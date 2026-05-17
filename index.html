@@ -1,0 +1,1930 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0e1a">
+<title>NeuroNotes Pro — Ing. Edisson Macias</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0a0e1a;--bg2:#0f1528;--bg3:#141b30;--bg4:#1a2240;--bg5:#1e2845;
+  --accent:#00d4ff;--accent2:#7c3aed;--accent3:#f59e0b;--accent4:#10b981;
+  --red:#ef4444;--pink:#ec4899;--blue:#3b82f6;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --border:#1e2d4a;--border2:#2a3a5c;
+  --font:'Space Grotesk',sans-serif;--mono:'JetBrains Mono',monospace;
+  --r:14px;--r2:10px;--r3:24px;
+  --nav-h:64px;--topbar-h:60px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font);touch-action:manipulation}
+
+/* === SPLASH === */
+#splash{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity 0.5s}
+#splash.hide{opacity:0;pointer-events:none}
+.splash-logo{width:80px;height:80px;background:linear-gradient(135deg,var(--accent2),var(--accent));border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;color:#fff;letter-spacing:-2px;animation:pulse 1.5s ease-in-out infinite}
+.splash-title{font-size:24px;font-weight:700;letter-spacing:-0.5px}
+.splash-title span{color:var(--accent)}
+.splash-sub{font-size:12px;color:var(--text3);letter-spacing:2px;text-transform:uppercase}
+.splash-loader{display:flex;gap:6px;margin-top:8px}
+.loader-dot{width:8px;height:8px;border-radius:50%;background:var(--accent2);animation:bounce 0.8s ease-in-out infinite}
+.loader-dot:nth-child(2){animation-delay:0.15s;background:var(--accent)}
+.loader-dot:nth-child(3){animation-delay:0.3s;background:var(--accent3)}
+@keyframes bounce{0%,100%{transform:translateY(0);opacity:0.4}50%{transform:translateY(-8px);opacity:1}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,212,255,0.3)}50%{box-shadow:0 0 0 12px rgba(0,212,255,0)}}
+
+/* === LAYOUT === */
+#app{height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:var(--topbar-h);background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0;position:relative;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:10px;flex:1}
+.topbar-logo{display:flex;align-items:center;gap:8px}
+.tl-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent2),var(--accent));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;letter-spacing:-1px;flex-shrink:0}
+.tl-name{font-size:15px;font-weight:700;letter-spacing:-0.3px}
+.tl-name span{color:var(--accent)}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.tb-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--r2);background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:15px;cursor:pointer;transition:all 0.15s;flex-shrink:0}
+.tb-btn:hover,.tb-btn:active{background:var(--bg4);color:var(--text);border-color:var(--accent)}
+.tb-btn.accent{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;border:none}
+.tb-btn.accent:active{opacity:0.85}
+.avatar-btn{width:36px;height:36px;background:linear-gradient(135deg,var(--accent2),var(--pink));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;cursor:pointer;flex-shrink:0}
+.sync-indicator{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--accent4);background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:20px;padding:4px 10px}
+.sync-dot{width:6px;height:6px;background:var(--accent4);border-radius:50%;animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* === SCREENS === */
+.screens{flex:1;overflow:hidden;position:relative}
+.screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;display:none;-webkit-overflow-scrolling:touch}
+.screen.active{display:block}
+.screen-content{padding:16px;padding-bottom:80px;min-height:100%}
+
+/* === BOTTOM NAV === */
+.bottom-nav{height:var(--nav-h);background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 8px;flex-shrink:0;position:relative;z-index:100}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:8px 4px;border-radius:var(--r2);transition:all 0.15s;position:relative}
+.nav-item:active{background:var(--bg3)}
+.nav-item i{font-size:18px;color:var(--text3);transition:all 0.2s}
+.nav-item span{font-size:9px;color:var(--text3);font-weight:600;letter-spacing:0.3px;text-transform:uppercase;transition:all 0.2s}
+.nav-item.active i{color:var(--accent)}
+.nav-item.active span{color:var(--accent)}
+.nav-item .badge{position:absolute;top:6px;right:calc(50% - 14px);background:var(--accent2);color:#fff;font-size:8px;font-weight:700;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+
+/* FAB */
+.fab{width:52px;height:52px;background:linear-gradient(135deg,var(--accent2),var(--accent));border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;color:#fff;box-shadow:0 4px 20px rgba(0,212,255,0.4);transition:all 0.2s;flex-shrink:0;margin:0 4px}
+.fab:active{transform:scale(0.92)}
+
+/* === SECTION HEADERS === */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.section-title{font-size:18px;font-weight:700;letter-spacing:-0.3px}
+.section-action{font-size:12px;color:var(--accent);font-weight:600;cursor:pointer;padding:6px 12px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);border-radius:20px;transition:all 0.15s}
+.section-action:active{background:rgba(0,212,255,0.15)}
+
+/* === STATS GRID === */
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px;cursor:pointer;transition:all 0.15s;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,212,255,0.04),transparent);pointer-events:none}
+.stat-card:active{transform:scale(0.97);border-color:var(--accent)}
+.stat-icon{font-size:22px;margin-bottom:8px}
+.stat-num{font-size:26px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+.stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-top:4px}
+
+/* === NOTE CARDS === */
+.notes-list{display:flex;flex-direction:column;gap:10px}
+.note-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:all 0.2s}
+.note-card:active{transform:scale(0.98);border-color:var(--accent)}
+.note-card-inner{padding:14px}
+.note-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.note-tag{font-size:9px;letter-spacing:0.8px;text-transform:uppercase;font-weight:700;padding:3px 9px;border-radius:20px}
+.tag-ee{background:rgba(0,212,255,0.12);color:var(--accent);border:1px solid rgba(0,212,255,0.25)}
+.tag-proj{background:rgba(124,58,237,0.12);color:#a78bfa;border:1px solid rgba(124,58,237,0.25)}
+.tag-agenda{background:rgba(245,158,11,0.12);color:var(--accent3);border:1px solid rgba(245,158,11,0.25)}
+.tag-idea{background:rgba(16,185,129,0.12);color:var(--accent4);border:1px solid rgba(16,185,129,0.25)}
+.tag-meeting{background:rgba(236,72,153,0.12);color:var(--pink);border:1px solid rgba(236,72,153,0.25)}
+.note-more{color:var(--text3);font-size:16px;padding:2px;cursor:pointer}
+.note-title{font-size:15px;font-weight:600;line-height:1.3;margin-bottom:6px}
+.note-preview{font-size:12px;color:var(--text2);line-height:1.5;font-family:var(--mono)}
+.note-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-top:1px solid var(--border);background:var(--bg3)}
+.note-date{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.note-chips{display:flex;gap:6px}
+.note-chip{font-size:10px;color:var(--text3);cursor:pointer;padding:3px 8px;background:var(--bg4);border-radius:6px;transition:all 0.15s}
+.note-chip:active{color:var(--accent);background:rgba(0,212,255,0.1)}
+
+/* === SEARCH OVERLAY === */
+.search-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:800;backdrop-filter:blur(8px);display:none;flex-direction:column;padding:16px}
+.search-overlay.show{display:flex}
+.search-header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.search-main-input{flex:1;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:14px 16px 14px 44px;font-size:16px;color:var(--text);font-family:var(--font);outline:none}
+.search-main-input:focus{border-color:var(--accent2)}
+.search-icon-abs{position:absolute;left:28px;top:29px;color:var(--text3);font-size:16px;pointer-events:none}
+.search-cancel{color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;padding:8px}
+.search-results{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.search-result-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:12px 14px;cursor:pointer;transition:all 0.15s}
+.search-result-item:active{border-color:var(--accent);transform:scale(0.98)}
+.search-result-title{font-size:14px;font-weight:600;margin-bottom:4px}
+.search-result-title mark{background:rgba(0,212,255,0.25);color:var(--accent);border-radius:3px;padding:0 2px}
+.search-result-preview{font-size:11px;color:var(--text2);font-family:var(--mono)}
+.search-empty{text-align:center;color:var(--text3);font-size:14px;margin-top:40px}
+
+/* === NOTE EDITOR MODAL === */
+.note-editor-overlay{position:fixed;inset:0;background:var(--bg);z-index:700;display:none;flex-direction:column}
+.note-editor-overlay.show{display:flex}
+.editor-topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.editor-back{color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
+.editor-title-inp{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:16px;font-weight:600;font-family:var(--font)}
+.editor-save-btn{padding:7px 16px;background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;border-radius:var(--r2);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.editor-tags{display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--bg2);overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+.editor-tags::-webkit-scrollbar{display:none}
+.editor-tag-btn{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid;flex-shrink:0;opacity:0.5;transition:all 0.15s}
+.editor-tag-btn.active{opacity:1}
+.editor-body{flex:1;overflow-y:auto;padding:16px}
+.editor-content{width:100%;min-height:300px;background:transparent;border:none;outline:none;color:var(--text);font-size:14px;line-height:1.7;font-family:var(--mono);resize:none}
+.editor-toolbar{display:flex;gap:6px;padding:10px 16px;border-top:1px solid var(--border);background:var(--bg2);overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+.editor-toolbar::-webkit-scrollbar{display:none}
+.ed-btn{padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all 0.15s;flex-shrink:0}
+.ed-btn:active{background:var(--bg4);color:var(--text);border-color:var(--accent2)}
+
+/* === CANVAS SCREEN === */
+.canvas-toolbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 12px;display:flex;align-items:center;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0;scrollbar-width:none}
+.canvas-toolbar::-webkit-scrollbar{display:none}
+.tool-group{display:flex;align-items:center;gap:2px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:3px;flex-shrink:0}
+.t-btn{width:36px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;font-size:15px;color:var(--text2);transition:all 0.1s;border:none;background:transparent;-webkit-tap-highlight-color:transparent}
+.t-btn:active{background:var(--border2);color:var(--text);transform:scale(0.92)}
+.t-btn.active{background:var(--accent2);color:#fff}
+.t-sep{width:1px;height:22px;background:var(--border);flex-shrink:0}
+.color-row{display:flex;gap:5px;align-items:center;padding:4px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);flex-shrink:0}
+.c-dot{width:20px;height:20px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:all 0.1s;flex-shrink:0}
+.c-dot:active,.c-dot.active{border-color:#fff;transform:scale(1.15)}
+.sticker-row{display:flex;gap:4px;padding:4px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);flex-shrink:0}
+.s-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:8px;font-size:17px;transition:all 0.1s}
+.s-btn:active{background:var(--border2);transform:scale(1.2)}
+.pen-slider{display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);flex-shrink:0}
+.pen-slider input{width:70px;accent-color:var(--accent)}
+
+/* CANVAS */
+.canvas-wrap{flex:1;position:relative;overflow:hidden;background:var(--bg);cursor:crosshair;touch-action:none}
+.canvas-wrap canvas{position:absolute;top:0;left:0;touch-action:none}
+#canvas-bg{background:var(--bg3)}
+.canvas-screen-inner{height:calc(100vh - var(--topbar-h) - var(--nav-h));display:flex;flex-direction:column}
+.note-title-input{background:transparent;border:none;outline:none;color:var(--text);font-family:var(--font);font-size:16px;font-weight:600;width:100%;padding:12px 16px;border-bottom:1px solid var(--border)}
+.note-title-input::placeholder{color:var(--text3)}
+
+/* === STICKY NOTES === */
+.sticky-container{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
+.sticky{position:absolute;width:140px;min-height:100px;padding:10px 12px;border-radius:10px;font-size:11px;line-height:1.5;pointer-events:all;cursor:move;user-select:none;box-shadow:3px 3px 12px rgba(0,0,0,0.35)}
+.sticky-yellow{background:#fef08a;color:#713f12}
+.sticky-blue{background:#bfdbfe;color:#1e3a8a}
+.sticky-green{background:#bbf7d0;color:#14532d}
+.sticky-pink{background:#fbcfe8;color:#831843}
+.sticky-hdr{font-weight:700;font-size:9px;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:4px;opacity:0.6;display:flex;align-items:center;justify-content:space-between}
+.sticky-del{cursor:pointer;opacity:0.5;font-size:11px}
+.sticky-del:hover{opacity:1}
+.sticky-body{font-size:11px;line-height:1.4}
+
+/* === AGENDA === */
+.agenda-hero{background:linear-gradient(135deg,var(--bg2),var(--bg3));border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:16px}
+.agenda-date-big{font-size:28px;font-weight:700;letter-spacing:-1px;line-height:1}
+.agenda-date-big span{color:var(--accent)}
+.agenda-weekday{font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:4px}
+.calendar-strip{display:flex;gap:6px;overflow-x:auto;margin-top:12px;padding-bottom:4px;scrollbar-width:none}
+.calendar-strip::-webkit-scrollbar{display:none}
+.cal-day{min-width:42px;padding:8px 4px;text-align:center;border-radius:var(--r2);cursor:pointer;transition:all 0.15s;flex-shrink:0}
+.cal-day:active{transform:scale(0.95)}
+.cal-day.today{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff}
+.cal-day .day-num{font-size:15px;font-weight:700;line-height:1}
+.cal-day .day-name{font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text3);margin-top:2px}
+.cal-day.today .day-name{color:rgba(255,255,255,0.7)}
+.cal-dot{width:5px;height:5px;border-radius:50%;background:var(--accent3);margin:3px auto 0}
+
+.sync-sources{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.source-chip{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s;border:1px solid;flex-shrink:0}
+.source-chip:active{transform:scale(0.95)}
+.sc-google{background:rgba(16,185,129,0.1);color:var(--accent4);border-color:rgba(16,185,129,0.3)}
+.sc-teams{background:rgba(98,100,167,0.1);color:#8b8fff;border-color:rgba(98,100,167,0.3)}
+.sc-personal{background:rgba(245,158,11,0.1);color:var(--accent3);border-color:rgba(245,158,11,0.3)}
+
+.event-list{display:flex;flex-direction:column;gap:8px}
+.event-item{display:flex;gap:10px;align-items:stretch}
+.event-time-col{display:flex;flex-direction:column;align-items:flex-end;min-width:44px;padding-top:2px}
+.evt-time{font-size:11px;font-weight:600;font-family:var(--mono);color:var(--text2);line-height:1}
+.evt-end{font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+.event-line-col{display:flex;flex-direction:column;align-items:center;width:20px;gap:0}
+.evt-dot{width:10px;height:10px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.evt-track{flex:1;width:1.5px;background:var(--border2);margin:2px 0}
+.event-body{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:10px 12px;border-left:3px solid transparent;cursor:pointer;transition:all 0.15s}
+.event-body:active{transform:scale(0.98);opacity:0.85}
+.evt-title{font-size:13px;font-weight:600;margin-bottom:3px}
+.evt-meta{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:5px}
+.evt-source-google .evt-dot,.evt-source-google .event-body{border-left-color:var(--accent4)!important}.evt-source-google .evt-dot{background:var(--accent4)}
+.evt-source-teams .evt-dot,.evt-source-teams .event-body{border-left-color:#6264a7!important}.evt-source-teams .evt-dot{background:#6264a7}
+.evt-source-personal .evt-dot,.evt-source-personal .event-body{border-left-color:var(--accent3)!important}.evt-source-personal .evt-dot{background:var(--accent3)}
+
+/* === MUSIC === */
+.music-hero{background:linear-gradient(135deg,#1a0533,#0a1535);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:16px;position:relative}
+.music-cover{width:100%;height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;position:relative}
+.music-wave{display:flex;gap:4px;align-items:center}
+.w-bar{width:4px;border-radius:3px;background:var(--accent);animation:wave 0.9s ease-in-out infinite}
+@keyframes wave{0%,100%{height:6px;opacity:0.3}50%{height:28px;opacity:1}}
+.w-bar:nth-child(2){animation-delay:0.1s}.w-bar:nth-child(3){animation-delay:0.2s}.w-bar:nth-child(4){animation-delay:0.3s}.w-bar:nth-child(5){animation-delay:0.15s}.w-bar:nth-child(6){animation-delay:0.05s}.w-bar:nth-child(7){animation-delay:0.25s}
+.music-wave.paused .w-bar{animation-play-state:paused}
+.music-platform{position:absolute;top:12px;right:12px;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);background:rgba(0,0,0,0.5);padding:3px 8px;border-radius:6px;font-family:var(--mono)}
+.music-info{padding:14px}
+.music-title{font-size:17px;font-weight:700;margin-bottom:3px}
+.music-artist{font-size:13px;color:var(--text3)}
+.music-controls{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;gap:8px}
+.mc{width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:50%;cursor:pointer;color:var(--text2);font-size:18px;transition:all 0.15s}
+.mc:active{transform:scale(0.88)}
+.mc:hover{color:var(--text)}
+.mc.play{width:52px;height:52px;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;font-size:20px;box-shadow:0 4px 16px rgba(0,212,255,0.35)}
+.mc.play:active{transform:scale(0.9)}
+.progress-area{padding:0 14px 14px}
+.progress-bar{width:100%;height:4px;background:var(--border2);border-radius:3px;cursor:pointer;position:relative;margin-bottom:6px}
+.progress-fill{height:100%;width:38%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:3px;position:relative;transition:width 0.1s}
+.progress-fill::after{content:'';position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:12px;height:12px;background:var(--accent);border-radius:50%;box-shadow:0 0 6px var(--accent)}
+.progress-time{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);font-family:var(--mono)}
+
+.queue-title{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-weight:600;margin-bottom:10px}
+.queue-list{display:flex;flex-direction:column;gap:6px}
+.queue-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);cursor:pointer;transition:all 0.15s}
+.queue-item:active{transform:scale(0.98);border-color:var(--accent)}
+.qi-num{font-size:10px;color:var(--text3);font-family:var(--mono);width:16px;text-align:center}
+.qi-info{flex:1}
+.qi-title{font-size:13px;font-weight:600}
+.qi-artist{font-size:11px;color:var(--text3)}
+.qi-dur{font-size:10px;color:var(--text3);font-family:var(--mono)}
+
+/* === TOOLS/INTEGRATIONS === */
+.int-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px}
+.int-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden}
+.int-card:active{transform:scale(0.97);border-color:var(--accent)}
+.int-card.connected{border-color:rgba(16,185,129,0.3)}
+.int-card-icon{font-size:28px;margin-bottom:8px}
+.int-card-name{font-size:13px;font-weight:700;margin-bottom:2px}
+.int-card-status{font-size:10px;font-weight:600}
+.int-card-status.on{color:var(--accent4)}.int-card-status.off{color:var(--text3)}
+.int-badge{position:absolute;top:10px;right:10px;width:8px;height:8px;border-radius:50%}
+.badge-on{background:var(--accent4);box-shadow:0 0 6px var(--accent4)}.badge-off{background:var(--text3)}
+
+.export-section{margin-bottom:20px}
+.export-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.exp-btn{display:flex;align-items:center;gap:10px;padding:14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all 0.2s}
+.exp-btn:active{transform:scale(0.97)}
+.exp-btn.pdf:active{border-color:var(--red)}.exp-btn.word:active{border-color:var(--blue)}.exp-btn.excel:active{border-color:var(--accent4)}.exp-btn.md:active{border-color:var(--text2)}
+.exp-icon{font-size:24px;width:36px;text-align:center}
+.exp-name{font-size:13px;font-weight:700}.exp-sub{font-size:10px;color:var(--text3);margin-top:1px}
+
+/* === SEARCH BAR inline === */
+.search-wrap{position:relative;padding:0 0 14px}
+.search-input{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);padding:12px 14px 12px 40px;font-size:14px;color:var(--text);font-family:var(--font);outline:none}
+.search-input:focus{border-color:var(--accent2)}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;pointer-events:none;z-index:1;margin-top:-7px}
+
+/* === MODAL === */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity 0.25s;backdrop-filter:blur(4px)}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r) var(--r) 0 0;padding:20px;width:100%;transform:translateY(30px);transition:transform 0.25s;max-height:85vh;overflow-y:auto}
+.modal-overlay.show .modal{transform:translateY(0)}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.modal-close{color:var(--text3);font-size:18px;cursor:pointer;padding:4px}
+.form-group{margin-bottom:14px}
+.form-label{font-size:11px;letter-spacing:0.8px;text-transform:uppercase;color:var(--text3);font-weight:600;margin-bottom:6px;display:block}
+.form-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);padding:10px 14px;font-size:14px;color:var(--text);font-family:var(--font);outline:none}
+.form-input:focus{border-color:var(--accent2)}
+.tag-picker{display:flex;gap:6px;flex-wrap:wrap}
+.tag-pick{padding:6px 14px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid;transition:all 0.15s;opacity:0.5}
+.tag-pick.selected{opacity:1}
+.btn-full{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;border-radius:var(--r2);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);transition:all 0.15s}
+.btn-full:active{opacity:0.85;transform:scale(0.98)}
+
+/* EVENT MODAL */
+.event-form .form-input{font-family:var(--font)}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--bg2);border:1px solid var(--accent4);border-radius:var(--r2);padding:10px 18px;font-size:13px;display:flex;align-items:center;gap:8px;z-index:1000;opacity:0;transition:all 0.3s;pointer-events:none;white-space:nowrap;max-width:90vw}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast i{color:var(--accent4)}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* INSTALL BANNER */
+.install-banner{background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(0,212,255,0.1));border:1px solid rgba(0,212,255,0.2);border-radius:var(--r);padding:14px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.install-banner i{font-size:24px;color:var(--accent);flex-shrink:0}
+.ib-text{flex:1}
+.ib-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.ib-sub{font-size:11px;color:var(--text3)}
+.ib-btn{padding:8px 14px;background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;border-radius:var(--r2);color:#fff;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;font-family:var(--font)}
+
+/* AI CHAT */
+.ai-chat-box{background:var(--bg3);border:1px solid rgba(124,58,237,0.2);border-radius:var(--r);padding:0;margin-bottom:12px;overflow:hidden}
+.ai-messages{padding:12px;max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.ai-msg{padding:8px 12px;border-radius:10px;font-size:13px;line-height:1.5;max-width:90%}
+.ai-msg.ai{background:rgba(124,58,237,0.12);color:var(--text);align-self:flex-start;border:1px solid rgba(124,58,237,0.2)}
+.ai-msg.user{background:rgba(0,212,255,0.1);color:var(--text);align-self:flex-end;border:1px solid rgba(0,212,255,0.2);text-align:right}
+.ai-msg.thinking{color:var(--text3);font-style:italic}
+.ai-input-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border)}
+.ai-input{flex:1;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);padding:9px 12px;font-size:13px;color:var(--text);font-family:var(--font);outline:none}
+.ai-input:focus{border-color:var(--accent2)}
+.ai-send-btn{width:36px;height:36px;background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;border-radius:var(--r2);color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ai-send-btn:active{opacity:0.85}
+.ai-send-btn:disabled{opacity:0.4;cursor:not-allowed}
+
+/* CONTEXT MENU */
+.context-menu{position:fixed;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);padding:6px;z-index:600;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,0.5);display:none}
+.context-menu.show{display:block}
+.ctx-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text2);transition:all 0.1s}
+.ctx-item:hover,.ctx-item:active{background:var(--bg3);color:var(--text)}
+.ctx-item.danger{color:var(--red)}
+.ctx-item.danger:hover{background:rgba(239,68,68,0.1)}
+.ctx-sep{height:1px;background:var(--border);margin:4px 0}
+
+/* FILTER BAR */
+.filter-bar{display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;scrollbar-width:none;padding-bottom:2px}
+.filter-bar::-webkit-scrollbar{display:none}
+.filter-chip{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border2);color:var(--text3);background:var(--bg2);white-space:nowrap;transition:all 0.15s;flex-shrink:0}
+.filter-chip.active{background:rgba(0,212,255,0.1);border-color:rgba(0,212,255,0.3);color:var(--accent)}
+.filter-chip:active{transform:scale(0.95)}
+
+/* NEW EVENT FORM */
+.ne-source-btns{display:flex;gap:6px;flex-wrap:wrap}
+.ne-src-btn{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid;opacity:0.5;transition:all 0.15s}
+.ne-src-btn.active{opacity:1}
+
+/* PROGRESS BAR for canvas save */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;display:inline-block}
+
+/* EMOJI PICKER */
+.emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;padding:8px;max-height:200px;overflow-y:auto}
+.emoji-item{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;border-radius:6px;transition:all 0.1s}
+.emoji-item:active{background:var(--bg3);transform:scale(1.2)}
+
+/* CONFIRM MODAL */
+.confirm-modal{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:900;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.confirm-modal.show{display:flex}
+.confirm-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:24px;margin:20px;max-width:320px;width:100%}
+.confirm-title{font-size:16px;font-weight:700;margin-bottom:8px}
+.confirm-msg{font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.5}
+.confirm-btns{display:flex;gap:10px}
+.confirm-btn-cancel{flex:1;padding:11px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);color:var(--text2);font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)}
+.confirm-btn-ok{flex:1;padding:11px;background:var(--red);border:none;border-radius:var(--r2);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)}
+
+/* Note color accent bar */
+.note-accent-bar{height:3px;width:100%}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-logo">N²</div>
+  <div class="splash-title">Neuro<span>Notes</span> Pro</div>
+  <div class="splash-sub">Ing. Edisson Macias · Bogotá</div>
+  <div class="splash-loader">
+    <div class="loader-dot"></div>
+    <div class="loader-dot"></div>
+    <div class="loader-dot"></div>
+  </div>
+</div>
+
+<!-- SEARCH OVERLAY -->
+<div class="search-overlay" id="search-overlay">
+  <div class="search-header" style="position:relative">
+    <i class="fas fa-search search-icon-abs"></i>
+    <input class="search-main-input" type="text" id="search-main-input" placeholder="Buscar notas, eventos, tareas..." oninput="doSearch(this.value)" autofocus>
+    <div class="search-cancel" onclick="closeSearch()">Cancelar</div>
+  </div>
+  <div class="filter-bar" id="search-filter-bar">
+    <div class="filter-chip active" onclick="setSearchFilter('all',this)">Todo</div>
+    <div class="filter-chip" onclick="setSearchFilter('ee',this)">⚡ Electrónica</div>
+    <div class="filter-chip" onclick="setSearchFilter('proj',this)">📁 Proyecto</div>
+    <div class="filter-chip" onclick="setSearchFilter('idea',this)">💡 Ideas</div>
+    <div class="filter-chip" onclick="setSearchFilter('meeting',this)">👥 Reuniones</div>
+    <div class="filter-chip" onclick="setSearchFilter('agenda',this)">📅 Agenda</div>
+  </div>
+  <div class="search-results" id="search-results">
+    <div class="search-empty"><i class="fas fa-search" style="font-size:32px;margin-bottom:12px;display:block;opacity:0.3"></i>Escribe para buscar notas...</div>
+  </div>
+</div>
+
+<!-- NOTE EDITOR -->
+<div class="note-editor-overlay" id="note-editor">
+  <div class="editor-topbar">
+    <div class="editor-back" onclick="closeEditor()"><i class="fas fa-arrow-left"></i> Notas</div>
+    <input class="editor-title-inp" type="text" id="editor-title" placeholder="Título de la nota...">
+    <button class="editor-save-btn" onclick="saveCurrentNote()">Guardar</button>
+  </div>
+  <div class="editor-tags" id="editor-tags-bar">
+    <div class="editor-tag-btn tag-ee active" data-tag="ee" onclick="setEditorTag(this)">⚡ Electrónica</div>
+    <div class="editor-tag-btn tag-proj" data-tag="proj" onclick="setEditorTag(this)">📁 Proyecto</div>
+    <div class="editor-tag-btn tag-agenda" data-tag="agenda" onclick="setEditorTag(this)">📅 Agenda</div>
+    <div class="editor-tag-btn tag-idea" data-tag="idea" onclick="setEditorTag(this)">💡 Idea</div>
+    <div class="editor-tag-btn tag-meeting" data-tag="meeting" onclick="setEditorTag(this)">👥 Reunión</div>
+  </div>
+  <div class="editor-body">
+    <textarea class="editor-content" id="editor-content" placeholder="Escribe aquí tu nota... Soporta texto libre, fórmulas, listas..."></textarea>
+  </div>
+  <div class="editor-toolbar">
+    <div class="ed-btn" onclick="insertText('**texto**')"><b>B</b></div>
+    <div class="ed-btn" onclick="insertText('_texto_')"><i>I</i></div>
+    <div class="ed-btn" onclick="insertText('\n- ')">• Lista</div>
+    <div class="ed-btn" onclick="insertText('\n☐ ')">☐ Tarea</div>
+    <div class="ed-btn" onclick="insertText('\n# ')">H1</div>
+    <div class="ed-btn" onclick="insertText('\n## ')">H2</div>
+    <div class="ed-btn" onclick="insertText('\n```\n\n```')">Code</div>
+    <div class="ed-btn" onclick="insertText('√3·V·I·cosφ')">∿ P</div>
+    <div class="ed-btn" onclick="insertText('∠°')">∠°</div>
+    <div class="ed-btn" onclick="insertText('Ω')">Ω</div>
+    <div class="ed-btn" onclick="insertText('μF')">μF</div>
+    <div class="ed-btn" onclick="insertText('→')">→</div>
+    <div class="ed-btn" onclick="insertDateStamp()">📅 Fecha</div>
+    <div class="ed-btn" onclick="copyEditorContent()"><i class="fas fa-copy"></i> Copiar</div>
+  </div>
+</div>
+
+<!-- CONTEXT MENU -->
+<div class="context-menu" id="context-menu">
+  <div class="ctx-item" onclick="ctxAction('edit')"><i class="fas fa-edit" style="width:16px;color:var(--accent)"></i> Editar</div>
+  <div class="ctx-item" onclick="ctxAction('draw')"><i class="fas fa-pen-nib" style="width:16px;color:var(--accent2)"></i> Abrir en Canvas</div>
+  <div class="ctx-item" onclick="ctxAction('duplicate')"><i class="fas fa-copy" style="width:16px;color:var(--text3)"></i> Duplicar</div>
+  <div class="ctx-item" onclick="ctxAction('share')"><i class="fas fa-share-alt" style="width:16px;color:var(--accent4)"></i> Compartir</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="ctxAction('export-pdf')"><i class="fas fa-file-pdf" style="width:16px;color:var(--red)"></i> Exportar PDF</div>
+  <div class="ctx-item" onclick="ctxAction('export-md')"><i class="fas fa-file-code" style="width:16px;color:var(--text2)"></i> Exportar Markdown</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item danger" onclick="ctxAction('delete')"><i class="fas fa-trash" style="width:16px"></i> Eliminar</div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="confirm-modal" id="confirm-modal">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirm-title">¿Eliminar nota?</div>
+    <div class="confirm-msg" id="confirm-msg">Esta acción no se puede deshacer.</div>
+    <div class="confirm-btns">
+      <button class="confirm-btn-cancel" onclick="closeConfirm()">Cancelar</button>
+      <button class="confirm-btn-ok" id="confirm-ok-btn">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">
+        <div class="tl-icon">N²</div>
+        <div class="tl-name">Neuro<span>Notes</span></div>
+      </div>
+      <div class="sync-indicator">
+        <div class="sync-dot"></div>
+        <span>Sync</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="tb-btn" onclick="openSearch()" title="Buscar"><i class="fas fa-search"></i></div>
+      <div class="tb-btn" id="notif-btn" onclick="toggleNotifications()" title="Notificaciones"><i class="fas fa-bell"></i></div>
+      <div class="avatar-btn" onclick="showProfileMenu()">EM</div>
+    </div>
+  </div>
+
+  <!-- SCREENS -->
+  <div class="screens">
+
+    <!-- HOME / NOTES -->
+    <div class="screen active" id="screen-home">
+      <div class="screen-content">
+        <div class="install-banner" id="install-banner">
+          <i class="fas fa-download"></i>
+          <div class="ib-text">
+            <div class="ib-title">Instalar NeuroNotes Pro</div>
+            <div class="ib-sub">Agrega al inicio · Funciona offline</div>
+          </div>
+          <button class="ib-btn" onclick="installApp()">Instalar</button>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card" onclick="showToast('🧠 '+notes.length+' notas en tu segundo cerebro')">
+            <div class="stat-icon">🧠</div>
+            <div class="stat-num" id="stat-notes">0</div>
+            <div class="stat-label">Notas</div>
+          </div>
+          <div class="stat-card" onclick="goScreen('home');setFilter('proj')">
+            <div class="stat-icon">⚡</div>
+            <div class="stat-num" id="stat-proj">0</div>
+            <div class="stat-label">Proyectos</div>
+          </div>
+          <div class="stat-card" onclick="goScreen('agenda')">
+            <div class="stat-icon">📅</div>
+            <div class="stat-num" id="stat-events">3</div>
+            <div class="stat-label">Eventos hoy</div>
+          </div>
+          <div class="stat-card" onclick="goScreen('tools')">
+            <div class="stat-icon">🔗</div>
+            <div class="stat-num">6</div>
+            <div class="stat-label">Apps sync</div>
+          </div>
+        </div>
+
+        <div class="section-header">
+          <div class="section-title">Notas</div>
+          <div class="section-action" onclick="openNewNote()">+ Nueva</div>
+        </div>
+
+        <div class="filter-bar" id="filter-bar">
+          <div class="filter-chip active" data-filter="all" onclick="setFilter('all',this)">Todas</div>
+          <div class="filter-chip" data-filter="ee" onclick="setFilter('ee',this)">⚡ Electrónica</div>
+          <div class="filter-chip" data-filter="proj" onclick="setFilter('proj',this)">📁 Proyectos</div>
+          <div class="filter-chip" data-filter="idea" onclick="setFilter('idea',this)">💡 Ideas</div>
+          <div class="filter-chip" data-filter="meeting" onclick="setFilter('meeting',this)">👥 Reuniones</div>
+          <div class="filter-chip" data-filter="agenda" onclick="setFilter('agenda',this)">📅 Agenda</div>
+        </div>
+
+        <div class="notes-list" id="notes-list"></div>
+      </div>
+    </div>
+
+    <!-- CANVAS / DIBUJO -->
+    <div class="screen" id="screen-canvas">
+      <div class="canvas-screen-inner">
+        <input class="note-title-input" type="text" placeholder="Título de la nota..." id="canvas-title" value="Control PID — Variador ABB">
+        <div class="canvas-toolbar" id="canvas-toolbar">
+          <div class="tool-group">
+            <div class="t-btn active" id="tool-pen" title="Lápiz" onclick="setTool('pen',this)"><i class="fas fa-pen"></i></div>
+            <div class="t-btn" id="tool-highlighter" title="Resaltador" onclick="setTool('highlighter',this)"><i class="fas fa-highlighter"></i></div>
+            <div class="t-btn" id="tool-eraser" title="Borrador" onclick="setTool('eraser',this)"><i class="fas fa-eraser"></i></div>
+            <div class="t-btn" id="tool-text" title="Texto" onclick="setTool('text',this)"><i class="fas fa-font"></i></div>
+          </div>
+          <div class="t-sep"></div>
+          <div class="tool-group">
+            <div class="t-btn" title="Rect." onclick="setTool('rect',this)" id="tool-rect"><i class="fas fa-square"></i></div>
+            <div class="t-btn" title="Círculo" onclick="setTool('circle',this)" id="tool-circle"><i class="fas fa-circle"></i></div>
+            <div class="t-btn" title="Línea" onclick="setTool('line',this)" id="tool-line"><i class="fas fa-minus"></i></div>
+            <div class="t-btn" title="Flecha" onclick="setTool('arrow',this)" id="tool-arrow"><i class="fas fa-arrow-right"></i></div>
+          </div>
+          <div class="t-sep"></div>
+          <div class="color-row">
+            <div class="c-dot active" style="background:#00d4ff" onclick="setColor('#00d4ff',this)"></div>
+            <div class="c-dot" style="background:#7c3aed" onclick="setColor('#7c3aed',this)"></div>
+            <div class="c-dot" style="background:#f59e0b" onclick="setColor('#f59e0b',this)"></div>
+            <div class="c-dot" style="background:#10b981" onclick="setColor('#10b981',this)"></div>
+            <div class="c-dot" style="background:#ef4444" onclick="setColor('#ef4444',this)"></div>
+            <div class="c-dot" style="background:#ec4899" onclick="setColor('#ec4899',this)"></div>
+            <div class="c-dot" style="background:#e2e8f0" onclick="setColor('#e2e8f0',this)"></div>
+          </div>
+          <div class="t-sep"></div>
+          <div class="pen-slider">
+            <i class="fas fa-circle" style="font-size:8px;color:var(--text3)"></i>
+            <input type="range" min="1" max="20" value="3" id="pen-size" oninput="penSize=+this.value">
+            <i class="fas fa-circle" style="font-size:15px;color:var(--text3)"></i>
+          </div>
+          <div class="t-sep"></div>
+          <div class="sticker-row">
+            <div class="s-btn" title="Sticky amarilla" onclick="addSticky('yellow')">📝</div>
+            <div class="s-btn" title="Sticky azul" onclick="addSticky('blue')">🔵</div>
+            <div class="s-btn" title="Sticky verde" onclick="addSticky('green')">🟢</div>
+            <div class="s-btn" title="Sticky rosa" onclick="addSticky('pink')">🌸</div>
+            <div class="s-btn" title="Sticker ⚡" onclick="placeSticker('⚡')">⚡</div>
+            <div class="s-btn" title="Sticker 📌" onclick="placeSticker('📌')">📌</div>
+            <div class="s-btn" title="Sticker 💡" onclick="placeSticker('💡')">💡</div>
+            <div class="s-btn" title="Sticker ⚠️" onclick="placeSticker('⚠️')">⚠️</div>
+            <div class="s-btn" title="Sticker 🔌" onclick="placeSticker('🔌')">🔌</div>
+            <div class="s-btn" title="Sticker 📐" onclick="placeSticker('📐')">📐</div>
+          </div>
+          <div class="t-sep"></div>
+          <div class="tool-group">
+            <div class="t-btn" title="Deshacer" onclick="canvasUndo()"><i class="fas fa-undo"></i></div>
+            <div class="t-btn" title="Rehacer" onclick="canvasRedo()"><i class="fas fa-redo"></i></div>
+            <div class="t-btn" title="Limpiar" onclick="confirmClearCanvas()"><i class="fas fa-trash"></i></div>
+            <div class="t-btn" title="Guardar imagen" onclick="saveCanvasAsImage()"><i class="fas fa-image"></i></div>
+            <div class="t-btn" title="Guardar nota" onclick="saveCanvas()"><i class="fas fa-save"></i></div>
+          </div>
+        </div>
+        <div class="canvas-wrap" id="canvas-wrap">
+          <canvas id="canvas-bg"></canvas>
+          <canvas id="canvas-draw"></canvas>
+          <div class="sticky-container" id="sticky-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENDA -->
+    <div class="screen" id="screen-agenda">
+      <div class="screen-content">
+        <div class="agenda-hero">
+          <div class="agenda-date-big" id="agenda-date-big">Viernes <span>16</span></div>
+          <div class="agenda-weekday" id="agenda-weekday">Mayo 2025 · Bogotá, Colombia</div>
+          <div class="calendar-strip" id="calendar-strip"></div>
+        </div>
+
+        <div class="sync-sources">
+          <div class="source-chip sc-google" onclick="showToast('Google Calendar: 3 eventos sincronizados ✓')">
+            <i class="fab fa-google"></i> Google
+          </div>
+          <div class="source-chip sc-teams" onclick="showToast('Microsoft Teams: reunión en 45min')">
+            <i class="fab fa-microsoft"></i> Teams
+          </div>
+          <div class="source-chip sc-personal" onclick="showToast('Agenda personal actualizada')">
+            <i class="fas fa-user"></i> Personal
+          </div>
+          <div class="source-chip" style="background:rgba(59,130,246,0.1);color:var(--blue);border-color:rgba(59,130,246,0.3)" onclick="showToast('Outlook conectado')">
+            <i class="fas fa-envelope"></i> Outlook
+          </div>
+        </div>
+
+        <div class="section-header">
+          <div class="section-title" id="agenda-section-title">Hoy</div>
+          <div class="section-action" onclick="openNewEvent()">+ Evento</div>
+        </div>
+        <div class="event-list" id="event-list"></div>
+      </div>
+    </div>
+
+    <!-- MUSIC -->
+    <div class="screen" id="screen-music">
+      <div class="screen-content">
+        <div class="music-hero">
+          <div class="music-cover">
+            <div class="music-platform">Amazon Music</div>
+            <div class="music-wave" id="music-wave">
+              <div class="w-bar"></div><div class="w-bar"></div><div class="w-bar"></div>
+              <div class="w-bar"></div><div class="w-bar"></div><div class="w-bar"></div>
+              <div class="w-bar"></div>
+            </div>
+          </div>
+          <div class="music-info">
+            <div class="music-title" id="music-title">Deep Focus Engineering</div>
+            <div class="music-artist" id="music-artist">Ambient Work Sessions</div>
+          </div>
+          <div class="music-controls">
+            <div class="mc" id="shuffle-btn" onclick="toggleShuffle()" title="Aleatorio"><i class="fas fa-random"></i></div>
+            <div class="mc" onclick="prevTrack()"><i class="fas fa-step-backward"></i></div>
+            <div class="mc play" id="play-btn" onclick="togglePlay()"><i class="fas fa-pause" id="play-icon"></i></div>
+            <div class="mc" onclick="nextTrack()"><i class="fas fa-step-forward"></i></div>
+            <div class="mc" id="repeat-btn" onclick="toggleRepeat()" title="Repetir"><i class="fas fa-redo"></i></div>
+          </div>
+          <div class="progress-area">
+            <div class="progress-bar" onclick="seekTrack(event)" id="progress-bar">
+              <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="progress-time">
+              <span id="time-cur">1:24</span>
+              <span id="time-tot">3:47</span>
+            </div>
+          </div>
+        </div>
+        <div class="queue-title">En cola</div>
+        <div class="queue-list" id="queue-list"></div>
+      </div>
+    </div>
+
+    <!-- TOOLS / INTEGRATIONS -->
+    <div class="screen" id="screen-tools">
+      <div class="screen-content">
+        <div class="section-header">
+          <div class="section-title">Integraciones</div>
+          <div class="section-action" onclick="showToast('Buscar más apps en la tienda...')">+ Agregar</div>
+        </div>
+        <div class="int-grid" id="int-grid"></div>
+
+        <div class="section-header">
+          <div class="section-title">Exportar nota activa</div>
+        </div>
+        <div class="export-grid">
+          <div class="exp-btn pdf" onclick="exportNote('PDF')">
+            <div class="exp-icon"><i class="fas fa-file-pdf" style="color:var(--red)"></i></div>
+            <div><div class="exp-name">PDF</div><div class="exp-sub">Adobe, Drive</div></div>
+          </div>
+          <div class="exp-btn word" onclick="exportNote('Word')">
+            <div class="exp-icon"><i class="fas fa-file-word" style="color:#63b3ed"></i></div>
+            <div><div class="exp-name">Word</div><div class="exp-sub">.docx</div></div>
+          </div>
+          <div class="exp-btn excel" onclick="exportNote('Excel')">
+            <div class="exp-icon"><i class="fas fa-file-excel" style="color:var(--accent4)"></i></div>
+            <div><div class="exp-name">Excel</div><div class="exp-sub">.xlsx</div></div>
+          </div>
+          <div class="exp-btn md" onclick="exportNote('Markdown')">
+            <div class="exp-icon"><i class="fas fa-file-code" style="color:var(--text2)"></i></div>
+            <div><div class="exp-name">Markdown</div><div class="exp-sub">.md</div></div>
+          </div>
+          <div class="exp-btn" onclick="exportNote('PowerPoint')">
+            <div class="exp-icon"><i class="fas fa-file-powerpoint" style="color:#ff7f50"></i></div>
+            <div><div class="exp-name">PowerPoint</div><div class="exp-sub">.pptx</div></div>
+          </div>
+          <div class="exp-btn" onclick="exportCanvasImage()">
+            <div class="exp-icon"><i class="fas fa-image" style="color:var(--pink)"></i></div>
+            <div><div class="exp-name">Imagen</div><div class="exp-sub">.png canvas</div></div>
+          </div>
+        </div>
+
+        <div class="section-header" style="margin-top:20px">
+          <div class="section-title">Asistente IA <span style="font-size:11px;color:var(--accent2);font-weight:400">Powered by Claude</span></div>
+        </div>
+        <div class="ai-chat-box">
+          <div class="ai-messages" id="ai-messages">
+            <div class="ai-msg ai">¡Hola Ing. Macias! Soy tu asistente de NeuroNotes. Puedo resumir notas, generar tareas, calcular fórmulas eléctricas, crear eventos y más. ¿En qué te ayudo?</div>
+          </div>
+          <div class="ai-input-row">
+            <input type="text" class="ai-input" id="ai-q" placeholder="Pregunta algo... (resumir notas, calcular P, crear tarea)" onkeydown="if(event.key==='Enter')askAI()">
+            <button class="ai-send-btn" id="ai-send-btn" onclick="askAI()"><i class="fas fa-paper-plane"></i></button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px" id="ai-actions"></div>
+      </div>
+    </div>
+
+  </div><!-- /screens -->
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <div class="nav-item active" id="nav-home" onclick="goScreen('home')">
+      <i class="fas fa-brain"></i><span>Notas</span>
+    </div>
+    <div class="nav-item" id="nav-canvas" onclick="goScreen('canvas')">
+      <i class="fas fa-pen-nib"></i><span>Dibujar</span>
+    </div>
+    <div class="nav-item" id="nav-agenda" onclick="goScreen('agenda')">
+      <i class="fas fa-calendar-alt"></i><span>Agenda</span>
+      <div class="badge" id="agenda-badge">3</div>
+    </div>
+    <div class="fab" onclick="openNewNote()"><i class="fas fa-plus"></i></div>
+    <div class="nav-item" id="nav-music" onclick="goScreen('music')">
+      <i class="fas fa-music"></i><span>Música</span>
+    </div>
+    <div class="nav-item" id="nav-tools" onclick="goScreen('tools')">
+      <i class="fas fa-plug"></i><span>Tools</span>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NEW NOTE -->
+<div class="modal-overlay" id="modal-new">
+  <div class="modal">
+    <div class="modal-title">
+      Nueva Nota
+      <i class="fas fa-times modal-close" onclick="closeModal()"></i>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Título</label>
+      <input class="form-input" type="text" id="new-title" placeholder="Título de la nota...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Categoría</label>
+      <div class="tag-picker" id="tag-picker">
+        <div class="tag-pick tag-ee selected" data-tag="ee" onclick="selectTag(this)">⚡ Electrónica</div>
+        <div class="tag-pick tag-proj" data-tag="proj" onclick="selectTag(this)">📁 Proyecto</div>
+        <div class="tag-pick tag-agenda" data-tag="agenda" onclick="selectTag(this)">📅 Agenda</div>
+        <div class="tag-pick tag-idea" data-tag="idea" onclick="selectTag(this)">💡 Idea</div>
+        <div class="tag-pick tag-meeting" data-tag="meeting" onclick="selectTag(this)">👥 Reunión</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Contenido inicial</label>
+      <textarea class="form-input" rows="4" id="new-content" placeholder="Escribe o usa el lápiz óptico..."></textarea>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-full" style="flex:1" onclick="createNote()">Crear nota <i class="fas fa-arrow-right"></i></button>
+      <button class="btn-full" style="flex:1;background:linear-gradient(135deg,#1a2240,#1e2845);border:1px solid var(--border2)" onclick="createNoteAndDraw()">Crear + Dibujar <i class="fas fa-pen"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NEW EVENT -->
+<div class="modal-overlay" id="modal-event">
+  <div class="modal event-form">
+    <div class="modal-title">
+      Nuevo Evento
+      <i class="fas fa-times modal-close" onclick="closeEventModal()"></i>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Título del evento</label>
+      <input class="form-input" type="text" id="evt-title" placeholder="Reunión, capacitación, entrega...">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group">
+        <label class="form-label">Hora inicio</label>
+        <input class="form-input" type="time" id="evt-start" value="09:00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hora fin</label>
+        <input class="form-input" type="time" id="evt-end" value="10:00">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Fuente</label>
+      <div class="ne-source-btns">
+        <div class="ne-src-btn sc-google active" data-src="google" onclick="selectEvtSrc(this)"><i class="fab fa-google"></i> Google</div>
+        <div class="ne-src-btn sc-teams" data-src="teams" onclick="selectEvtSrc(this)"><i class="fab fa-microsoft"></i> Teams</div>
+        <div class="ne-src-btn sc-personal" data-src="personal" onclick="selectEvtSrc(this)"><i class="fas fa-user"></i> Personal</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notas del evento</label>
+      <input class="form-input" type="text" id="evt-meta" placeholder="Link, ubicación, descripción...">
+    </div>
+    <button class="btn-full" onclick="createEvent()">Agregar al calendario <i class="fas fa-calendar-plus"></i></button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toast-msg">Acción completada</span></div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const NOTES_DEFAULT = [
+  {id:1,tag:'ee',title:'Control PID — Variador ABB ACS550',preview:'Kp=0.85  Ki=0.12  Kd=0.03\nMotor 3∅ 15kW | Frec: 50→42.5Hz\nEficiencia: 94.2%',date:'Hoy 14:30',pinned:true,created:Date.now()-3600000},
+  {id:2,tag:'meeting',title:'Comité Técnico ICONTEC NTC 2050',preview:'✓ RETIE Art. 22 revisado\n⚡ Puesta a tierra TN-S\n📋 Pendiente: informe calibración',date:'Hoy 10:00',created:Date.now()-18000000},
+  {id:3,tag:'idea',title:'Automatización Tablero IoT',preview:'ESP32 + MQTT broker\nMonitoreo V, I, P real-time\nAlertas WhatsApp OTA',created:Date.now()-86400000,date:'Ayer 14:32'},
+  {id:4,tag:'proj',title:'Propuesta Subestación 34.5 kV',preview:'Cliente: Planta Industrial Sur\nEntrega: 28 jun 2025\nAvance: 65%',date:'16 May',created:Date.now()-90000000},
+  {id:5,tag:'ee',title:'Fórmulas Potencia Trifásica',preview:'P = √3·V·I·cosφ\nQ = √3·V·I·sinφ\nS = √3·VL·IL',date:'Plantilla',created:Date.now()-200000000},
+  {id:6,tag:'agenda',title:'Semana 20 — Prioridades',preview:'☐ Planos AS-BUILT\n☑ Reunión ICONTEC\n☐ Calibración instrumentos',date:'16 May',created:Date.now()-50000000},
+];
+
+let EVENTS_DATA = [
+  {id:1,time:'08:00',end:'08:45',title:'Revisión Proyecto PCB',source:'google',meta:'Google Calendar · 45min'},
+  {id:2,time:'10:00',end:'11:30',title:'Comité Técnico ICONTEC',source:'teams',meta:'Microsoft Teams · Online'},
+  {id:3,time:'14:00',end:'15:00',title:'Entrega Propuesta Subestación',source:'personal',meta:'Documento · ⚠️ Urgente'},
+  {id:4,time:'16:30',end:'18:00',title:'Capacitación Python Automatización',source:'google',meta:'Google Meet · Online'},
+];
+
+const TRACKS = [
+  {title:'Deep Focus Engineering',artist:'Ambient Work Sessions',dur:'3:47',totalSec:227},
+  {title:'Engineering Focus Vol.2',artist:'Brian Eno',dur:'4:12',totalSec:252},
+  {title:'Concentration Mode',artist:'Lo-Fi Engineering',dur:'3:58',totalSec:238},
+  {title:'Deep Work Session',artist:'Productivity Beats',dur:'5:21',totalSec:321},
+  {title:'Circuit Breaker Beats',artist:'Electronic Workflow',dur:'4:05',totalSec:245},
+];
+
+let INTEGRATIONS = [
+  {icon:'📅',name:'Google Calendar',status:true},
+  {icon:'💼',name:'Microsoft Teams',status:true},
+  {icon:'🎵',name:'Amazon Music',status:true},
+  {icon:'📓',name:'Notion',status:true},
+  {icon:'📋',name:'Trello',status:true},
+  {icon:'💬',name:'Slack',status:false},
+  {icon:'📁',name:'Google Drive',status:true},
+  {icon:'✉️',name:'Outlook',status:false},
+];
+
+const AI_ACTIONS = [
+  {icon:'fas fa-compress-alt',label:'Resumir todas las notas del día'},
+  {icon:'fas fa-magic',label:'Generar agenda semanal automática'},
+  {icon:'fas fa-tasks',label:'Extraer tareas pendientes de notas'},
+  {icon:'fas fa-calculator',label:'Calcular potencia trifásica'},
+  {icon:'fas fa-bolt',label:'Verificar fórmulas RETIE'},
+  {icon:'fas fa-file-export',label:'Exportar resumen ejecutivo'},
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let notes = [];
+let currentFilter = 'all';
+let currentTrack = 0;
+let isPlaying = true;
+let isShuffle = false;
+let isRepeat = false;
+let progressValue = 38;
+let progressInterval;
+let currentTool = 'pen';
+let currentColor = '#00d4ff';
+let penSize = 3;
+let isDrawing = false;
+let drawHistory = [];
+let historyStep = -1;
+let selectedTag = 'ee';
+let selectedEvtSrc = 'google';
+let deferredPrompt = null;
+let ctx, canvas, bgCtx, bgCanvas;
+let shapeStart = null;
+let currentNoteId = null; // note being edited
+let ctxMenuNoteId = null;
+let pendingStickerEmoji = null;
+let aiConversation = [];
+let selectedDate = null;
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('load', () => {
+  loadFromLocal();
+  setTimeout(()=>{
+    document.getElementById('splash').classList.add('hide');
+    updateStats();
+    renderNotes();
+    renderCalendarStrip();
+    renderEvents();
+    renderQueue();
+    renderIntegrations();
+    renderAIActions();
+    initCanvas();
+    startProgress();
+    updateAgendaDate();
+  }, 1800);
+});
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+});
+
+// Close context menu on click outside
+document.addEventListener('click', (e) => {
+  const cm = document.getElementById('context-menu');
+  if(cm.classList.contains('show') && !cm.contains(e.target)) {
+    cm.classList.remove('show');
+  }
+});
+
+function installApp(){
+  if(deferredPrompt){ deferredPrompt.prompt(); }
+  else { showToast('Menú del navegador → "Añadir a pantalla inicio"'); }
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function goScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  const ni=document.getElementById('nav-'+name);
+  if(ni) ni.classList.add('active');
+  if(name==='canvas') setTimeout(resizeCanvas,100);
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+let toastTimer;
+function showToast(msg, type='success'){
+  const t=document.getElementById('toast');
+  const icon=t.querySelector('i');
+  document.getElementById('toast-msg').textContent=msg;
+  icon.className = type==='error' ? 'fas fa-exclamation-circle' : type==='info' ? 'fas fa-info-circle' : 'fas fa-check-circle';
+  t.style.borderColor = type==='error' ? 'var(--red)' : type==='info' ? 'var(--accent)' : 'var(--accent4)';
+  icon.style.color = type==='error' ? 'var(--red)' : type==='info' ? 'var(--accent)' : 'var(--accent4)';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ============================================================
+// STATS
+// ============================================================
+function updateStats(){
+  document.getElementById('stat-notes').textContent = notes.length;
+  document.getElementById('stat-proj').textContent = notes.filter(n=>n.tag==='proj').length;
+  document.getElementById('stat-events').textContent = EVENTS_DATA.length;
+  document.getElementById('agenda-badge').textContent = EVENTS_DATA.length;
+}
+
+// ============================================================
+// FILTER
+// ============================================================
+function setFilter(f, el){
+  currentFilter = f;
+  document.querySelectorAll('#filter-bar .filter-chip').forEach(c=>c.classList.remove('active'));
+  if(el) el.classList.add('active');
+  else {
+    const chip = document.querySelector(`#filter-bar [data-filter="${f}"]`);
+    if(chip) chip.classList.add('active');
+  }
+  renderNotes();
+}
+
+// ============================================================
+// NOTES RENDER
+// ============================================================
+const tagMap={ee:'tag-ee',proj:'tag-proj',agenda:'tag-agenda',idea:'tag-idea',meeting:'tag-meeting'};
+const tagLabel={ee:'Electrónica',proj:'Proyecto',agenda:'Agenda',idea:'Idea',meeting:'Reunión'};
+const tagAccent={ee:'var(--accent)',proj:'#a78bfa',agenda:'var(--accent3)',idea:'var(--accent4)',meeting:'var(--pink)'};
+
+function renderNotes(subset){
+  const list = subset || (currentFilter==='all' ? notes : notes.filter(n=>n.tag===currentFilter));
+  if(list.length===0){
+    document.getElementById('notes-list').innerHTML=`<div style="text-align:center;padding:40px 20px;color:var(--text3)"><i class="fas fa-sticky-note" style="font-size:40px;margin-bottom:12px;display:block;opacity:0.3"></i>No hay notas aquí aún<br><span style="font-size:12px">Toca + para crear una nueva</span></div>`;
+    return;
+  }
+  document.getElementById('notes-list').innerHTML = list.map(n=>`
+    <div class="note-card" onclick="openEditor(${n.id})">
+      <div class="note-accent-bar" style="background:${tagAccent[n.tag]||'var(--accent)'}"></div>
+      <div class="note-card-inner">
+        <div class="note-header">
+          <span class="note-tag ${tagMap[n.tag]}">${tagLabel[n.tag]}</span>
+          <i class="fas fa-ellipsis-h note-more" onclick="event.stopPropagation();showNoteMenu(event,${n.id})"></i>
+        </div>
+        <div class="note-title">${escHtml(n.title)}</div>
+        <div class="note-preview">${escHtml(n.preview||'').replace(/\n/g,'<br>').slice(0,120)}</div>
+      </div>
+      <div class="note-footer">
+        <span class="note-date">${n.date}</span>
+        <div class="note-chips">
+          <span class="note-chip" onclick="event.stopPropagation();exportNoteById(${n.id},'md')" title="Exportar MD"><i class="fas fa-file-code"></i></span>
+          <span class="note-chip" onclick="event.stopPropagation();openCanvas(${n.id})" title="Dibujar"><i class="fas fa-pen"></i></span>
+          <span class="note-chip" onclick="event.stopPropagation();shareNote(${n.id})" title="Compartir"><i class="fas fa-share-alt"></i></span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function escHtml(str){ return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ============================================================
+// CONTEXT MENU
+// ============================================================
+function showNoteMenu(event, id){
+  ctxMenuNoteId = id;
+  const cm = document.getElementById('context-menu');
+  cm.style.left = Math.min(event.clientX, window.innerWidth-170)+'px';
+  cm.style.top = Math.min(event.clientY, window.innerHeight-300)+'px';
+  cm.classList.add('show');
+}
+
+function ctxAction(action){
+  document.getElementById('context-menu').classList.remove('show');
+  if(!ctxMenuNoteId) return;
+  if(action==='edit') openEditor(ctxMenuNoteId);
+  else if(action==='draw') openCanvas(ctxMenuNoteId);
+  else if(action==='duplicate') duplicateNote(ctxMenuNoteId);
+  else if(action==='share') shareNote(ctxMenuNoteId);
+  else if(action==='export-pdf') exportNoteById(ctxMenuNoteId,'pdf');
+  else if(action==='export-md') exportNoteById(ctxMenuNoteId,'md');
+  else if(action==='delete') confirmDeleteNote(ctxMenuNoteId);
+}
+
+// ============================================================
+// NOTE EDITOR
+// ============================================================
+let editorNoteId = null;
+let editorTag = 'ee';
+
+function openEditor(id){
+  const n = notes.find(x=>x.id===id);
+  if(!n) return;
+  editorNoteId = id;
+  editorTag = n.tag;
+  document.getElementById('editor-title').value = n.title;
+  document.getElementById('editor-content').value = n.preview||'';
+  document.querySelectorAll('.editor-tag-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.tag===n.tag);
+  });
+  document.getElementById('note-editor').classList.add('show');
+}
+
+function closeEditor(){
+  document.getElementById('note-editor').classList.remove('show');
+}
+
+function setEditorTag(el){
+  editorTag = el.dataset.tag;
+  document.querySelectorAll('.editor-tag-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function saveCurrentNote(){
+  if(editorNoteId===null) return;
+  const title = document.getElementById('editor-title').value.trim() || 'Sin título';
+  const content = document.getElementById('editor-content').value;
+  const idx = notes.findIndex(x=>x.id===editorNoteId);
+  if(idx>=0){
+    notes[idx].title = title;
+    notes[idx].preview = content;
+    notes[idx].tag = editorTag;
+    notes[idx].date = 'Editado ahora';
+  }
+  saveToLocal();
+  updateStats();
+  renderNotes();
+  closeEditor();
+  showToast('✓ Nota guardada');
+}
+
+function insertText(text){
+  const ta = document.getElementById('editor-content');
+  const start = ta.selectionStart;
+  const end = ta.selectionEnd;
+  const val = ta.value;
+  ta.value = val.slice(0,start) + text + val.slice(end);
+  ta.selectionStart = ta.selectionEnd = start + text.length;
+  ta.focus();
+}
+
+function insertDateStamp(){
+  const now = new Date();
+  insertText(`\n📅 ${now.toLocaleDateString('es-CO',{weekday:'long',year:'numeric',month:'long',day:'numeric'})} — ${now.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}`);
+}
+
+function copyEditorContent(){
+  const content = document.getElementById('editor-title').value + '\n\n' + document.getElementById('editor-content').value;
+  navigator.clipboard.writeText(content).then(()=>showToast('Contenido copiado al portapapeles')).catch(()=>showToast('No se pudo copiar','error'));
+}
+
+// ============================================================
+// MODAL NEW NOTE
+// ============================================================
+function openNewNote(){
+  document.getElementById('new-title').value='';
+  document.getElementById('new-content').value='';
+  document.getElementById('modal-new').classList.add('show');
+  setTimeout(()=>document.getElementById('new-title').focus(),300);
+}
+function closeModal(){ document.getElementById('modal-new').classList.remove('show'); }
+document.getElementById('modal-new').addEventListener('click',function(e){ if(e.target===this) closeModal(); });
+
+function selectTag(el){
+  document.querySelectorAll('.tag-pick').forEach(t=>t.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedTag=el.dataset.tag;
+}
+
+function createNote(goCanvas=false){
+  const title=document.getElementById('new-title').value.trim()||'Nueva nota';
+  const content=document.getElementById('new-content').value.trim()||'';
+  const now = new Date();
+  const newNote={
+    id:Date.now(),
+    tag:selectedTag,
+    title,
+    preview:content,
+    date:`Hoy ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`,
+    created:Date.now()
+  };
+  notes.unshift(newNote);
+  saveToLocal();
+  updateStats();
+  renderNotes();
+  closeModal();
+  showToast('✓ Nota creada: '+title);
+  if(goCanvas) openCanvas(newNote.id);
+  return newNote;
+}
+
+function createNoteAndDraw(){ createNote(true); }
+
+// ============================================================
+// NOTE ACTIONS
+// ============================================================
+function openCanvas(id){
+  const n = notes.find(x=>x.id===id);
+  if(n) document.getElementById('canvas-title').value = n.title;
+  currentNoteId = id;
+  goScreen('canvas');
+  showToast('Canvas abierto — dibuja tu nota');
+}
+
+function duplicateNote(id){
+  const n = notes.find(x=>x.id===id);
+  if(!n) return;
+  const copy = {...n, id:Date.now(), title:n.title+' (copia)', date:'Ahora', created:Date.now()};
+  const idx = notes.findIndex(x=>x.id===id);
+  notes.splice(idx+1,0,copy);
+  saveToLocal();
+  updateStats();
+  renderNotes();
+  showToast('Nota duplicada');
+}
+
+function shareNote(id){
+  const n = notes.find(x=>x.id===id);
+  if(!n) return;
+  const text = `${n.title}\n\n${n.preview}`;
+  if(navigator.share){
+    navigator.share({title:n.title, text}).catch(()=>{});
+  } else {
+    navigator.clipboard.writeText(text).then(()=>showToast('Nota copiada al portapapeles'));
+  }
+}
+
+function confirmDeleteNote(id){
+  showConfirm(
+    '¿Eliminar nota?',
+    'Esta acción no se puede deshacer.',
+    ()=>{
+      notes = notes.filter(x=>x.id!==id);
+      saveToLocal();
+      updateStats();
+      renderNotes();
+      showToast('Nota eliminada','info');
+    }
+  );
+}
+
+// ============================================================
+// EXPORT
+// ============================================================
+function exportNote(fmt){
+  const note = notes[0] || {title:'Nota', preview:'Contenido'};
+  if(fmt==='Markdown'){
+    const md = `# ${note.title}\n\n${note.preview}\n\n---\n*Exportado desde NeuroNotes Pro — Ing. Edisson Macias*`;
+    downloadText(md, note.title.replace(/\s+/g,'_')+'.md', 'text/markdown');
+    showToast('Markdown descargado ✓');
+  } else if(fmt==='PDF'){
+    printNote(note);
+  } else {
+    showToast(`Exportando a ${fmt}... ✓`);
+  }
+}
+
+function exportNoteById(id, fmt){
+  const note = notes.find(x=>x.id===id);
+  if(!note) return;
+  if(fmt==='md'){
+    const md = `# ${note.title}\n\n*Categoría: ${tagLabel[note.tag]} | ${note.date}*\n\n${note.preview}\n\n---\n*Exportado desde NeuroNotes Pro — Ing. Edisson Macias*`;
+    downloadText(md, note.title.replace(/\s+/g,'_')+'.md', 'text/markdown');
+    showToast('Markdown descargado ✓');
+  } else if(fmt==='pdf'){
+    printNote(note);
+  }
+}
+
+function downloadText(content, filename, type){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = filename;
+  a.click();
+}
+
+function printNote(note){
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${note.title}</title><style>body{font-family:'Segoe UI',sans-serif;max-width:800px;margin:40px auto;padding:20px;color:#1a1a2e}h1{color:#7c3aed;border-bottom:2px solid #7c3aed;padding-bottom:10px}pre{background:#f4f4f8;padding:14px;border-radius:8px;white-space:pre-wrap;font-family:'JetBrains Mono',monospace;font-size:13px}.meta{color:#64748b;font-size:12px;margin-top:-8px;margin-bottom:20px}.footer{margin-top:40px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8}</style></head><body><h1>${note.title}</h1><p class="meta">${tagLabel[note.tag]} · ${note.date}</p><pre>${note.preview}</pre><div class="footer">Exportado desde NeuroNotes Pro — Ing. Edisson Macias · ${new Date().toLocaleString('es-CO')}</div></body></html>`;
+  const win = window.open('','_blank');
+  win.document.write(html);
+  win.document.close();
+  win.print();
+}
+
+function exportCanvasImage(){
+  const c = document.getElementById('canvas-draw');
+  const link = document.createElement('a');
+  link.download = (document.getElementById('canvas-title').value||'canvas')+'_'+Date.now()+'.png';
+  link.href = c.toDataURL();
+  link.click();
+  showToast('Imagen del canvas descargada ✓');
+}
+
+// ============================================================
+// SEARCH
+// ============================================================
+let searchFilter = 'all';
+
+function openSearch(){
+  document.getElementById('search-overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('search-main-input').focus(),100);
+}
+function closeSearch(){
+  document.getElementById('search-overlay').classList.remove('show');
+  document.getElementById('search-main-input').value='';
+  document.getElementById('search-results').innerHTML='<div class="search-empty"><i class="fas fa-search" style="font-size:32px;margin-bottom:12px;display:block;opacity:0.3"></i>Escribe para buscar notas...</div>';
+}
+
+function setSearchFilter(f, el){
+  searchFilter = f;
+  document.querySelectorAll('#search-filter-bar .filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  doSearch(document.getElementById('search-main-input').value);
+}
+
+function doSearch(q){
+  const results = document.getElementById('search-results');
+  if(!q.trim()){
+    results.innerHTML='<div class="search-empty"><i class="fas fa-search" style="font-size:32px;margin-bottom:12px;display:block;opacity:0.3"></i>Escribe para buscar notas...</div>';
+    return;
+  }
+  let pool = searchFilter==='all' ? notes : notes.filter(n=>n.tag===searchFilter);
+  const ql = q.toLowerCase();
+  const matches = pool.filter(n=>
+    n.title.toLowerCase().includes(ql) ||
+    (n.preview||'').toLowerCase().includes(ql)
+  );
+  if(!matches.length){
+    results.innerHTML=`<div class="search-empty"><i class="fas fa-search" style="font-size:32px;margin-bottom:12px;display:block;opacity:0.3"></i>Sin resultados para "<b>${escHtml(q)}</b>"</div>`;
+    return;
+  }
+  results.innerHTML = matches.map(n=>{
+    const ht = n.title.replace(new RegExp(q,'gi'), m=>`<mark>${m}</mark>`);
+    const hp = (n.preview||'').slice(0,100).replace(new RegExp(q,'gi'), m=>`<mark>${m}</mark>`);
+    return `<div class="search-result-item" onclick="closeSearch();openEditor(${n.id})">
+      <span class="note-tag ${tagMap[n.tag]}" style="font-size:9px;padding:2px 7px;display:inline-block;margin-bottom:6px">${tagLabel[n.tag]}</span>
+      <div class="search-result-title">${ht}</div>
+      <div class="search-result-preview">${hp}</div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// CONFIRM MODAL
+// ============================================================
+function showConfirm(title, msg, onOk){
+  document.getElementById('confirm-title').textContent=title;
+  document.getElementById('confirm-msg').textContent=msg;
+  const btn=document.getElementById('confirm-ok-btn');
+  btn.onclick=()=>{ closeConfirm(); onOk(); };
+  document.getElementById('confirm-modal').classList.add('show');
+}
+function closeConfirm(){ document.getElementById('confirm-modal').classList.remove('show'); }
+
+// ============================================================
+// PROFILE MENU
+// ============================================================
+function showProfileMenu(){
+  showToast('Ing. Edisson Macias ⚡ | NeuroNotes Pro v2.0');
+}
+
+function toggleNotifications(){
+  showToast('3 recordatorios pendientes: Entrega, Reunión, Calibración','info');
+}
+
+// ============================================================
+// CALENDAR & EVENTS
+// ============================================================
+function updateAgendaDate(){
+  const now = new Date();
+  const days=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('agenda-date-big').innerHTML=`${days[now.getDay()]} <span>${now.getDate()}</span>`;
+  document.getElementById('agenda-weekday').textContent=`${months[now.getMonth()]} ${now.getFullYear()} · Bogotá, Colombia`;
+}
+
+function renderCalendarStrip(){
+  const days=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const today = new Date().getDate();
+  let html='';
+  for(let i=today-3;i<=today+7;i++){
+    if(i<1) continue;
+    const d=new Date(); d.setDate(i);
+    const dow=d.getDay();
+    html+=`<div class="cal-day${i===today?' today':''}" onclick="selectCalDay(${i},this)">
+      <div class="day-num">${i}</div>
+      <div class="day-name">${days[dow]}</div>
+      ${[today,today+2].includes(i)?'<div class="cal-dot"></div>':''}
+    </div>`;
+  }
+  document.getElementById('calendar-strip').innerHTML=html;
+}
+
+function selectCalDay(day, el){
+  document.querySelectorAll('.cal-day').forEach(d=>d.classList.remove('today'));
+  el.classList.add('today');
+  selectedDate = day;
+  document.getElementById('agenda-section-title').textContent = day===new Date().getDate()?'Hoy':'Día '+day;
+  showToast('Mostrando eventos del día '+day);
+}
+
+function renderEvents(){
+  const el = document.getElementById('event-list');
+  if(!EVENTS_DATA.length){
+    el.innerHTML='<div style="text-align:center;padding:30px;color:var(--text3)"><i class="fas fa-calendar" style="font-size:32px;opacity:0.3;margin-bottom:12px;display:block"></i>Sin eventos. Toca + para agregar</div>';
+    return;
+  }
+  el.innerHTML=EVENTS_DATA.map((e,i)=>`
+    <div class="event-item evt-source-${e.source}">
+      <div class="event-time-col">
+        <div class="evt-time">${e.time}</div>
+        <div class="evt-end">${e.end}</div>
+      </div>
+      <div class="event-line-col">
+        <div class="evt-dot"></div>
+        ${i<EVENTS_DATA.length-1?'<div class="evt-track"></div>':''}
+      </div>
+      <div class="event-body" onclick="openEventDetail(${e.id})">
+        <div class="evt-title">${escHtml(e.title)}</div>
+        <div class="evt-meta">${escHtml(e.meta)} <span style="margin-left:auto;cursor:pointer;color:var(--red)" onclick="event.stopPropagation();deleteEvent(${e.id})"><i class="fas fa-times"></i></span></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openEventDetail(id){
+  const ev = EVENTS_DATA.find(x=>x.id===id);
+  if(!ev) return;
+  const src={google:'Google Calendar',teams:'Microsoft Teams',personal:'Personal'}[ev.source]||ev.source;
+  showToast(`${ev.title} · ${ev.time}–${ev.end} · ${src}`,'info');
+}
+
+function deleteEvent(id){
+  showConfirm('¿Eliminar evento?','No se puede deshacer.',()=>{
+    EVENTS_DATA = EVENTS_DATA.filter(x=>x.id!==id);
+    renderEvents();
+    updateStats();
+    showToast('Evento eliminado','info');
+  });
+}
+
+function openNewEvent(){
+  document.getElementById('evt-title').value='';
+  document.getElementById('evt-meta').value='';
+  document.getElementById('modal-event').classList.add('show');
+  setTimeout(()=>document.getElementById('evt-title').focus(),300);
+}
+function closeEventModal(){ document.getElementById('modal-event').classList.remove('show'); }
+document.getElementById('modal-event').addEventListener('click',function(e){ if(e.target===this) closeEventModal(); });
+
+function selectEvtSrc(el){
+  selectedEvtSrc = el.dataset.src;
+  document.querySelectorAll('.ne-src-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function createEvent(){
+  const title = document.getElementById('evt-title').value.trim();
+  if(!title){ showToast('Escribe un título para el evento','error'); return; }
+  const start = document.getElementById('evt-start').value;
+  const end = document.getElementById('evt-end').value;
+  const meta = document.getElementById('evt-meta').value.trim() || ({google:'Google Calendar',teams:'Microsoft Teams',personal:'Agenda personal'}[selectedEvtSrc]);
+  const newEvt = {id:Date.now(), time:start, end, title, source:selectedEvtSrc, meta};
+  EVENTS_DATA.push(newEvt);
+  EVENTS_DATA.sort((a,b)=>a.time.localeCompare(b.time));
+  closeEventModal();
+  renderEvents();
+  updateStats();
+  showToast('✓ Evento creado: '+title);
+}
+
+// ============================================================
+// MUSIC
+// ============================================================
+function renderQueue(){
+  document.getElementById('queue-list').innerHTML=TRACKS.map((t,i)=>`
+    <div class="queue-item" onclick="playTrack(${i})" style="${i===currentTrack?'border-color:var(--accent2);background:rgba(124,58,237,0.08)':''}">
+      <div class="qi-num">${i===currentTrack?'▶':i+1}</div>
+      <div class="qi-info">
+        <div class="qi-title">${t.title}</div>
+        <div class="qi-artist">${t.artist}</div>
+      </div>
+      <div class="qi-dur">${t.dur}</div>
+    </div>
+  `).join('');
+}
+
+function playTrack(i){
+  currentTrack=i;
+  const t=TRACKS[i];
+  document.getElementById('music-title').textContent=t.title;
+  document.getElementById('music-artist').textContent=t.artist;
+  document.getElementById('time-tot').textContent=t.dur;
+  progressValue=0;
+  document.getElementById('progress-fill').style.width='0%';
+  document.getElementById('time-cur').textContent='0:00';
+  isPlaying=true;
+  document.getElementById('play-icon').className='fas fa-pause';
+  document.getElementById('music-wave').classList.remove('paused');
+  renderQueue();
+  showToast('▶ '+t.title);
+}
+function nextTrack(){
+  if(isShuffle) playTrack(Math.floor(Math.random()*TRACKS.length));
+  else playTrack((currentTrack+1)%TRACKS.length);
+}
+function prevTrack(){
+  if(progressValue>5){ progressValue=0; document.getElementById('progress-fill').style.width='0%'; return; }
+  playTrack((currentTrack-1+TRACKS.length)%TRACKS.length);
+}
+function togglePlay(){
+  isPlaying=!isPlaying;
+  document.getElementById('play-icon').className=isPlaying?'fas fa-pause':'fas fa-play';
+  document.getElementById('music-wave').classList.toggle('paused',!isPlaying);
+  showToast(isPlaying?'▶ Reproduciendo':'⏸ Pausado');
+}
+function toggleShuffle(){
+  isShuffle=!isShuffle;
+  document.getElementById('shuffle-btn').style.color=isShuffle?'var(--accent)':'var(--text2)';
+  showToast(isShuffle?'Aleatorio activado':'Aleatorio desactivado');
+}
+function toggleRepeat(){
+  isRepeat=!isRepeat;
+  document.getElementById('repeat-btn').style.color=isRepeat?'var(--accent)':'var(--text2)';
+  showToast(isRepeat?'Repetir activado':'Repetir desactivado');
+}
+function seekTrack(e){
+  const bar=document.getElementById('progress-bar');
+  const rect=bar.getBoundingClientRect();
+  progressValue=Math.max(0,Math.min(100,((e.clientX-rect.left)/rect.width)*100));
+  document.getElementById('progress-fill').style.width=progressValue+'%';
+  const tot=TRACKS[currentTrack].totalSec;
+  const cur=Math.round(tot*progressValue/100);
+  const m=Math.floor(cur/60),s=cur%60;
+  document.getElementById('time-cur').textContent=m+':'+(s<10?'0':'')+s;
+}
+function startProgress(){
+  progressInterval=setInterval(()=>{
+    if(!isPlaying) return;
+    const tot=TRACKS[currentTrack].totalSec;
+    progressValue=Math.min(100,progressValue+(100/tot/3.33));
+    document.getElementById('progress-fill').style.width=progressValue+'%';
+    const cur=Math.round(tot*progressValue/100);
+    const m=Math.floor(cur/60),s=cur%60;
+    document.getElementById('time-cur').textContent=m+':'+(s<10?'0':'')+s;
+    if(progressValue>=100){
+      if(isRepeat) playTrack(currentTrack);
+      else nextTrack();
+    }
+  },300);
+}
+
+// ============================================================
+// INTEGRATIONS
+// ============================================================
+function renderIntegrations(){
+  document.getElementById('int-grid').innerHTML=INTEGRATIONS.map((item,idx)=>`
+    <div class="int-card${item.status?' connected':''}" onclick="toggleIntegration(${idx})">
+      <div class="int-badge ${item.status?'badge-on':'badge-off'}"></div>
+      <div class="int-card-icon">${item.icon}</div>
+      <div class="int-card-name">${item.name}</div>
+      <div class="int-card-status ${item.status?'on':'off'}">${item.status?'● Conectado':'○ Desconectado'}</div>
+    </div>
+  `).join('');
+}
+function toggleIntegration(idx){
+  INTEGRATIONS[idx].status = !INTEGRATIONS[idx].status;
+  renderIntegrations();
+  showToast(INTEGRATIONS[idx].status ? INTEGRATIONS[idx].name+' conectado ✓' : INTEGRATIONS[idx].name+' desconectado');
+}
+
+// ============================================================
+// AI ACTIONS (quick prompts)
+// ============================================================
+function renderAIActions(){
+  document.getElementById('ai-actions').innerHTML=AI_ACTIONS.map(a=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);cursor:pointer;transition:all 0.15s" onclick="quickAI('${a.label}')" onmouseenter="this.style.borderColor='var(--accent2)'" onmouseleave="this.style.borderColor='var(--border)'">
+      <i class="${a.icon}" style="color:var(--accent2);font-size:15px;width:18px;text-align:center"></i>
+      <span style="font-size:13px;font-weight:500">${a.label}</span>
+      <i class="fas fa-chevron-right" style="color:var(--text3);font-size:11px;margin-left:auto"></i>
+    </div>
+  `).join('');
+}
+
+function quickAI(label){
+  document.getElementById('ai-q').value = label;
+  askAI();
+}
+
+// ============================================================
+// AI CHAT (real Claude API)
+// ============================================================
+async function askAI(){
+  const input = document.getElementById('ai-q');
+  const q = input.value.trim();
+  if(!q) return;
+  input.value='';
+  const sendBtn = document.getElementById('ai-send-btn');
+  sendBtn.disabled=true;
+
+  addAIMsg(q,'user');
+  const thinkId = addAIMsg('Procesando...','thinking');
+  
+  // Build context from notes
+  const notesContext = notes.slice(0,10).map(n=>`• [${tagLabel[n.tag]}] ${n.title}: ${(n.preview||'').slice(0,200)}`).join('\n');
+  const eventsContext = EVENTS_DATA.map(e=>`• ${e.time}-${e.end} ${e.title}`).join('\n');
+
+  const systemPrompt = `Eres el asistente IA de NeuroNotes Pro para el Ingeniero Edisson Macias, especialista en ingeniería eléctrica/electrónica en Bogotá, Colombia. Tienes acceso a sus notas y agenda.
+
+NOTAS ACTUALES DEL USUARIO:
+${notesContext}
+
+EVENTOS DE HOY:
+${eventsContext}
+
+Responde en español, de forma concisa y profesional. Cuando sea relevante, usa términos de ingeniería eléctrica (RETIE, NTC 2050, ICONTEC, potencia trifásica, etc.). Sé útil y práctico.`;
+
+  aiConversation.push({role:'user', content:q});
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:systemPrompt,
+        messages:aiConversation
+      })
+    });
+    const data = await resp.json();
+    const reply = data.content?.[0]?.text || 'No pude procesar la respuesta.';
+    aiConversation.push({role:'assistant', content:reply});
+    removeAIMsg(thinkId);
+    addAIMsg(reply,'ai');
+  } catch(err) {
+    removeAIMsg(thinkId);
+    // Fallback inteligente
+    addAIMsg(getFallbackResponse(q),'ai');
+  }
+  sendBtn.disabled=false;
+}
+
+function getFallbackResponse(q){
+  const ql = q.toLowerCase();
+  if(ql.includes('poten') || ql.includes('trifás') || ql.includes('kw') || ql.includes('voltaj')){
+    return 'Fórmulas de potencia trifásica:\n• P = √3 · V · I · cosφ (potencia activa, W)\n• Q = √3 · V · I · sinφ (potencia reactiva, VAR)\n• S = √3 · VL · IL (potencia aparente, VA)\n• cosφ típico motores: 0.85–0.95\n• Para 15kW, 380V: I ≈ 26.9A (cosφ=0.9)';
+  }
+  if(ql.includes('resum') || ql.includes('notas')){
+    const resumen = notes.slice(0,5).map(n=>`• ${n.title}`).join('\n');
+    return `Resumen de tus ${notes.length} notas recientes:\n${resumen}\n\nTienes proyectos activos en electrónica, reuniones ICONTEC y propuestas en curso.`;
+  }
+  if(ql.includes('agenda') || ql.includes('evento') || ql.includes('hoy')){
+    return `Tienes ${EVENTS_DATA.length} eventos hoy:\n${EVENTS_DATA.map(e=>`• ${e.time} - ${e.title}`).join('\n')}\n\nEl más urgente: Entrega Propuesta Subestación a las 14:00.`;
+  }
+  if(ql.includes('tarea') || ql.includes('pendiente')){
+    return 'Tareas pendientes detectadas en tus notas:\n☐ Planos AS-BUILT (Semana 20)\n☐ Calibración de instrumentos\n☐ Informe calibración ICONTEC\n☐ Avance propuesta subestación (65% → 100%)';
+  }
+  if(ql.includes('retie') || ql.includes('ntc') || ql.includes('icontec')){
+    return 'Normativa eléctrica Colombia:\n• RETIE: Reglamento Técnico de Instalaciones Eléctricas (Min. Minas)\n• NTC 2050: Código Eléctrico Nacional (basado en NEC)\n• RETILAP: Iluminación\n• Verificar: Art. 15 (instalaciones) y Art. 22 (puesta a tierra TN-S)\n\n¿Quieres que busque algo específico de tus notas sobre ICONTEC?';
+  }
+  return `Entendido: "${q}"\n\nPuedo ayudarte con:\n• Fórmulas de ingeniería eléctrica\n• Resumen de tus notas\n• Organización de agenda\n• Consultas sobre RETIE/NTC\n• Extracción de tareas\n\n¿Qué necesitas específicamente?`;
+}
+
+let msgCounter = 0;
+function addAIMsg(text, type){
+  const id = 'msg-'+(++msgCounter);
+  const box = document.getElementById('ai-messages');
+  const div = document.createElement('div');
+  div.className = `ai-msg ${type}`;
+  div.id = id;
+  div.style.whiteSpace = 'pre-wrap';
+  div.textContent = text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+  return id;
+}
+function removeAIMsg(id){
+  const el = document.getElementById(id);
+  if(el) el.remove();
+}
+
+// ============================================================
+// CANVAS DRAWING
+// ============================================================
+function initCanvas(){
+  const wrap=document.getElementById('canvas-wrap');
+  bgCanvas=document.getElementById('canvas-bg');
+  canvas=document.getElementById('canvas-draw');
+  bgCtx=bgCanvas.getContext('2d');
+  ctx=canvas.getContext('2d');
+  ctx.lineCap='round';
+  ctx.lineJoin='round';
+  resizeCanvas();
+  window.addEventListener('resize',resizeCanvas);
+
+  canvas.addEventListener('pointerdown',startDraw);
+  canvas.addEventListener('pointermove',draw);
+  canvas.addEventListener('pointerup',endDraw);
+  canvas.addEventListener('pointercancel',endDraw);
+  canvas.addEventListener('pointerleave',endDraw);
+}
+
+function resizeCanvas(){
+  const wrap=document.getElementById('canvas-wrap');
+  const w=wrap.offsetWidth,h=wrap.offsetHeight;
+  if(w===0||h===0) return;
+  // Save current drawing
+  const imgData = historyStep>=0 ? drawHistory[historyStep] : null;
+  [bgCanvas,canvas].forEach(c=>{c.width=w;c.height=h;});
+  drawGrid();
+  ctx.lineCap='round';ctx.lineJoin='round';
+  if(imgData) ctx.putImageData(imgData,0,0);
+}
+
+function drawGrid(){
+  const w=bgCanvas.width,h=bgCanvas.height;
+  bgCtx.fillStyle='#141b30';
+  bgCtx.fillRect(0,0,w,h);
+  bgCtx.strokeStyle='rgba(30,45,74,0.8)';
+  bgCtx.lineWidth=0.5;
+  const gap=32;
+  for(let x=0;x<w;x+=gap){bgCtx.beginPath();bgCtx.moveTo(x,0);bgCtx.lineTo(x,h);bgCtx.stroke();}
+  for(let y=0;y<h;y+=gap){bgCtx.beginPath();bgCtx.moveTo(0,y);bgCtx.lineTo(w,y);bgCtx.stroke();}
+  // Dot grid overlay
+  bgCtx.fillStyle='rgba(0,212,255,0.12)';
+  for(let x=0;x<w;x+=gap) for(let y=0;y<h;y+=gap){ bgCtx.beginPath();bgCtx.arc(x,y,1,0,Math.PI*2);bgCtx.fill(); }
+}
+
+let startX,startY;
+function startDraw(e){
+  e.preventDefault();
+  if(pendingStickerEmoji){
+    const r=canvas.getBoundingClientRect();
+    const x=e.clientX-r.left,y=e.clientY-r.top;
+    ctx.font=`${penSize*5+20}px serif`;
+    ctx.fillText(pendingStickerEmoji,x-12,y+12);
+    pendingStickerEmoji=null;
+    canvas.style.cursor='crosshair';
+    saveHistory();
+    return;
+  }
+  if(currentTool==='text'){ insertTextAt(e); return; }
+  isDrawing=true;
+  const r=canvas.getBoundingClientRect();
+  startX=e.clientX-r.left;
+  startY=e.clientY-r.top;
+  if(currentTool==='pen'||currentTool==='highlighter'){
+    ctx.beginPath();ctx.moveTo(startX,startY);
+  }
+}
+
+let previewImg = null;
+function draw(e){
+  if(!isDrawing) return;
+  e.preventDefault();
+  const r=canvas.getBoundingClientRect();
+  const x=e.clientX-r.left,y=e.clientY-r.top;
+
+  if(currentTool==='eraser'){
+    ctx.clearRect(x-penSize*3,y-penSize*3,penSize*6,penSize*6);
+  } else if(currentTool==='pen'){
+    ctx.strokeStyle=currentColor;
+    ctx.lineWidth=penSize;
+    ctx.globalAlpha=1;
+    ctx.lineTo(x,y);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x,y);
+  } else if(currentTool==='highlighter'){
+    ctx.strokeStyle=currentColor;
+    ctx.lineWidth=penSize*5;
+    ctx.globalAlpha=0.25;
+    ctx.lineTo(x,y);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x,y);
+  } else if(['rect','circle','line','arrow'].includes(currentTool)){
+    // Restore preview
+    if(previewImg) ctx.putImageData(previewImg,0,0);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.strokeStyle=currentColor;
+    ctx.lineWidth=penSize;
+    ctx.globalAlpha=1;
+    ctx.beginPath();
+    if(currentTool==='rect'){
+      ctx.strokeRect(startX,startY,x-startX,y-startY);
+    } else if(currentTool==='circle'){
+      const rx=(x-startX)/2,ry=(y-startY)/2;
+      ctx.ellipse(startX+rx,startY+ry,Math.abs(rx),Math.abs(ry),0,0,Math.PI*2);
+      ctx.stroke();
+    } else if(currentTool==='line'){
+      ctx.moveTo(startX,startY);ctx.lineTo(x,y);ctx.stroke();
+    } else if(currentTool==='arrow'){
+      drawArrow(ctx,startX,startY,x,y);
+    }
+  }
+}
+
+function endDraw(e){
+  if(!isDrawing) return;
+  isDrawing=false;
+  ctx.globalAlpha=1;
+  previewImg=null;
+  saveHistory();
+  e.preventDefault();
+}
+
+function drawArrow(c,x1,y1,x2,y2){
+  const angle=Math.atan2(y2-y1,x2-x1);
+  const len=16;
+  c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();
+  c.beginPath();
+  c.moveTo(x2,y2);
+  c.lineTo(x2-len*Math.cos(angle-0.4),y2-len*Math.sin(angle-0.4));
+  c.lineTo(x2-len*Math.cos(angle+0.4),y2-len*Math.sin(angle+0.4));
+  c.closePath();c.fillStyle=currentColor;c.fill();
+}
+
+function saveHistory(){
+  historyStep++;
+  drawHistory=drawHistory.slice(0,historyStep);
+  drawHistory.push(ctx.getImageData(0,0,canvas.width,canvas.height));
+  if(drawHistory.length>50) { drawHistory.shift(); historyStep--; }
+}
+
+function setTool(tool,el){
+  currentTool=tool;
+  previewImg = ['rect','circle','line','arrow'].includes(tool) ?
+    ctx.getImageData(0,0,canvas.width,canvas.height) : null;
+  document.querySelectorAll('.canvas-toolbar .t-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  showToast('Herramienta: '+el.title);
+}
+function setColor(c,el){
+  currentColor=c;
+  document.querySelectorAll('.c-dot').forEach(d=>d.classList.remove('active'));
+  el.classList.add('active');
+}
+function canvasUndo(){
+  if(historyStep>0){ historyStep--; ctx.putImageData(drawHistory[historyStep],0,0); }
+  else { ctx.clearRect(0,0,canvas.width,canvas.height); }
+  showToast('Deshacer ↩');
+}
+function canvasRedo(){
+  if(historyStep<drawHistory.length-1){ historyStep++; ctx.putImageData(drawHistory[historyStep],0,0); }
+  else showToast('Nada más que rehacer');
+}
+function confirmClearCanvas(){
+  showConfirm('¿Limpiar canvas?','Se borrarán todos los trazos. Esta acción no se puede deshacer.',()=>{
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawHistory=[];historyStep=-1;
+    document.getElementById('sticky-container').innerHTML='';
+    showToast('Canvas limpiado');
+  });
+}
+function saveCanvas(){
+  const title=document.getElementById('canvas-title').value;
+  // Also update note preview if linked
+  if(currentNoteId){
+    const idx=notes.findIndex(x=>x.id===currentNoteId);
+    if(idx>=0){ notes[idx].title=title; notes[idx].date='Editado ahora'; }
+    saveToLocal();
+    renderNotes();
+  }
+  showToast('Nota guardada ✓');
+}
+function saveCanvasAsImage(){
+  // Merge bg + draw
+  const merged = document.createElement('canvas');
+  merged.width=canvas.width; merged.height=canvas.height;
+  const mc=merged.getContext('2d');
+  mc.drawImage(bgCanvas,0,0);
+  mc.drawImage(canvas,0,0);
+  const link=document.createElement('a');
+  link.download=(document.getElementById('canvas-title').value||'canvas').replace(/\s+/g,'_')+'.png';
+  link.href=merged.toDataURL();
+  link.click();
+  showToast('Imagen guardada ✓');
+}
+
+function insertTextAt(e){
+  const r=canvas.getBoundingClientRect();
+  const x=e.clientX-r.left,y=e.clientY-r.top;
+  const text=prompt('Escribe el texto:');
+  if(text){
+    ctx.fillStyle=currentColor;
+    ctx.font=`${Math.max(14,penSize*4)}px Space Grotesk`;
+    ctx.fillText(text,x,y);
+    saveHistory();
+    showToast('Texto insertado');
+  }
+}
+
+function placeSticker(emoji){
+  pendingStickerEmoji=emoji;
+  canvas.style.cursor='cell';
+  showToast('Toca el canvas para colocar '+emoji);
+}
+
+// STICKY NOTES
+function addSticky(color){
+  const container=document.getElementById('sticky-container');
+  const texts={
+    yellow:'⚡ Nota EE\nRevisar RETIE Art.15\nPendiente calibrar',
+    blue:'📌 Pendiente\nEntrega propuesta\nFecha: 28 jun',
+    green:'✓ Completado\nDiseño PCB v2.1\nAprobado por cliente',
+    pink:'💡 Idea\nIoT Gateway LTE\n+ WiFi backup'
+  };
+  const div=document.createElement('div');
+  div.className=`sticky sticky-${color}`;
+  div.style.left=(60+Math.random()*160)+'px';
+  div.style.top=(40+Math.random()*120)+'px';
+  div.innerHTML=`<div class="sticky-hdr">${color.toUpperCase()} <span class="sticky-del" onclick="this.closest('.sticky').remove();showToast('Sticky eliminada')">✕</span></div><div class="sticky-body" contenteditable="true">${texts[color]||'Toca para editar...'}</div>`;
+  makeDraggable(div);
+  container.appendChild(div);
+  showToast('Sticky '+color+' añadida 📝');
+}
+
+function makeDraggable(el){
+  let ox,oy,sx,sy;
+  el.addEventListener('pointerdown',e=>{
+    if(e.target.getAttribute('contenteditable')||e.target.classList.contains('sticky-del')) return;
+    sx=el.offsetLeft;sy=el.offsetTop;ox=e.clientX;oy=e.clientY;
+    el.setPointerCapture(e.pointerId);
+    const mv=(e)=>{el.style.left=(sx+e.clientX-ox)+'px';el.style.top=(sy+e.clientY-oy)+'px';};
+    const up=()=>{el.removeEventListener('pointermove',mv);el.removeEventListener('pointerup',up);};
+    el.addEventListener('pointermove',mv);
+    el.addEventListener('pointerup',up);
+  });
+}
+
+// ============================================================
+// LOCAL STORAGE
+// ============================================================
+function saveToLocal(){
+  try{localStorage.setItem('neuronotes_v2',JSON.stringify({notes,events:EVENTS_DATA}));}catch(e){}
+}
+function loadFromLocal(){
+  try{
+    const d=localStorage.getItem('neuronotes_v2');
+    if(d){
+      const parsed=JSON.parse(d);
+      notes=parsed.notes||NOTES_DEFAULT;
+      if(parsed.events) EVENTS_DATA=parsed.events;
+    } else {
+      notes=[...NOTES_DEFAULT];
+    }
+  }catch(e){ notes=[...NOTES_DEFAULT]; }
+}
+
+</script>
+</body>
+</html>
