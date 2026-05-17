@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0a0e1a">
-<title>NeuroNotes Pro — Ing. Edisson Macias</title>
+<title>NeuroNotes — neuronotes.duckdns.org</title>
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -220,7 +220,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .evt-title{font-size:13px;font-weight:600;margin-bottom:3px}
 .evt-meta{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:5px}
 .evt-source-google .evt-dot,.evt-source-google .event-body{border-left-color:var(--accent4)!important}.evt-source-google .evt-dot{background:var(--accent4)}
-.evt-source-teams .evt-dot,.evt-source-teams .event-body{border-left-color:#6264a7!important}.evt-source-teams .evt-dot{background:#6264a7}
+.evt-source-trello .evt-dot,.evt-source-trello .event-body{border-left-color:#5ba4cf!important}.evt-source-trello .evt-dot{background:#5ba4cf}
 .evt-source-personal .evt-dot,.evt-source-personal .event-body{border-left-color:var(--accent3)!important}.evt-source-personal .evt-dot{background:var(--accent3)}
 
 /* === MUSIC === */
@@ -383,8 +383,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 <!-- SPLASH -->
 <div id="splash">
   <div class="splash-logo">N²</div>
-  <div class="splash-title">Neuro<span>Notes</span> Pro</div>
-  <div class="splash-sub">Ing. Edisson Macias · Bogotá</div>
+  <div class="splash-title">Neuro<span>Notes</span></div>
+  <div class="splash-sub">neuronotes.duckdns.org</div>
   <div class="splash-loader">
     <div class="loader-dot"></div>
     <div class="loader-dot"></div>
@@ -502,7 +502,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <div class="install-banner" id="install-banner">
           <i class="fas fa-download"></i>
           <div class="ib-text">
-            <div class="ib-title">Instalar NeuroNotes Pro</div>
+            <div class="ib-title">Instalar NeuroNotes</div>
             <div class="ib-sub">Agrega al inicio · Funciona offline</div>
           </div>
           <button class="ib-btn" onclick="installApp()">Instalar</button>
@@ -623,17 +623,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         </div>
 
         <div class="sync-sources">
-          <div class="source-chip sc-google" onclick="showToast('Google Calendar: 3 eventos sincronizados ✓')">
-            <i class="fab fa-google"></i> Google
+          <div class="source-chip sc-google" onclick="window.open('https://calendar.google.com','_blank','noopener');showToast('Abriendo Google Calendar ↗')">
+            <i class="fab fa-google"></i> Google Cal
           </div>
-          <div class="source-chip sc-teams" onclick="showToast('Microsoft Teams: reunión en 45min')">
-            <i class="fab fa-microsoft"></i> Teams
+          <div class="source-chip" style="background:rgba(255,0,0,0.1);color:#ff4444;border-color:rgba(255,0,0,0.3)" onclick="window.open('https://music.youtube.com','_blank','noopener');showToast('Abriendo YouTube Music ↗')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg> YT Music
           </div>
-          <div class="source-chip sc-personal" onclick="showToast('Agenda personal actualizada')">
-            <i class="fas fa-user"></i> Personal
+          <div class="source-chip sc-personal" onclick="window.open('https://trello.com','_blank','noopener');showToast('Abriendo Trello ↗')">
+            <i class="fas fa-columns"></i> Trello
           </div>
-          <div class="source-chip" style="background:rgba(59,130,246,0.1);color:var(--blue);border-color:rgba(59,130,246,0.3)" onclick="showToast('Outlook conectado')">
-            <i class="fas fa-envelope"></i> Outlook
+          <div class="source-chip" style="background:rgba(59,130,246,0.1);color:var(--blue);border-color:rgba(59,130,246,0.3)" onclick="window.open('https://mail.google.com','_blank','noopener');showToast('Abriendo Gmail ↗')">
+            <i class="fas fa-envelope"></i> Gmail
           </div>
         </div>
 
@@ -650,7 +650,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <div class="screen-content">
         <div class="music-hero">
           <div class="music-cover">
-            <div class="music-platform">Amazon Music</div>
+            <div class="music-platform" style="display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="red"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg> YouTube Music</div>
             <div class="music-wave" id="music-wave">
               <div class="w-bar"></div><div class="w-bar"></div><div class="w-bar"></div>
               <div class="w-bar"></div><div class="w-bar"></div><div class="w-bar"></div>
@@ -660,6 +660,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <div class="music-info">
             <div class="music-title" id="music-title">Deep Focus Engineering</div>
             <div class="music-artist" id="music-artist">Ambient Work Sessions</div>
+          </div>
+          <div style="padding:0 14px 10px;display:flex;gap:8px">
+            <div style="flex:1;padding:8px 12px;background:rgba(255,0,0,0.12);border:1px solid rgba(255,0,0,0.3);border-radius:8px;font-size:11px;font-weight:600;color:#ff4444;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px" onclick="window.open('https://music.youtube.com','_blank','noopener');showToast('Abriendo YouTube Music ↗')"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg> Abrir YouTube Music</div>
+            <div style="padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;text-align:center" onclick="window.open('https://music.youtube.com/search','_blank','noopener');showToast('Buscar en YouTube Music ↗')"><i class="fas fa-search"></i></div>
           </div>
           <div class="music-controls">
             <div class="mc" id="shuffle-btn" onclick="toggleShuffle()" title="Aleatorio"><i class="fas fa-random"></i></div>
@@ -691,6 +695,32 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <div class="section-action" onclick="showToast('Buscar más apps en la tienda...')">+ Agregar</div>
         </div>
         <div class="int-grid" id="int-grid"></div>
+
+        <div class="section-header" style="margin-top:20px">
+          <div class="section-title">Accesos rápidos</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+          <div style="padding:16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;text-align:center;transition:all 0.15s" onclick="window.open('https://calendar.google.com','_blank','noopener');showToast('Abriendo Google Calendar ↗')" onmouseenter="this.style.borderColor='var(--accent4)'" onmouseleave="this.style.borderColor='var(--border)'">
+            <div style="font-size:24px;margin-bottom:8px">📅</div>
+            <div style="font-size:13px;font-weight:600">Google Calendar</div>
+            <div style="font-size:10px;color:var(--accent4);margin-top:4px">● Abre en Google</div>
+          </div>
+          <div style="padding:16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;text-align:center;transition:all 0.15s" onclick="window.open('https://trello.com','_blank','noopener');showToast('Abriendo Trello ↗')" onmouseenter="this.style.borderColor='#5ba4cf'" onmouseleave="this.style.borderColor='var(--border)'">
+            <div style="font-size:24px;margin-bottom:8px">📋</div>
+            <div style="font-size:13px;font-weight:600">Trello</div>
+            <div style="font-size:10px;color:#5ba4cf;margin-top:4px">● Abre en Trello</div>
+          </div>
+          <div style="padding:16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;text-align:center;transition:all 0.15s" onclick="window.open('https://music.youtube.com','_blank','noopener');showToast('Abriendo YouTube Music ↗')" onmouseenter="this.style.borderColor='#ff0000'" onmouseleave="this.style.borderColor='var(--border)'">
+            <div style="font-size:24px;margin-bottom:8px">▶</div>
+            <div style="font-size:13px;font-weight:600">YouTube Music</div>
+            <div style="font-size:10px;color:#ff4444;margin-top:4px">● Abre en YouTube</div>
+          </div>
+          <div style="padding:16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;text-align:center;transition:all 0.15s" onclick="window.open('https://drive.google.com','_blank','noopener');showToast('Abriendo Google Drive ↗')" onmouseenter="this.style.borderColor='var(--accent3)'" onmouseleave="this.style.borderColor='var(--border)'">
+            <div style="font-size:24px;margin-bottom:8px">📁</div>
+            <div style="font-size:13px;font-weight:600">Google Drive</div>
+            <div style="font-size:10px;color:var(--accent3);margin-top:4px">● Abre en Drive</div>
+          </div>
+        </div>
 
         <div class="section-header">
           <div class="section-title">Exportar nota activa</div>
@@ -820,7 +850,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <label class="form-label">Fuente</label>
       <div class="ne-source-btns">
         <div class="ne-src-btn sc-google active" data-src="google" onclick="selectEvtSrc(this)"><i class="fab fa-google"></i> Google</div>
-        <div class="ne-src-btn sc-teams" data-src="teams" onclick="selectEvtSrc(this)"><i class="fab fa-microsoft"></i> Teams</div>
+        <div class="ne-src-btn" data-src="trello" style="background:rgba(91,164,207,0.1);color:#5ba4cf;border-color:rgba(91,164,207,0.3)" onclick="selectEvtSrc(this)"><i class="fas fa-columns"></i> Trello</div>
         <div class="ne-src-btn sc-personal" data-src="personal" onclick="selectEvtSrc(this)"><i class="fas fa-user"></i> Personal</div>
       </div>
     </div>
@@ -850,9 +880,9 @@ const NOTES_DEFAULT = [
 
 let EVENTS_DATA = [
   {id:1,time:'08:00',end:'08:45',title:'Revisión Proyecto PCB',source:'google',meta:'Google Calendar · 45min'},
-  {id:2,time:'10:00',end:'11:30',title:'Comité Técnico ICONTEC',source:'teams',meta:'Microsoft Teams · Online'},
-  {id:3,time:'14:00',end:'15:00',title:'Entrega Propuesta Subestación',source:'personal',meta:'Documento · ⚠️ Urgente'},
-  {id:4,time:'16:30',end:'18:00',title:'Capacitación Python Automatización',source:'google',meta:'Google Meet · Online'},
+  {id:2,time:'10:00',end:'11:30',title:'Comité Técnico ICONTEC',source:'trello',meta:'Trello Board · Tarea pendiente'},
+  {id:3,time:'14:00',end:'15:00',title:'Entrega Propuesta Subestación',source:'personal',meta:'Agenda personal · ⚠️ Urgente'},
+  {id:4,time:'16:30',end:'18:00',title:'Capacitación Python Automatización',source:'google',meta:'Google Calendar · Online'},
 ];
 
 const TRACKS = [
@@ -864,14 +894,14 @@ const TRACKS = [
 ];
 
 let INTEGRATIONS = [
-  {icon:'📅',name:'Google Calendar',status:true},
-  {icon:'💼',name:'Microsoft Teams',status:true},
-  {icon:'🎵',name:'Amazon Music',status:true},
-  {icon:'📓',name:'Notion',status:true},
-  {icon:'📋',name:'Trello',status:true},
-  {icon:'💬',name:'Slack',status:false},
-  {icon:'📁',name:'Google Drive',status:true},
-  {icon:'✉️',name:'Outlook',status:false},
+  {icon:'📅',name:'Google Calendar',status:true,url:'https://calendar.google.com'},
+  {icon:'📋',name:'Trello',status:true,url:'https://trello.com'},
+  {icon:'▶',name:'YouTube Music',status:true,url:'https://music.youtube.com'},
+  {icon:'📓',name:'Notion',status:true,url:'https://notion.so'},
+  {icon:'💬',name:'Slack',status:false,url:'https://slack.com'},
+  {icon:'📁',name:'Google Drive',status:true,url:'https://drive.google.com'},
+  {icon:'✉️',name:'Gmail',status:false,url:'https://mail.google.com'},
+  {icon:'💼',name:'Microsoft Teams',status:false,url:'https://teams.microsoft.com'},
 ];
 
 const AI_ACTIONS = [
@@ -1336,7 +1366,7 @@ function closeConfirm(){ document.getElementById('confirm-modal').classList.remo
 // PROFILE MENU
 // ============================================================
 function showProfileMenu(){
-  showToast('Ing. Edisson Macias ⚡ | NeuroNotes Pro v2.0');
+  showToast('Ing. Edisson Macias ⚡ | neuronotes.duckdns.org');
 }
 
 function toggleNotifications(){
@@ -1406,7 +1436,7 @@ function renderEvents(){
 function openEventDetail(id){
   const ev = EVENTS_DATA.find(x=>x.id===id);
   if(!ev) return;
-  const src={google:'Google Calendar',teams:'Microsoft Teams',personal:'Personal'}[ev.source]||ev.source;
+  const src={google:'Google Calendar',trello:'Trello',personal:'Personal'}[ev.source]||ev.source;
   showToast(`${ev.title} · ${ev.time}–${ev.end} · ${src}`,'info');
 }
 
@@ -1439,7 +1469,7 @@ function createEvent(){
   if(!title){ showToast('Escribe un título para el evento','error'); return; }
   const start = document.getElementById('evt-start').value;
   const end = document.getElementById('evt-end').value;
-  const meta = document.getElementById('evt-meta').value.trim() || ({google:'Google Calendar',teams:'Microsoft Teams',personal:'Agenda personal'}[selectedEvtSrc]);
+  const meta = document.getElementById('evt-meta').value.trim() || ({google:'Google Calendar',trello:'Trello Board',personal:'Agenda personal'}[selectedEvtSrc]);
   const newEvt = {id:Date.now(), time:start, end, title, source:selectedEvtSrc, meta};
   EVENTS_DATA.push(newEvt);
   EVENTS_DATA.sort((a,b)=>a.time.localeCompare(b.time));
@@ -1535,18 +1565,24 @@ function startProgress(){
 // ============================================================
 function renderIntegrations(){
   document.getElementById('int-grid').innerHTML=INTEGRATIONS.map((item,idx)=>`
-    <div class="int-card${item.status?' connected':''}" onclick="toggleIntegration(${idx})">
+    <div class="int-card${item.status?' connected':''}" onclick="openIntegration(${idx})">
       <div class="int-badge ${item.status?'badge-on':'badge-off'}"></div>
       <div class="int-card-icon">${item.icon}</div>
       <div class="int-card-name">${item.name}</div>
-      <div class="int-card-status ${item.status?'on':'off'}">${item.status?'● Conectado':'○ Desconectado'}</div>
+      <div class="int-card-status ${item.status?'on':'off'}">${item.status?'● Conectado':'○ Conectar'}</div>
     </div>
   `).join('');
 }
-function toggleIntegration(idx){
-  INTEGRATIONS[idx].status = !INTEGRATIONS[idx].status;
-  renderIntegrations();
-  showToast(INTEGRATIONS[idx].status ? INTEGRATIONS[idx].name+' conectado ✓' : INTEGRATIONS[idx].name+' desconectado');
+function openIntegration(idx){
+  const item = INTEGRATIONS[idx];
+  if(item.status && item.url){
+    window.open(item.url,'_blank','noopener');
+    showToast('Abriendo '+item.name+' ↗');
+  } else {
+    item.status = !item.status;
+    renderIntegrations();
+    showToast(item.status ? item.name+' conectado ✓' : item.name+' desconectado');
+  }
 }
 
 // ============================================================
