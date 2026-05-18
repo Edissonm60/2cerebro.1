@@ -4715,8 +4715,8 @@ function toast(msg, type){
 <head>
 <meta charset='UTF-8'/>
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'/>
-<title>Alertas &amp; Recordatorios</title>
-<link href='https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&amp;family=IBM+Plex+Sans:wght@400;600;700&amp;display=swap' rel='stylesheet'/>
+<title>Alertas & Recordatorios</title>
+<link href='https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap' rel='stylesheet'/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 :root{
@@ -4895,7 +4895,7 @@ textarea{min-height:60px;resize:vertical;}
 
 <!-- TOPBAR -->
 <div id='topbar'>
-  <div class='logo'><span class='logo-badge'>🔔</span> Alertas &amp; Recordatorios</div>
+  <div class='logo'><span class='logo-badge'>🔔</span> Alertas & Recordatorios</div>
   <div class='sp'></div>
   <button class='tb-btn prim' onclick='openForm()'>＋ Nuevo recordatorio</button>
   <button class='tb-btn ok' onclick='checkAndSendAll()' style='margin-left:6px'>📲 Enviar pendientes</button>
@@ -4934,13 +4934,13 @@ textarea{min-height:60px;resize:vertical;}
   </div>
 
   <!-- WhatsApp status -->
-  <div class='wa-status' id='wa-status'>
+  <div class='wa-status' id='tg-status'>
     <div class='wa-dot'></div>
     <div class='wa-info'>
-      <strong>📱 WhatsApp activado — +57 3108864803</strong>
-      <span>Notificaciones via CallMeBot • <span id='wa-last'>Sin envíos aún</span></span>
+      <strong>✈️ Telegram activo — @CallMeBot_txtbot</strong>
+      <span>Mensajes automáticos gratuitos • <span id='tg-last'>Sin envíos aún</span></span>
     </div>
-    <button class='wa-test' onclick='testWhatsApp()'>Probar</button>
+    <button class='wa-test' onclick='testTelegram()'>📨 Probar</button>
   </div>
 
   <!-- FORMULARIO nuevo recordatorio -->
@@ -5025,10 +5025,10 @@ textarea{min-height:60px;resize:vertical;}
   <div class='notif-config' style='margin-top:20px'>
     <h4>⚙️ Configuración de notificaciones</h4>
     <div class='notif-row'>
-      <div class='notif-icon' style='background:rgba(34,197,94,.1)'>📱</div>
+      <div class='notif-icon' style='background:rgba(14,165,233,.1)'>✈️</div>
       <div class='notif-info'>
-        <strong>WhatsApp (+57 3108864803)</strong>
-        <span>Mensajes automáticos vía CallMeBot — Gratis hasta 100 msg/día</span>
+        <strong>Telegram (@CallMeBot_txtbot)</strong>
+        <span>Mensajes automáticos gratuitos — Sin límite diario</span>
       </div>
       <label class='toggle'><input type='checkbox' id='tog-wa' checked onchange='saveConfig()'><div class='toggle-slider'></div></label>
     </div>
@@ -5083,7 +5083,8 @@ textarea{min-height:60px;resize:vertical;}
 
 <script>
 'use strict';
-const PHONE = '573108864803';
+const TG_TOKEN = '8911619631:AAE6QNA4FzdQcKjjpG5BR5Go-skl1nnvQH0';
+const TG_CHAT_ID = '8995621093';
 const EMAIL = 'edissonm60@gmail.com';
 const STORAGE_KEY = 'em_alerts_v1';
 let editId = null;
@@ -5222,7 +5223,9 @@ window.addEventListener('load', function() {
   document.getElementById('tog-1h').checked = d.config.h1 !== false;
   document.getElementById('tog-over').checked = d.config.over !== false;
   document.getElementById('tog-daily').checked = d.config.daily !== false;
-  if(d.apikey) document.getElementById('wa-apikey').value = d.apikey;
+  // Telegram pre-configurado
+  const sm = document.getElementById('tg-status-msg');
+  if(sm) { sm.textContent = '✅ Bot conectado: Edisson Macias (8995621093)'; sm.style.color = 'var(--ok)'; }
   // Set default date to today
   document.getElementById('ev-date').value = todayStr();
   render();
@@ -5256,9 +5259,7 @@ function saveApiKey() {
   toast('API Key guardada ✓', 'ok');
 }
 
-function openCallMeBotGuide() {
-  window.open('https://www.callmebot.com/blog/free-api-whatsapp-messages/', '_blank');
-}
+
 
 // ─── RENDER ──────────────────────────────────
 function render() {
@@ -5383,7 +5384,7 @@ function evDateLabel(date, todayS) {
   if(date < todayS) return '🔴 Venció ' + dt.toLocaleDateString('es-CO',{day:'numeric',month:'short'});
   return dt.toLocaleDateString('es-CO',{weekday:'short',day:'numeric',month:'short'});
 }
-function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(s) { return String(s).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>'); }
 
 // ─── FORM ────────────────────────────────────
 function openForm() {
@@ -5504,7 +5505,7 @@ function setSbTab(tab) {
   render();
 }
 
-// ─── WHATSAPP ────────────────────────────────
+// ─── TELEGRAM ────────────────────────────────
 function buildMsg(ev, mode) {
   const icon = typeIcon(ev.type);
   const label = typeLabel(ev.type);
@@ -5557,38 +5558,59 @@ function buildDailySummary(events) {
   return msg;
 }
 
-function sendWhatsApp(msg) {
-  const d = getData();
-  if(!d.config.wa) return;
-  const apiKey = d.apikey;
-  if(!apiKey) {
-    console.warn('CallMeBot API key no configurada');
-    // Show instruction toast
-    toast('⚠️ Configura tu API Key de CallMeBot para recibir WhatsApp', 'warn');
-    return;
-  }
-  const encoded = encodeURIComponent(msg);
-  const url = 'https://api.callmebot.com/whatsapp.php?phone=' + PHONE + '&text=' + encoded + '&apikey=' + apiKey;
-
-  fetch(url, {mode:'no-cors'})
-    .then(() => {
-      const waLast = document.getElementById('wa-last');
-      if(waLast) waLast.textContent = 'Enviado ' + new Date().toLocaleTimeString('es-CO');
-      console.log('WhatsApp sent');
-    })
-    .catch(err => console.warn('WA error:', err));
+function getTgConfig() {
+  return { token: TG_TOKEN, chatId: TG_CHAT_ID };
 }
 
-function testWhatsApp() {
+function saveTgConfig() {
+  const token = document.getElementById('tg-apikey').value.trim();
+  const chatId = document.getElementById('tg-chatid').value.trim();
+  if(!token || !chatId) { toast('Completa el API Key y el Chat ID', 'err'); return; }
+  try {
+    localStorage.setItem(TG_BOT_TOKEN_KEY, token);
+    localStorage.setItem(TG_CHAT_ID_KEY, chatId);
+  } catch(e){}
   const d = getData();
-  if(!d.apikey) {
-    toast('Primero configura tu API Key de CallMeBot arriba ⬇️', 'warn');
-    document.getElementById('wa-apikey').focus();
-    return;
-  }
-  const msg = '👋 *Prueba de conexión exitosa!*\n\n✅ EM Suite PRO está conectado a tu WhatsApp.\n📱 Número: +57 3108864803\n\n_Ing. Edisson Macias — ' + new Date().toLocaleTimeString('es-CO') + '_';
-  sendWhatsApp(msg);
-  toast('Mensaje de prueba enviado a WhatsApp 📲', 'ok');
+  d.tg_token = token;
+  d.tg_chatid = chatId;
+  save(d);
+  document.getElementById('tg-status-msg').textContent = '✅ Configuración guardada correctamente';
+  document.getElementById('tg-status-msg').style.color = 'var(--ok)';
+  toast('✅ Telegram configurado', 'ok');
+}
+
+function sendTelegram(msg) {
+  const url = 'https://api.telegram.org/bot' + TG_TOKEN + '/sendMessage';
+  fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      chat_id: TG_CHAT_ID,
+      text: msg,
+      parse_mode: 'Markdown'
+    })
+  })
+  .then(r => r.json())
+  .then(r => {
+    if(r.ok) {
+      const el = document.getElementById('tg-last');
+      if(el) el.textContent = 'Enviado ' + new Date().toLocaleTimeString('es-CO');
+      toast('✅ Mensaje enviado a Telegram', 'ok');
+    } else {
+      toast('❌ Error: ' + (r.description || 'Sin respuesta'), 'err');
+    }
+  })
+  .catch(err => { toast('❌ Error de red: ' + err.message, 'err'); });
+}
+
+// Alias for backward compat in all calls
+function sendWhatsApp(msg) { sendTelegram(msg); }
+
+function testTelegram() {
+  const cfg = getTgConfig();
+  const msg = '👋 *Prueba exitosa — EM Suite PRO*\n\n✅ Tu bot de Telegram está conectado.\n🧠 NeuroNotes sincronizado.\n📅 Recibirás alertas de reuniones, tareas y proyectos.\n\n_Ing. Edisson Macias — ' + new Date().toLocaleTimeString('es-CO') + '_';
+  sendTelegram(msg);
+  toast('📨 Mensaje enviado — revisa Telegram', 'ok');
 }
 
 function checkAndSendAll() {
