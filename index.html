@@ -2,1864 +2,1173 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>NeuroNotes — Segundo Cerebro</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>NeuroNotes v2 — Life OS</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-:root {
-  --bg-deep: #080C14;
-  --bg-panel: #0D1320;
-  --bg-card: #111927;
-  --bg-hover: #162035;
-  --bg-active: #1A2640;
-  --accent: #00D4FF;
-  --accent2: #7B5EA7;
-  --accent3: #FF6B35;
-  --accent4: #00FF88;
-  --text-primary: #E8F0FE;
-  --text-secondary: #8899BB;
-  --text-muted: #445566;
-  --border: #1E2E44;
-  --border-accent: #00D4FF33;
-  --danger: #FF4444;
-  --warning: #FFB800;
-  --success: #00FF88;
-  --font-main: 'Space Grotesk', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  --font-display: 'Fraunces', serif;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --radius-lg: 18px;
-  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  --shadow: 0 8px 32px rgba(0,0,0,0.4);
-  --glow: 0 0 20px rgba(0,212,255,0.15);
+:root{
+--bg:#080C14;--bg2:#0D1320;--bg3:#111927;--bg4:#162035;--bg5:#1A2640;
+--ac:#00D4FF;--ac2:#7B5EA7;--ac3:#FF6B35;--ac4:#00FF88;--ac5:#FFB800;--ac6:#FF4488;
+--t1:#E8F0FE;--t2:#8899BB;--t3:#445566;
+--bd:#1E2E44;--bd2:rgba(0,212,255,0.25);
+--danger:#FF4444;--warn:#FFB800;--ok:#00FF88;
+--fm:'Space Grotesk',sans-serif;--mono:'JetBrains Mono',monospace;--display:'Fraunces',serif;
+--r:12px;--rs:8px;--rl:18px;--tr:.2s cubic-bezier(.4,0,.2,1);
 }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh;overflow:hidden;}
+#app{display:grid;grid-template-columns:60px 220px 1fr;height:100vh;}
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+/* RAIL */
+#rail{background:var(--bg2);border-right:1px solid var(--bd);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:2px;z-index:10;}
+.logo{width:38px;height:38px;background:linear-gradient(135deg,var(--ac),var(--ac2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:600;font-size:17px;color:#fff;margin-bottom:16px;flex-shrink:0;}
+.rb{width:38px;height:38px;border-radius:var(--rs);border:none;background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:var(--tr);position:relative;}
+.rb:hover{background:var(--bg4);color:var(--t2);}
+.rb.on{background:var(--bg5);color:var(--ac);}
+.rb.on::before{content:'';position:absolute;left:-1px;width:3px;height:18px;background:var(--ac);border-radius:0 2px 2px 0;}
+.rb[data-tip]::after{content:attr(data-tip);position:absolute;left:48px;background:var(--bg3);border:1px solid var(--bd);color:var(--t1);font-size:11px;padding:4px 8px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .2s;z-index:100;}
+.rb:hover[data-tip]::after{opacity:1;}
+.rsep{flex:1;}
+.uav{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--ac3),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;cursor:pointer;border:2px solid var(--bd);}
 
-body {
-  font-family: var(--font-main);
-  background: var(--bg-deep);
-  color: var(--text-primary);
-  min-height: 100vh;
-  overflow: hidden;
-  user-select: none;
-}
+/* SIDEBAR */
+#sb{background:var(--bg2);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden;}
+.sbh{padding:16px 14px 10px;border-bottom:1px solid var(--bd);}
+.sbht{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:10px;}
+.srch{display:flex;align-items:center;gap:7px;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rs);padding:6px 9px;}
+.srch:focus-within{border-color:var(--ac);}
+.srch i{color:var(--t3);font-size:12px;}
+.srch input{background:none;border:none;outline:none;color:var(--t1);font-family:var(--fm);font-size:12px;width:100%;}
+.srch input::placeholder{color:var(--t3);}
+.sbs{flex:1;overflow-y:auto;padding:10px 6px;}
+.sbs::-webkit-scrollbar{width:2px;}
+.sbs::-webkit-scrollbar-thumb{background:var(--bd);}
+.sl{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);padding:10px 8px 5px;}
+.si{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:var(--rs);cursor:pointer;transition:var(--tr);font-size:12px;color:var(--t2);}
+.si:hover{background:var(--bg4);color:var(--t1);}
+.si.on{background:var(--bg5);color:var(--ac);}
+.si i{font-size:13px;width:16px;flex-shrink:0;}
+.sib{margin-left:auto;background:var(--ac);color:var(--bg);font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px;}
+.sib.w{background:var(--warn);}
+.sib.d{background:var(--danger);}
+.sib.g{background:var(--ok);color:var(--bg);}
+.sicd{width:8px;height:8px;border-radius:50%;margin-left:auto;flex-shrink:0;}
+.bna{margin:8px;padding:8px 12px;background:var(--ac);border:none;border-radius:var(--rs);color:var(--bg);font-family:var(--fm);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:var(--tr);}
+.bna:hover{background:#22E0FF;transform:translateY(-1px);}
 
-/* GRID LAYOUT */
-#app {
-  display: grid;
-  grid-template-columns: 64px 240px 1fr;
-  grid-template-rows: 100vh;
-  height: 100vh;
-}
+/* MAIN */
+#main{display:grid;grid-template-rows:52px 1fr;overflow:hidden;}
+#tb{border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 20px;gap:12px;background:var(--bg2);}
+.tbb{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t3);}
+.tbb span{color:var(--t2);}
+.tbb .cur{color:var(--t1);font-weight:500;}
+.tba{margin-left:auto;display:flex;gap:6px;align-items:center;}
+.bi{width:30px;height:30px;border-radius:var(--rs);border:1px solid var(--bd);background:transparent;color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:var(--tr);}
+.bi:hover{background:var(--bg4);color:var(--ac);border-color:var(--ac);}
+.online{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pu 2s infinite;}
+@keyframes pu{0%,100%{opacity:1}50%{opacity:.4}}
+#ct{overflow-y:auto;overflow-x:hidden;background:var(--bg);}
+#ct::-webkit-scrollbar{width:3px;}
+#ct::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px;}
 
-/* ── NAV RAIL ── */
-#nav-rail {
-  background: var(--bg-panel);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 16px 0;
-  gap: 4px;
-  z-index: 10;
-}
+/* VIEWS */
+.view{display:none;padding:24px;}
+.view.on{display:block;}
+.view-full{display:none;height:100%;}
+.view-full.on{display:flex;flex-direction:column;padding:24px;gap:16px;}
 
-.logo-mark {
-  width: 40px; height: 40px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display);
-  font-weight: 600; font-size: 18px; color: #fff;
-  margin-bottom: 20px;
-  box-shadow: var(--glow);
-  flex-shrink: 0;
-}
+/* TYPOGRAPHY */
+.pg{margin-bottom:22px;}
+.pgh1{font-family:var(--display);font-size:26px;font-weight:300;margin-bottom:3px;}
+.pgh1 em{font-style:italic;color:var(--ac);}
+.pgp{font-size:12px;color:var(--t3);}
+.sect{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.sect::after{content:'';flex:1;height:1px;background:var(--bd);}
 
-.nav-btn {
-  width: 40px; height: 40px;
-  border-radius: var(--radius-sm);
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
-  transition: var(--transition);
-  position: relative;
-}
-.nav-btn:hover { background: var(--bg-hover); color: var(--text-secondary); }
-.nav-btn.active { background: var(--bg-active); color: var(--accent); }
-.nav-btn.active::before {
-  content: '';
-  position: absolute; left: -1px;
-  width: 3px; height: 20px;
-  background: var(--accent);
-  border-radius: 0 2px 2px 0;
-}
+/* CARDS */
+.card{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:16px;transition:var(--tr);}
+.card:hover{border-color:var(--bd2);}
+.card-cl{cursor:pointer;}
+.card-cl:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3);}
 
-.nav-spacer { flex: 1; }
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.ga{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;}
 
-.user-avatar {
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent3), var(--accent2));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 600;
-  color: #fff; cursor: pointer;
-  border: 2px solid var(--border);
-  transition: var(--transition);
-}
-.user-avatar:hover { border-color: var(--accent); }
+/* STAT CARD */
+.sc{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:16px;cursor:pointer;transition:var(--tr);}
+.sc:hover{border-color:var(--bd2);transform:translateY(-2px);}
+.sci{width:34px;height:34px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:15px;margin-bottom:10px;}
+.scn{font-size:26px;font-weight:700;font-family:var(--mono);line-height:1;margin-bottom:3px;}
+.scl{font-size:11px;color:var(--t3);}
+.scc{font-size:10px;margin-top:5px;}
+.up{color:var(--ok);}
+.dn{color:var(--danger);}
+.wa{color:var(--warn);}
 
-/* ── SIDEBAR ── */
-#sidebar {
-  background: var(--bg-panel);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
+/* TAGS */
+.tag{font-size:10px;padding:2px 7px;border-radius:16px;background:var(--bg4);color:var(--t2);border:1px solid var(--bd);}
+.chip{font-size:10px;padding:2px 8px;border-radius:16px;font-weight:500;border:1px solid;}
+.cb{background:rgba(0,212,255,.1);color:var(--ac);border-color:rgba(0,212,255,.3);}
+.co{background:rgba(255,107,53,.1);color:var(--ac3);border-color:rgba(255,107,53,.3);}
+.cg{background:rgba(0,255,136,.1);color:var(--ok);border-color:rgba(0,255,136,.3);}
+.cp{background:rgba(123,94,167,.1);color:var(--ac2);border-color:rgba(123,94,167,.3);}
+.cy{background:rgba(255,184,0,.1);color:var(--warn);border-color:rgba(255,184,0,.3);}
+.cr{background:rgba(255,68,68,.1);color:var(--danger);border-color:rgba(255,68,68,.3);}
+.cpk{background:rgba(255,68,136,.1);color:var(--ac6);border-color:rgba(255,68,136,.3);}
 
-.sidebar-header {
-  padding: 20px 16px 12px;
-  border-bottom: 1px solid var(--border);
-}
+/* PROGRESS */
+.pb{height:4px;background:var(--bd);border-radius:4px;overflow:hidden;}
+.pf{height:100%;border-radius:4px;transition:width .8s ease;}
 
-.sidebar-title {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-muted);
-  margin-bottom: 12px;
-}
+/* FORMS */
+.fg{margin-bottom:14px;}
+.fl{font-size:11px;font-weight:500;color:var(--t2);margin-bottom:5px;display:block;}
+.fi,.fs,.ft{width:100%;padding:8px 11px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--t1);font-family:var(--fm);font-size:12px;outline:none;transition:var(--tr);}
+.fi:focus,.fs:focus,.ft:focus{border-color:var(--ac);}
+.fs{cursor:pointer;}
+.ft{resize:vertical;min-height:70px;line-height:1.5;}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 
-.search-box {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 7px 10px;
-  transition: var(--transition);
-}
-.search-box:focus-within { border-color: var(--accent); }
-.search-box i { color: var(--text-muted); font-size: 13px; }
-.search-box input {
-  background: none; border: none; outline: none;
-  color: var(--text-primary); font-family: var(--font-main);
-  font-size: 13px; width: 100%;
-}
-.search-box input::placeholder { color: var(--text-muted); }
+/* BUTTONS */
+.bp{padding:8px 18px;border:none;background:var(--ac);color:var(--bg);border-radius:var(--rs);font-family:var(--fm);font-size:12px;font-weight:600;cursor:pointer;transition:var(--tr);}
+.bp:hover{background:#22E0FF;}
+.bs{padding:8px 18px;border:1px solid var(--bd);background:transparent;color:var(--t2);border-radius:var(--rs);font-family:var(--fm);font-size:12px;cursor:pointer;transition:var(--tr);}
+.bs:hover{border-color:var(--ac);color:var(--ac);}
+.bd2b{padding:6px 14px;border-radius:16px;font-size:11px;font-weight:500;border:1px solid var(--bd);background:transparent;color:var(--t2);cursor:pointer;transition:var(--tr);font-family:var(--fm);}
+.bd2b.on{background:var(--ac);color:var(--bg);border-color:var(--ac);}
+.bd2b:hover:not(.on){border-color:var(--ac);color:var(--ac);}
 
-.sidebar-scroll {
-  flex: 1; overflow-y: auto; padding: 12px 8px;
-}
-.sidebar-scroll::-webkit-scrollbar { width: 3px; }
-.sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
-.sidebar-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+/* MODAL */
+.mo{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;}
+.mo.op{display:flex;}
+.md{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rl);width:500px;max-width:94vw;animation:mdin .22s ease;}
+@keyframes mdin{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.mdh{padding:18px 22px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;}
+.mdh h3{font-size:15px;font-weight:600;flex:1;}
+.mdc{padding:18px 22px;}
+.mdf{padding:14px 22px;border-top:1px solid var(--bd);display:flex;gap:8px;justify-content:flex-end;}
+.xb{width:28px;height:28px;border:none;background:var(--bg4);color:var(--t2);border-radius:6px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:var(--tr);}
+.xb:hover{color:var(--danger);}
 
-.section-label {
-  font-size: 10px; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.1em;
-  color: var(--text-muted); padding: 12px 8px 6px;
-}
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;z-index:200;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:12px 16px;display:flex;align-items:center;gap:10px;min-width:260px;transform:translateY(80px);opacity:0;transition:.35s cubic-bezier(.4,0,.2,1);pointer-events:none;}
+.toast.sh{transform:translateY(0);opacity:1;pointer-events:all;}
+.toast-i{font-size:17px;}
+.toast-t{flex:1;}
+.toast-t strong{font-size:12px;font-weight:600;display:block;}
+.toast-t span{font-size:11px;color:var(--t2);}
 
-.sidebar-item {
-  display: flex; align-items: center; gap: 9px;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: var(--transition);
-  font-size: 13px; color: var(--text-secondary);
-  position: relative;
-}
-.sidebar-item:hover { background: var(--bg-hover); color: var(--text-primary); }
-.sidebar-item.active { background: var(--bg-active); color: var(--accent); }
-.sidebar-item .item-icon { font-size: 14px; width: 18px; flex-shrink: 0; }
-.sidebar-item .item-badge {
-  margin-left: auto;
-  background: var(--accent);
-  color: var(--bg-deep);
-  font-size: 10px; font-weight: 700;
-  padding: 1px 6px; border-radius: 10px;
-}
-.sidebar-item .item-badge.warn { background: var(--warning); }
-.sidebar-item .item-badge.danger { background: var(--danger); }
+/* TABLES */
+.tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tbl th{text-align:left;padding:8px 12px;border-bottom:1px solid var(--bd);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--bd);color:var(--t2);}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:var(--bg4);color:var(--t1);}
 
-.sidebar-item .item-tag {
-  margin-left: auto;
-  width: 8px; height: 8px; border-radius: 50%;
-  flex-shrink: 0;
-}
+/* TIMELINE */
+.tl{position:relative;padding-left:28px;}
+.tl::before{content:'';position:absolute;left:10px;top:0;bottom:0;width:1px;background:var(--bd);}
+.tli{position:relative;margin-bottom:20px;}
+.tli::before{content:'';position:absolute;left:-22px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--ac);border:2px solid var(--bg);}
+.tli-d{font-size:10px;color:var(--t3);font-family:var(--mono);margin-bottom:3px;}
+.tli-t{font-size:13px;font-weight:500;margin-bottom:2px;}
+.tli-s{font-size:11px;color:var(--t2);}
 
-.btn-new {
-  margin: 8px; padding: 9px 14px;
-  background: var(--accent);
-  border: none; border-radius: var(--radius-sm);
-  color: var(--bg-deep);
-  font-family: var(--font-main); font-size: 13px; font-weight: 600;
-  cursor: pointer; display: flex; align-items: center; gap: 7px;
-  transition: var(--transition);
-}
-.btn-new:hover { background: #22E0FF; transform: translateY(-1px); }
-.btn-new:active { transform: translateY(0); }
+/* CALENDAR */
+.cal{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:14px;}
+.calh{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.calh h4{font-size:13px;font-weight:600;}
+.caln{display:flex;gap:3px;}
+.caln button{width:22px;height:22px;border:none;background:var(--bg4);color:var(--t2);border-radius:5px;cursor:pointer;font-size:11px;transition:var(--tr);}
+.caln button:hover{color:var(--ac);}
+.calg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.caldl{font-size:9px;color:var(--t3);text-align:center;padding:3px;}
+.cald{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:11px;border-radius:5px;cursor:pointer;transition:var(--tr);}
+.cald:hover{background:var(--bg4);}
+.cald.tod{background:var(--ac);color:var(--bg);font-weight:700;}
+.cald.ev{position:relative;}
+.cald.ev::after{content:'';position:absolute;bottom:2px;width:3px;height:3px;border-radius:50%;background:var(--ac3);}
+.cald.om{color:var(--t3);}
 
-/* ── MAIN CONTENT ── */
-#main {
-  display: grid;
-  grid-template-rows: 56px 1fr;
-  overflow: hidden;
-}
+/* CHART BARS */
+.barchart{display:flex;align-items:flex-end;gap:6px;height:120px;margin-top:8px;}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.bar{width:100%;border-radius:4px 4px 0 0;transition:height .6s ease;cursor:pointer;min-height:4px;}
+.bar-l{font-size:9px;color:var(--t3);}
+.bar-v{font-size:9px;color:var(--t2);font-family:var(--mono);}
 
-/* TOP BAR */
-#topbar {
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center;
-  padding: 0 24px; gap: 16px;
-  background: var(--bg-panel);
-}
+/* DONUT */
+.donut-wrap{position:relative;width:120px;height:120px;flex-shrink:0;}
+.donut-wrap svg{transform:rotate(-90deg);}
+.donut-txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.donut-txt big{font-size:22px;font-weight:700;font-family:var(--mono);}
+.donut-txt small{font-size:10px;color:var(--t3);}
 
-.topbar-breadcrumb {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 13px; color: var(--text-muted);
-}
-.topbar-breadcrumb span { color: var(--text-secondary); }
-.topbar-breadcrumb .current { color: var(--text-primary); font-weight: 500; }
+/* GOAL CARD */
+.goal-card{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:16px;transition:var(--tr);}
+.goal-card:hover{border-color:var(--bd2);}
+.gc-h{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.gc-ico{width:36px;height:36px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.gc-info h4{font-size:13px;font-weight:500;margin-bottom:2px;}
+.gc-info p{font-size:11px;color:var(--t3);}
+.gc-pct{font-size:20px;font-weight:700;font-family:var(--mono);margin-bottom:6px;}
 
-.topbar-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+/* TRIP */
+.trip-card{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;transition:var(--tr);cursor:pointer;}
+.trip-card:hover{border-color:var(--bd2);transform:translateY(-2px);}
+.trip-banner{height:90px;display:flex;align-items:center;justify-content:center;font-size:36px;position:relative;}
+.trip-body{padding:14px;}
+.trip-body h4{font-size:13px;font-weight:600;margin-bottom:4px;}
+.trip-body p{font-size:11px;color:var(--t3);margin-bottom:8px;}
+.trip-meta{display:flex;gap:8px;flex-wrap:wrap;}
 
-.btn-icon {
-  width: 32px; height: 32px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  font-size: 14px; transition: var(--transition);
-}
-.btn-icon:hover { background: var(--bg-hover); color: var(--accent); border-color: var(--accent); }
+/* MEETING */
+.meet-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:8px;transition:var(--tr);}
+.meet-item:hover{border-color:var(--bd2);}
+.meet-time{width:70px;flex-shrink:0;text-align:center;}
+.meet-time .mt{font-size:16px;font-weight:700;font-family:var(--mono);color:var(--ac);}
+.meet-time .md2{font-size:10px;color:var(--t3);}
+.meet-info{flex:1;}
+.meet-info h4{font-size:13px;font-weight:500;margin-bottom:3px;}
+.meet-info p{font-size:11px;color:var(--t3);}
+.meet-avatars{display:flex;}
+.meet-av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;border:2px solid var(--bg3);margin-left:-6px;}
+.meet-av:first-child{margin-left:0;}
 
-.status-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--success);
-  box-shadow: 0 0 8px var(--success);
-  animation: pulse 2s infinite;
-}
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+/* TEAMS BADGE */
+.teams-badge{background:rgba(100,100,255,.15);border:1px solid rgba(100,100,255,.3);color:#8899FF;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;}
+.gcal-badge{background:rgba(66,133,244,.15);border:1px solid rgba(66,133,244,.3);color:#6699FF;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;}
 
-/* CONTENT AREA */
-#content {
-  overflow-y: auto; overflow-x: hidden;
-  background: var(--bg-deep);
-}
-#content::-webkit-scrollbar { width: 4px; }
-#content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+/* FINANCE */
+.finrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--bd);transition:var(--tr);}
+.finrow:last-child{border-bottom:none;}
+.finrow:hover{background:var(--bg4);}
+.finrow-ico{width:30px;height:30px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.finrow-info{flex:1;}
+.finrow-info h5{font-size:12px;font-weight:500;margin-bottom:1px;}
+.finrow-info p{font-size:10px;color:var(--t3);}
+.finrow-amt{font-size:14px;font-weight:600;font-family:var(--mono);flex-shrink:0;}
+.ingreso{color:var(--ok);}
+.egreso{color:var(--danger);}
+.neutro{color:var(--t2);}
 
-/* ── DASHBOARD VIEW ── */
-.dashboard {
-  padding: 28px 28px;
-  display: none;
-}
-.dashboard.active { display: block; }
+/* DEBT */
+.debt-card{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:14px;transition:var(--tr);}
+.debt-card:hover{border-color:rgba(255,68,68,.3);}
+.debt-h{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.debt-h h4{font-size:13px;font-weight:500;flex:1;}
+.debt-total{font-size:20px;font-weight:700;font-family:var(--mono);color:var(--danger);margin-bottom:6px;}
+.debt-pct{font-size:11px;color:var(--t3);margin-bottom:8px;}
 
-.dash-greeting {
-  margin-bottom: 28px;
-}
-.dash-greeting h1 {
-  font-family: var(--font-display);
-  font-size: 28px; font-weight: 300;
-  color: var(--text-primary);
-  margin-bottom: 4px;
-}
-.dash-greeting h1 em { font-style: italic; color: var(--accent); }
-.dash-greeting p { font-size: 13px; color: var(--text-muted); }
+/* AI PANEL */
+.aip{position:fixed;right:0;top:0;bottom:0;width:360px;z-index:50;background:var(--bg2);border-left:1px solid var(--bd);display:flex;flex-direction:column;transform:translateX(100%);transition:.3s cubic-bezier(.4,0,.2,1);}
+.aip.op{transform:translateX(0);}
+.aih{padding:18px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;}
+.aih h3{font-size:14px;font-weight:600;flex:1;}
+.aim{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;}
+.aim::-webkit-scrollbar{width:2px;}
+.aim::-webkit-scrollbar-thumb{background:var(--bd);}
+.aimsg{max-width:92%;padding:10px 13px;border-radius:var(--r);font-size:12px;line-height:1.6;}
+.aimsg.ass{background:var(--bg3);border:1px solid var(--bd);align-self:flex-start;}
+.aimsg.usr{background:var(--ac);color:var(--bg);align-self:flex-end;font-weight:500;}
+.dots{display:flex;gap:3px;}
+.dots span{width:5px;height:5px;border-radius:50%;background:var(--t3);animation:bl 1.4s infinite;}
+.dots span:nth-child(2){animation-delay:.2s;}
+.dots span:nth-child(3){animation-delay:.4s;}
+@keyframes bl{0%,80%,100%{opacity:.3}40%{opacity:1}}
+.aiia{padding:12px 14px;border-top:1px solid var(--bd);display:flex;gap:7px;}
+.aiin{flex:1;padding:8px 11px;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rs);color:var(--t1);font-family:var(--fm);font-size:12px;outline:none;transition:var(--tr);}
+.aiin:focus{border-color:var(--ac);}
+.bsnd{width:34px;height:34px;border-radius:var(--rs);background:var(--ac);border:none;color:var(--bg);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:var(--tr);}
+.bsnd:hover{background:#22E0FF;}
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  margin-bottom: 28px;
-}
-
-.stat-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px;
-  transition: var(--transition);
-  cursor: pointer;
-}
-.stat-card:hover { border-color: var(--accent); box-shadow: var(--glow); transform: translateY(-2px); }
-.stat-card .stat-icon {
-  width: 36px; height: 36px;
-  border-radius: var(--radius-sm);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px; margin-bottom: 12px;
-}
-.stat-card .stat-num {
-  font-size: 28px; font-weight: 700;
-  font-family: var(--font-mono);
-  color: var(--text-primary);
-  line-height: 1;
-  margin-bottom: 4px;
-}
-.stat-card .stat-label { font-size: 12px; color: var(--text-muted); }
-.stat-card .stat-change { font-size: 11px; margin-top: 6px; }
-.stat-card .stat-change.up { color: var(--success); }
-.stat-card .stat-change.warn { color: var(--warning); }
-
-/* Quick Access */
-.section-title {
-  font-size: 12px; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.1em;
-  color: var(--text-muted); margin-bottom: 14px;
-  display: flex; align-items: center; gap: 8px;
-}
-.section-title::after {
-  content: ''; flex: 1; height: 1px;
-  background: var(--border);
-}
-
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
-.three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 28px; }
-
-/* Project cards */
-.project-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  transition: var(--transition);
-  cursor: pointer;
-}
-.project-card:hover { border-color: var(--border-accent); box-shadow: var(--glow); }
-.project-card .proj-header {
-  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
-}
-.proj-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.project-card h3 { font-size: 14px; font-weight: 600; flex: 1; }
-.project-card .proj-client { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; }
-.project-card .proj-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px; }
-.progress-bar { height: 3px; background: var(--border); border-radius: 3px; overflow: hidden; }
-.progress-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
-.proj-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
-.proj-tags { display: flex; gap: 5px; flex-wrap: wrap; }
-.tag {
-  font-size: 10px; padding: 2px 8px; border-radius: 20px;
-  background: var(--bg-hover); color: var(--text-secondary);
-  border: 1px solid var(--border); font-weight: 500;
-}
-
-/* Activity */
-.activity-feed {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-.activity-item {
-  display: flex; align-items: flex-start; gap: 12px;
-  padding: 13px 16px;
-  border-bottom: 1px solid var(--border);
-  transition: var(--transition);
-}
-.activity-item:last-child { border-bottom: none; }
-.activity-item:hover { background: var(--bg-hover); }
-.activity-icon {
-  width: 32px; height: 32px; border-radius: var(--radius-sm);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; flex-shrink: 0;
-}
-.activity-text { flex: 1; }
-.activity-text strong { font-size: 13px; font-weight: 500; }
-.activity-text p { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
-.activity-time { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
-
-/* Calendar mini */
-.calendar-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-}
-.cal-header {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 12px;
-}
-.cal-header h4 { font-size: 14px; font-weight: 600; }
-.cal-nav { display: flex; gap: 4px; }
-.cal-nav button {
-  width: 24px; height: 24px; border: none; background: var(--bg-hover);
-  color: var(--text-secondary); border-radius: 6px; cursor: pointer;
-  font-size: 12px; transition: var(--transition);
-}
-.cal-nav button:hover { color: var(--accent); }
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-.cal-day-label { font-size: 10px; color: var(--text-muted); text-align: center; padding: 4px; }
-.cal-day {
-  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-  font-size: 12px; border-radius: 6px; cursor: pointer; transition: var(--transition);
-}
-.cal-day:hover { background: var(--bg-hover); }
-.cal-day.today { background: var(--accent); color: var(--bg-deep); font-weight: 700; }
-.cal-day.has-event { position: relative; }
-.cal-day.has-event::after {
-  content: ''; position: absolute; bottom: 3px;
-  width: 4px; height: 4px; border-radius: 50%; background: var(--accent3);
-}
-.cal-day.other-month { color: var(--text-muted); }
-
-/* Events list */
-.event-list { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
-.event-item {
-  display: flex; align-items: center; gap: 10px;
-  background: var(--bg-hover); border-radius: var(--radius-sm);
-  padding: 10px 12px;
-}
-.event-time { font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); width: 52px; flex-shrink: 0; }
-.event-title { font-size: 13px; flex: 1; }
-.event-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-
-/* ── KANBAN VIEW ── */
-.kanban-view {
-  padding: 24px;
-  display: none;
-  height: 100%;
-}
-.kanban-view.active { display: flex; flex-direction: column; }
-.kanban-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
-.kanban-header h2 { font-size: 20px; font-weight: 600; }
-.kanban-filter {
-  display: flex; gap: 8px; margin-left: auto;
-}
-.filter-btn {
-  padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500;
-  border: 1px solid var(--border); background: transparent;
-  color: var(--text-secondary); cursor: pointer; transition: var(--transition);
-  font-family: var(--font-main);
-}
-.filter-btn.active { background: var(--accent); color: var(--bg-deep); border-color: var(--accent); }
-.filter-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
-.kanban-board { display: flex; gap: 16px; flex: 1; overflow-x: auto; padding-bottom: 8px; }
-.kanban-board::-webkit-scrollbar { height: 4px; }
-.kanban-board::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
-.kanban-col {
-  min-width: 270px; max-width: 270px;
-  display: flex; flex-direction: column; gap: 10px;
-}
-.col-header {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 12px;
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); font-size: 13px; font-weight: 600;
-}
-.col-dot { width: 8px; height: 8px; border-radius: 50%; }
-.col-count {
-  margin-left: auto; font-size: 11px; font-family: var(--font-mono);
-  color: var(--text-muted);
-}
-
-.kanban-card {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 14px;
-  cursor: pointer; transition: var(--transition);
-}
-.kanban-card:hover { border-color: var(--accent); box-shadow: var(--glow); transform: translateY(-1px); }
-.kanban-card .card-priority {
-  font-size: 10px; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.08em; margin-bottom: 8px;
-  display: flex; align-items: center; gap: 5px;
-}
-.kanban-card h4 { font-size: 13px; font-weight: 500; line-height: 1.4; margin-bottom: 8px; }
-.kanban-card .card-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-.kanban-card .card-footer {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-top: 10px;
-}
-.card-assignee {
-  width: 24px; height: 24px; border-radius: 50%;
-  background: var(--accent2); display: flex; align-items: center;
-  justify-content: center; font-size: 10px; font-weight: 600; color: #fff;
-}
-.card-due { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
-.card-due.overdue { color: var(--danger); }
-
-.col-add {
-  padding: 10px; border: 1px dashed var(--border); border-radius: var(--radius);
-  text-align: center; font-size: 12px; color: var(--text-muted);
-  cursor: pointer; transition: var(--transition);
-}
-.col-add:hover { border-color: var(--accent); color: var(--accent); background: var(--bg-hover); }
-
-/* ── NOTES VIEW ── */
-.notes-view {
-  display: none; height: 100%;
-}
-.notes-view.active { display: grid; grid-template-columns: 260px 1fr; }
-
-.notes-list {
-  border-right: 1px solid var(--border);
-  overflow-y: auto; background: var(--bg-panel);
-}
-.notes-list::-webkit-scrollbar { width: 3px; }
-.notes-list::-webkit-scrollbar-thumb { background: var(--border); }
-
-.notes-list-header {
-  padding: 16px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 8px;
-}
-.notes-list-header h3 { font-size: 14px; font-weight: 600; flex: 1; }
-
-.note-item {
-  padding: 14px 16px; border-bottom: 1px solid var(--border);
-  cursor: pointer; transition: var(--transition);
-}
-.note-item:hover { background: var(--bg-hover); }
-.note-item.active { background: var(--bg-active); border-left: 3px solid var(--accent); }
-.note-item h4 { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
-.note-item p { font-size: 12px; color: var(--text-muted); line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.note-item .note-meta { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
-.note-item .note-date { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
-
-.note-editor {
-  display: flex; flex-direction: column; overflow: hidden;
-}
-.editor-toolbar {
-  border-bottom: 1px solid var(--border);
-  padding: 10px 20px; display: flex; gap: 6px; align-items: center;
-  background: var(--bg-panel); flex-wrap: wrap;
-}
-.toolbar-btn {
-  width: 30px; height: 30px; border: none;
-  background: transparent; color: var(--text-secondary);
-  border-radius: 6px; cursor: pointer; font-size: 13px;
-  display: flex; align-items: center; justify-content: center;
-  transition: var(--transition); font-family: var(--font-main);
-}
-.toolbar-btn:hover { background: var(--bg-hover); color: var(--accent); }
-.toolbar-sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
-.editor-title {
-  padding: 24px 28px 8px;
-  font-size: 26px; font-weight: 600;
-  background: none; border: none; outline: none;
-  color: var(--text-primary); font-family: var(--font-main);
-  width: 100%;
-}
-.editor-area {
-  flex: 1; padding: 8px 28px 28px;
-  font-size: 14px; line-height: 1.8;
-  background: none; border: none; outline: none;
-  color: var(--text-secondary); font-family: var(--font-main);
-  resize: none; overflow-y: auto;
-}
-.editor-area::-webkit-scrollbar { width: 4px; }
-.editor-area::-webkit-scrollbar-thumb { background: var(--border); }
-.editor-area::placeholder { color: var(--text-muted); }
-
-/* ── TOOLS VIEW ── */
-.tools-view {
-  padding: 28px; display: none;
-}
-.tools-view.active { display: block; }
-.tools-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px;
-}
-.tool-card {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 24px;
-  cursor: pointer; transition: var(--transition); text-align: center;
-}
-.tool-card:hover { border-color: var(--accent); box-shadow: var(--glow); transform: translateY(-3px); }
-.tool-icon {
-  width: 56px; height: 56px; border-radius: var(--radius);
-  margin: 0 auto 14px; display: flex; align-items: center; justify-content: center;
-  font-size: 24px;
-}
-.tool-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
-.tool-card p { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
-
-/* ── MODAL ── */
-.modal-overlay {
-  position: fixed; inset: 0; z-index: 100;
-  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
-  display: none; align-items: center; justify-content: center;
-}
-.modal-overlay.open { display: flex; }
-.modal {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); width: 520px; max-width: 95vw;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
-  animation: modalIn 0.25s ease;
-}
-@keyframes modalIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-.modal-header {
-  padding: 20px 24px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 12px;
-}
-.modal-header h3 { font-size: 16px; font-weight: 600; flex: 1; }
-.modal-close {
-  width: 30px; height: 30px; border: none;
-  background: var(--bg-hover); color: var(--text-secondary);
-  border-radius: 8px; cursor: pointer; font-size: 14px;
-  display: flex; align-items: center; justify-content: center;
-  transition: var(--transition);
-}
-.modal-close:hover { color: var(--danger); }
-.modal-body { padding: 20px 24px; }
-.modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
-
-.form-group { margin-bottom: 16px; }
-.form-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; display: block; }
-.form-input, .form-select, .form-textarea {
-  width: 100%; padding: 9px 12px;
-  background: var(--bg-panel); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); color: var(--text-primary);
-  font-family: var(--font-main); font-size: 13px; outline: none;
-  transition: var(--transition);
-}
-.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
-.form-select { cursor: pointer; }
-.form-textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
-
-.btn-primary {
-  padding: 9px 20px; border: none;
-  background: var(--accent); color: var(--bg-deep);
-  border-radius: var(--radius-sm); font-family: var(--font-main);
-  font-size: 13px; font-weight: 600; cursor: pointer; transition: var(--transition);
-}
-.btn-primary:hover { background: #22E0FF; }
-.btn-secondary {
-  padding: 9px 20px;
-  border: 1px solid var(--border); background: transparent;
-  color: var(--text-secondary); border-radius: var(--radius-sm);
-  font-family: var(--font-main); font-size: 13px; cursor: pointer; transition: var(--transition);
-}
-.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
-
-/* ── INTEGRATIONS ── */
-.integrations-panel {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 20px; margin-bottom: 20px;
-}
-.integration-row {
-  display: flex; align-items: center; gap: 14px;
-  padding: 12px 0; border-bottom: 1px solid var(--border);
-}
-.integration-row:last-child { border-bottom: none; }
-.integration-logo {
-  width: 40px; height: 40px; border-radius: var(--radius-sm);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 20px; flex-shrink: 0;
-}
-.integration-info { flex: 1; }
-.integration-info h4 { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
-.integration-info p { font-size: 12px; color: var(--text-muted); }
-.toggle {
-  width: 40px; height: 22px; border-radius: 11px;
-  background: var(--border); cursor: pointer; position: relative;
-  transition: var(--transition); flex-shrink: 0; border: none;
-}
-.toggle.on { background: var(--accent); }
-.toggle::after {
-  content: ''; position: absolute; top: 3px; left: 3px;
-  width: 16px; height: 16px; border-radius: 50%; background: #fff;
-  transition: var(--transition);
-}
-.toggle.on::after { left: 21px; }
-
-/* ── GOOGLE CALENDAR WIDGET ── */
-.gcal-widget {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius); overflow: hidden;
-}
-.gcal-header {
-  background: linear-gradient(135deg, #1557b0, #4285F4);
-  padding: 14px 16px; display: flex; align-items: center; gap: 10px;
-}
-.gcal-header h4 { font-size: 14px; font-weight: 600; color: #fff; }
-.gcal-header .gcal-today {
-  margin-left: auto; font-size: 12px; color: rgba(255,255,255,0.7);
-}
-.gcal-events { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
-.gcal-event {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px; border-radius: var(--radius-sm);
-  background: var(--bg-hover);
-  border-left: 3px solid;
-}
-.gcal-event .ge-time { font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); width: 60px; flex-shrink: 0; }
-.gcal-event .ge-title { font-size: 13px; flex: 1; }
-.gcal-event .ge-type { font-size: 10px; padding: 2px 7px; border-radius: 10px; opacity: 0.8; }
-
-/* ── NOTIFICATION TOAST ── */
-.toast {
-  position: fixed; bottom: 24px; right: 24px; z-index: 200;
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 14px 18px;
-  display: flex; align-items: center; gap: 12px;
-  box-shadow: var(--shadow); min-width: 280px;
-  transform: translateY(100px); opacity: 0; transition: 0.4s cubic-bezier(0.4,0,0.2,1);
-  pointer-events: none;
-}
-.toast.show { transform: translateY(0); opacity: 1; pointer-events: all; }
-.toast-icon { font-size: 18px; }
-.toast-text { flex: 1; }
-.toast-text strong { font-size: 13px; font-weight: 600; display: block; }
-.toast-text span { font-size: 12px; color: var(--text-secondary); }
-.toast-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; }
-
-/* ── AI ASSISTANT ── */
-.ai-panel {
-  position: fixed; right: 0; top: 0; bottom: 0; width: 380px; z-index: 50;
-  background: var(--bg-panel); border-left: 1px solid var(--border);
-  display: flex; flex-direction: column;
-  transform: translateX(100%); transition: 0.35s cubic-bezier(0.4,0,0.2,1);
-}
-.ai-panel.open { transform: translateX(0); }
-.ai-header {
-  padding: 20px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 12px;
-}
-.ai-header h3 { font-size: 15px; font-weight: 600; flex: 1; }
-.ai-badge {
-  font-size: 10px; padding: 2px 8px; border-radius: 10px;
-  background: var(--accent); color: var(--bg-deep); font-weight: 700;
-}
-.ai-messages {
-  flex: 1; overflow-y: auto; padding: 16px;
-  display: flex; flex-direction: column; gap: 12px;
-}
-.ai-messages::-webkit-scrollbar { width: 3px; }
-.ai-messages::-webkit-scrollbar-thumb { background: var(--border); }
-.ai-msg {
-  max-width: 90%; padding: 12px 14px; border-radius: var(--radius);
-  font-size: 13px; line-height: 1.6;
-}
-.ai-msg.assistant {
-  background: var(--bg-card); border: 1px solid var(--border);
-  align-self: flex-start;
-}
-.ai-msg.user {
-  background: var(--accent); color: var(--bg-deep);
-  align-self: flex-end; font-weight: 500;
-}
-.ai-msg.thinking {
-  background: var(--bg-card); border: 1px solid var(--border);
-  align-self: flex-start;
-}
-.dots { display: flex; gap: 4px; }
-.dots span {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--text-muted);
-  animation: blink 1.4s infinite;
-}
-.dots span:nth-child(2) { animation-delay: 0.2s; }
-.dots span:nth-child(3) { animation-delay: 0.4s; }
-@keyframes blink { 0%,80%,100%{opacity:0.3} 40%{opacity:1} }
-.ai-input-area {
-  padding: 14px; border-top: 1px solid var(--border);
-  display: flex; gap: 8px; align-items: center;
-}
-.ai-input {
-  flex: 1; padding: 9px 12px;
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); color: var(--text-primary);
-  font-family: var(--font-main); font-size: 13px; outline: none;
-  transition: var(--transition);
-}
-.ai-input:focus { border-color: var(--accent); }
-.btn-send {
-  width: 36px; height: 36px; border-radius: var(--radius-sm);
-  background: var(--accent); border: none;
-  color: var(--bg-deep); cursor: pointer; font-size: 14px;
-  display: flex; align-items: center; justify-content: center;
-  transition: var(--transition); flex-shrink: 0;
-}
-.btn-send:hover { background: #22E0FF; }
-
-/* Misc */
-.chip {
-  font-size: 11px; padding: 3px 10px; border-radius: 20px;
-  font-weight: 500; border: 1px solid;
-}
-.chip-blue { background: rgba(0,212,255,0.1); color: var(--accent); border-color: rgba(0,212,255,0.3); }
-.chip-orange { background: rgba(255,107,53,0.1); color: var(--accent3); border-color: rgba(255,107,53,0.3); }
-.chip-green { background: rgba(0,255,136,0.1); color: var(--success); border-color: rgba(0,255,136,0.3); }
-.chip-purple { background: rgba(123,94,167,0.1); color: var(--accent2); border-color: rgba(123,94,167,0.3); }
-.chip-red { background: rgba(255,68,68,0.1); color: var(--danger); border-color: rgba(255,68,68,0.3); }
-
-.empty-state {
-  text-align: center; padding: 48px; color: var(--text-muted);
-}
-.empty-state i { font-size: 40px; margin-bottom: 12px; display: block; opacity: 0.3; }
-.empty-state p { font-size: 13px; }
-
-/* RESPONSIVE for tablet */
-@media (max-width: 900px) {
-  #app { grid-template-columns: 56px 200px 1fr; }
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .two-col, .three-col { grid-template-columns: 1fr; }
-  .tools-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 700px) {
-  #app { grid-template-columns: 0 0 1fr; }
-  #nav-rail, #sidebar { display: none; }
-}
-
-/* Loading animation */
-.skeleton {
-  background: linear-gradient(90deg, var(--bg-hover) 25%, var(--bg-active) 50%, var(--bg-hover) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: var(--radius-sm);
-}
-@keyframes shimmer { to { background-position: -200% 0; } }
+@media(max-width:900px){#app{grid-template-columns:52px 180px 1fr;}.g4{grid-template-columns:1fr 1fr;}}
+@media(max-width:700px){#app{grid-template-columns:0 0 1fr;}#rail,#sb{display:none;}}
 </style>
 </head>
 <body>
-
 <div id="app">
 
-  <!-- NAV RAIL -->
-  <nav id="nav-rail">
-    <div class="logo-mark">N</div>
-    <button class="nav-btn active" onclick="showView('dashboard')" title="Dashboard"><i class="fa fa-th-large"></i></button>
-    <button class="nav-btn" onclick="showView('kanban')" title="Proyectos"><i class="fa fa-columns"></i></button>
-    <button class="nav-btn" onclick="showView('notes')" title="Notas"><i class="fa fa-sticky-note"></i></button>
-    <button class="nav-btn" onclick="showView('tools')" title="Herramientas"><i class="fa fa-tools"></i></button>
-    <button class="nav-btn" onclick="showView('integrations')" title="Integraciones"><i class="fa fa-plug"></i></button>
-    <div class="nav-spacer"></div>
-    <button class="nav-btn" onclick="toggleAI()" title="Asistente IA"><i class="fa fa-robot"></i></button>
-    <div class="user-avatar" onclick="showToast('Perfil','Edisson Moreno — Ing. Electrónico','👤')" title="Perfil">EM</div>
-  </nav>
+<!-- RAIL -->
+<nav id="rail">
+  <div class="logo">N</div>
+  <button class="rb on" onclick="V('dash')" data-tip="Dashboard"><i class="fa fa-th-large"></i></button>
+  <button class="rb" onclick="V('finance')" data-tip="Finanzas"><i class="fa fa-chart-pie"></i></button>
+  <button class="rb" onclick="V('calendar')" data-tip="Calendario"><i class="fa fa-calendar-alt"></i></button>
+  <button class="rb" onclick="V('meetings')" data-tip="Reuniones"><i class="fa fa-video"></i></button>
+  <button class="rb" onclick="V('goals')" data-tip="Metas & Cursos"><i class="fa fa-bullseye"></i></button>
+  <button class="rb" onclick="V('travel')" data-tip="Viajes"><i class="fa fa-plane"></i></button>
+  <button class="rb" onclick="V('kanban')" data-tip="Proyectos"><i class="fa fa-columns"></i></button>
+  <button class="rb" onclick="V('notes')" data-tip="Notas"><i class="fa fa-sticky-note"></i></button>
+  <button class="rb" onclick="V('tools')" data-tip="Herramientas"><i class="fa fa-tools"></i></button>
+  <button class="rb" onclick="V('home')" data-tip="Hogar"><i class="fa fa-home"></i></button>
+  <div class="rsep"></div>
+  <button class="rb" onclick="toggleAI()" data-tip="Asistente IA"><i class="fa fa-robot"></i></button>
+  <div class="uav" title="Edisson Moreno">EM</div>
+</nav>
 
-  <!-- SIDEBAR -->
-  <aside id="sidebar">
-    <div class="sidebar-header">
-      <div class="sidebar-title">NeuroNotes Pro</div>
-      <div class="search-box">
-        <i class="fa fa-search"></i>
-        <input type="text" placeholder="Buscar..." id="globalSearch" oninput="handleSearch(this.value)">
+<!-- SIDEBAR -->
+<aside id="sb">
+  <div class="sbh">
+    <div class="sbht">NeuroNotes v2</div>
+    <div class="srch"><i class="fa fa-search"></i><input placeholder="Buscar todo..." oninput="gsrch(this.value)"></div>
+  </div>
+  <div class="sbs">
+    <div class="sl">Principal</div>
+    <div class="si on" onclick="V('dash')"><i class="fa fa-th-large"></i> Dashboard<span class="sib">!</span></div>
+    <div class="si" onclick="V('finance')"><i class="fa fa-coins"></i> Finanzas<span class="sib g">OK</span></div>
+    <div class="si" onclick="V('calendar')"><i class="fa fa-calendar-alt"></i> Calendario</div>
+    <div class="si" onclick="V('meetings')"><i class="fa fa-video"></i> Reuniones<span class="sib">3</span></div>
+    <div class="sl">Personal</div>
+    <div class="si" onclick="V('goals')"><i class="fa fa-bullseye"></i> Metas & Cursos<span class="sib w">5</span></div>
+    <div class="si" onclick="V('travel')"><i class="fa fa-plane"></i> Viajes & Trips</div>
+    <div class="si" onclick="V('home')"><i class="fa fa-house-user"></i> Hogar & Gastos</div>
+    <div class="sl">Trabajo</div>
+    <div class="si" onclick="V('kanban')"><i class="fa fa-tasks"></i> Proyectos<span class="sib w">7</span></div>
+    <div class="si" onclick="V('notes')"><i class="fa fa-file-alt"></i> Notas Técnicas<span class="sib">12</span></div>
+    <div class="si" onclick="V('tools')"><i class="fa fa-tools"></i> Herramientas</div>
+    <div class="sl">Finanzas detalle</div>
+    <div class="si" onclick="V('finance')"><i class="fa fa-arrow-up" style="color:var(--ok)"></i> Ingresos</div>
+    <div class="si" onclick="V('finance')"><i class="fa fa-arrow-down" style="color:var(--danger)"></i> Egresos<span class="sib d">!</span></div>
+    <div class="si" onclick="V('finance')"><i class="fa fa-credit-card" style="color:var(--warn)"></i> Deudas<span class="sib w">2</span></div>
+    <div class="si" onclick="V('finance')"><i class="fa fa-piggy-bank" style="color:var(--ac)"></i> Presupuesto</div>
+    <div class="sl">Integraciones</div>
+    <div class="si"><i class="fab fa-microsoft" style="color:#6264A7"></i> Microsoft Teams<span class="sib" style="background:#6264A7">Sync</span></div>
+    <div class="si"><i class="fab fa-google" style="color:#4285F4"></i> Google Calendar<span class="sib g">ON</span></div>
+    <div class="si"><i class="fab fa-google-drive" style="color:#FBBC05"></i> Google Drive</div>
+  </div>
+  <button class="bna" onclick="openModal('mo-new')"><i class="fa fa-plus"></i> Nuevo elemento</button>
+</aside>
+
+<!-- MAIN -->
+<div id="main">
+  <div id="tb">
+    <div class="tbb"><i class="fa fa-home" style="font-size:11px"></i><i class="fa fa-chevron-right" style="font-size:9px"></i><span class="cur" id="bc">Dashboard</span></div>
+    <div class="tba">
+      <div class="online"></div>
+      <span style="font-size:10px;color:var(--t3)">neuronotes.duckdns.org</span>
+      <button class="bi" onclick="T('Sync','Sincronizado con Google & Teams','✅')"><i class="fa fa-sync-alt"></i></button>
+      <button class="bi" onclick="openModal('mo-new')"><i class="fa fa-plus"></i></button>
+      <button class="bi" onclick="toggleAI()"><i class="fa fa-robot"></i></button>
+    </div>
+  </div>
+  <div id="ct">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div class="view on" id="v-dash">
+      <div class="pg"><h1 class="pgh1">Hola, <em>Edisson</em> ⚡</h1><p class="pgp" id="dt-now">...</p></div>
+      <div class="g4" style="margin-bottom:22px">
+        <div class="sc" onclick="V('finance')"><div class="sci" style="background:rgba(0,255,136,.1)"><i class="fa fa-wallet" style="color:var(--ok)"></i></div><div class="scn" style="color:var(--ok)">$4.2M</div><div class="scl">Balance neto mes</div><div class="scc up"><i class="fa fa-arrow-up"></i> +12% vs abril</div></div>
+        <div class="sc" onclick="V('kanban')"><div class="sci" style="background:rgba(0,212,255,.1)"><i class="fa fa-tasks" style="color:var(--ac)"></i></div><div class="scn">14</div><div class="scl">Tareas activas</div><div class="scc wa"><i class="fa fa-exclamation"></i> 3 urgentes hoy</div></div>
+        <div class="sc" onclick="V('meetings')"><div class="sci" style="background:rgba(98,100,167,.1)"><i class="fa fa-video" style="color:#8899FF"></i></div><div class="scn">3</div><div class="scl">Reuniones hoy</div><div class="scc up"><i class="fa fa-calendar"></i> Teams + Google</div></div>
+        <div class="sc" onclick="V('goals')"><div class="sci" style="background:rgba(255,184,0,.1)"><i class="fa fa-bullseye" style="color:var(--warn)"></i></div><div class="scn">5</div><div class="scl">Metas activas</div><div class="scc wa"><i class="fa fa-clock"></i> 2 retrasadas</div></div>
+      </div>
+      <div class="g2" style="margin-bottom:22px">
+        <div>
+          <div class="sect">Finanzas mayo 2026</div>
+          <div class="card" style="margin-bottom:12px">
+            <div style="display:flex;gap:12px;margin-bottom:14px">
+              <div style="flex:1;text-align:center;background:var(--bg4);border-radius:var(--rs);padding:10px">
+                <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--ok)">$8.5M</div>
+                <div style="font-size:10px;color:var(--t3)">Ingresos</div>
+              </div>
+              <div style="flex:1;text-align:center;background:var(--bg4);border-radius:var(--rs);padding:10px">
+                <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--danger)">$4.3M</div>
+                <div style="font-size:10px;color:var(--t3)">Egresos</div>
+              </div>
+              <div style="flex:1;text-align:center;background:var(--bg4);border-radius:var(--rs);padding:10px">
+                <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--warn)">$1.8M</div>
+                <div style="font-size:10px;color:var(--t3)">Deudas</div>
+              </div>
+            </div>
+            <div class="sect" style="margin-bottom:8px">Gastos por categoría</div>
+            <div class="barchart" id="dash-bars"></div>
+          </div>
+        </div>
+        <div>
+          <div class="sect">Próximas reuniones</div>
+          <div id="dash-meets"></div>
+          <div class="sect" style="margin-top:16px">Metas destacadas</div>
+          <div id="dash-goals"></div>
+        </div>
+      </div>
+      <div class="g2">
+        <div>
+          <div class="sect">Próximo viaje</div>
+          <div id="dash-trip"></div>
+        </div>
+        <div>
+          <div class="sect">Calendario</div>
+          <div class="cal"><div class="calh"><h4>Mayo 2026</h4><div class="caln"><button onclick="cm(-1)">‹</button><button onclick="cm(1)">›</button></div></div><div class="calg" id="cal-main"></div></div>
+        </div>
       </div>
     </div>
-    <div class="sidebar-scroll">
-      <div class="section-label">Workspace</div>
-      <div class="sidebar-item active" onclick="showView('dashboard')"><i class="fa fa-home item-icon"></i> Dashboard<span class="item-badge">3</span></div>
-      <div class="sidebar-item" onclick="showView('kanban')"><i class="fa fa-tasks item-icon"></i> Proyectos<span class="item-badge warn">7</span></div>
-      <div class="sidebar-item" onclick="showView('notes')"><i class="fa fa-file-alt item-icon"></i> Notas Técnicas<span class="item-badge">12</span></div>
-      <div class="sidebar-item" onclick="showView('tools')"><i class="fa fa-tools item-icon"></i> Herramientas</div>
 
-      <div class="section-label">Proyectos</div>
-      <div class="sidebar-item" onclick="filterKanban('CCTV')"><span class="proj-dot" style="background:#00D4FF;width:8px;height:8px;border-radius:50%;flex-shrink:0"></span> CCTV Residencial<span class="item-tag" style="background:#00D4FF"></span></div>
-      <div class="sidebar-item" onclick="filterKanban('Acceso')"><span class="proj-dot" style="background:#FF6B35;width:8px;height:8px;border-radius:50%;flex-shrink:0"></span> Control Accesos<span class="item-badge danger">!</span></div>
-      <div class="sidebar-item" onclick="filterKanban('Alarma')"><span class="proj-dot" style="background:#7B5EA7;width:8px;height:8px;border-radius:50%;flex-shrink:0"></span> Sistema Alarmas</div>
-      <div class="sidebar-item" onclick="filterKanban('Red')"><span class="proj-dot" style="background:#00FF88;width:8px;height:8px;border-radius:50%;flex-shrink:0"></span> Red IP Seguridad</div>
-
-      <div class="section-label">Documentos</div>
-      <div class="sidebar-item"><i class="fa fa-file-pdf item-icon" style="color:#FF4444"></i> Manuales técnicos</div>
-      <div class="sidebar-item"><i class="fa fa-file-contract item-icon" style="color:#00D4FF"></i> Contratos / Propuestas</div>
-      <div class="sidebar-item"><i class="fa fa-diagram-project item-icon" style="color:#7B5EA7"></i> Esquemas eléctricos</div>
-      <div class="sidebar-item"><i class="fa fa-shield-alt item-icon" style="color:#00FF88"></i> Protocolos seguridad</div>
-
-      <div class="section-label">Integraciones</div>
-      <div class="sidebar-item" onclick="showView('integrations')"><i class="fab fa-google item-icon" style="color:#4285F4"></i> Google Calendar<span class="item-badge" style="background:#4285F4">Sync</span></div>
-      <div class="sidebar-item" onclick="showView('integrations')"><i class="fab fa-google-drive item-icon" style="color:#FBBC05"></i> Google Drive</div>
-    </div>
-    <button class="btn-new" onclick="openNewModal()"><i class="fa fa-plus"></i> Nueva tarea</button>
-  </aside>
-
-  <!-- MAIN -->
-  <div id="main">
-    <!-- TOPBAR -->
-    <div id="topbar">
-      <div class="topbar-breadcrumb">
-        <i class="fa fa-home" style="font-size:12px"></i>
-        <i class="fa fa-chevron-right" style="font-size:10px"></i>
-        <span class="current" id="breadcrumb-text">Dashboard</span>
+    <!-- ══ FINANCE ══ -->
+    <div class="view" id="v-finance">
+      <div class="pg"><h1 class="pgh1">Finanzas <em>personales</em></h1><p class="pgp">Control total de ingresos, egresos, presupuesto y deudas — Mayo 2026</p></div>
+      <div class="g4" style="margin-bottom:22px">
+        <div class="sc"><div class="sci" style="background:rgba(0,255,136,.1)"><i class="fa fa-arrow-up" style="color:var(--ok)"></i></div><div class="scn" style="color:var(--ok)">$8.5M</div><div class="scl">Ingresos del mes</div><div class="scc up"><i class="fa fa-arrow-up"></i> $2.1M sueldo + proyectos</div></div>
+        <div class="sc"><div class="sci" style="background:rgba(255,68,68,.1)"><i class="fa fa-arrow-down" style="color:var(--danger)"></i></div><div class="scn" style="color:var(--danger)">$4.3M</div><div class="scl">Egresos del mes</div><div class="scc dn"><i class="fa fa-arrow-down"></i> -8% vs abril</div></div>
+        <div class="sc"><div class="sci" style="background:rgba(0,212,255,.1)"><i class="fa fa-piggy-bank" style="color:var(--ac)"></i></div><div class="scn">$4.2M</div><div class="scl">Balance neto</div><div class="scc up"><i class="fa fa-check"></i> Por encima meta</div></div>
+        <div class="sc"><div class="sci" style="background:rgba(255,184,0,.1)"><i class="fa fa-credit-card" style="color:var(--warn)"></i></div><div class="scn" style="color:var(--warn)">$1.8M</div><div class="scl">Deuda total</div><div class="scc wa"><i class="fa fa-clock"></i> 2 cuotas este mes</div></div>
       </div>
-      <div class="topbar-actions">
-        <div class="status-dot" title="Sincronizado"></div>
-        <span style="font-size:11px;color:var(--text-muted)">neuronotes.duckdns.org</span>
-        <button class="btn-icon" onclick="showToast('Sync','Sincronizado con Google','✅')"><i class="fa fa-sync-alt"></i></button>
-        <button class="btn-icon" onclick="openNewModal()"><i class="fa fa-plus"></i></button>
-        <button class="btn-icon" onclick="toggleAI()"><i class="fa fa-robot"></i></button>
-        <button class="btn-icon" onclick="showView('integrations')"><i class="fa fa-cog"></i></button>
+      <div class="g2" style="margin-bottom:22px">
+        <div>
+          <div class="sect">Presupuesto mensual</div>
+          <div class="card" id="budget-panel"></div>
+        </div>
+        <div>
+          <div class="sect">Distribución de gastos</div>
+          <div class="card" style="display:flex;gap:20px;align-items:center">
+            <div class="donut-wrap"><svg width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#1E2E44" stroke-width="18"/><circle cx="60" cy="60" r="50" fill="none" stroke="#00D4FF" stroke-width="18" stroke-dasharray="94 220"/><circle cx="60" cy="60" r="50" fill="none" stroke="#FF4444" stroke-width="18" stroke-dasharray="69 220" stroke-dashoffset="-94"/><circle cx="60" cy="60" r="50" fill="none" stroke="#FFB800" stroke-width="18" stroke-dasharray="50 220" stroke-dashoffset="-163"/><circle cx="60" cy="60" r="50" fill="none" stroke="#7B5EA7" stroke-width="18" stroke-dasharray="31 220" stroke-dashoffset="-213"/></svg><div class="donut-txt"><big>$4.3M</big><small>Egresos</small></div></div>
+            <div style="flex:1;font-size:11px;display:flex;flex-direction:column;gap:7px" id="donut-legend"></div>
+          </div>
+        </div>
+      </div>
+      <div class="g2" style="margin-bottom:22px">
+        <div>
+          <div class="sect">Transacciones recientes</div>
+          <div class="card" id="trans-panel"></div>
+        </div>
+        <div>
+          <div class="sect">Deudas activas</div>
+          <div id="debt-panel"></div>
+          <button class="bp" style="margin-top:10px;font-size:11px" onclick="openModal('mo-debt')"><i class="fa fa-plus" style="margin-right:5px"></i>Registrar deuda</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:16px">
+        <button class="bp" onclick="openModal('mo-trans')"><i class="fa fa-plus" style="margin-right:6px"></i>Nueva transacción</button>
+        <button class="bs" onclick="T('Exportando','Generando reporte Excel...','📊')"><i class="fa fa-file-excel" style="margin-right:6px"></i>Exportar reporte</button>
       </div>
     </div>
 
-    <!-- CONTENT -->
-    <div id="content">
-
-      <!-- ── DASHBOARD ── -->
-      <div class="dashboard active" id="view-dashboard">
-        <div class="dash-greeting">
-          <h1>Buenas tardes, <em>Edisson</em> ⚡</h1>
-          <p id="dash-datetime">Cargando fecha...</p>
-        </div>
-
-        <div class="stats-grid">
-          <div class="stat-card" onclick="showView('kanban')">
-            <div class="stat-icon" style="background:rgba(0,212,255,0.1)"><i class="fa fa-tasks" style="color:var(--accent)"></i></div>
-            <div class="stat-num">14</div>
-            <div class="stat-label">Tareas activas</div>
-            <div class="stat-change up"><i class="fa fa-arrow-up"></i> 3 esta semana</div>
-          </div>
-          <div class="stat-card" onclick="showView('kanban')">
-            <div class="stat-icon" style="background:rgba(255,107,53,0.1)"><i class="fa fa-exclamation-circle" style="color:var(--accent3)"></i></div>
-            <div class="stat-num">3</div>
-            <div class="stat-label">Urgentes / Vencidas</div>
-            <div class="stat-change warn"><i class="fa fa-clock"></i> Requiere atención</div>
-          </div>
-          <div class="stat-card" onclick="showView('notes')">
-            <div class="stat-icon" style="background:rgba(0,255,136,0.1)"><i class="fa fa-sticky-note" style="color:var(--success)"></i></div>
-            <div class="stat-num">28</div>
-            <div class="stat-label">Notas técnicas</div>
-            <div class="stat-change up"><i class="fa fa-arrow-up"></i> 5 nuevas</div>
-          </div>
-          <div class="stat-card" onclick="showView('integrations')">
-            <div class="stat-icon" style="background:rgba(123,94,167,0.1)"><i class="fa fa-calendar-check" style="color:var(--accent2)"></i></div>
-            <div class="stat-num">4</div>
-            <div class="stat-label">Eventos hoy</div>
-            <div class="stat-change up"><i class="fa fa-sync"></i> Google Calendar</div>
+    <!-- ══ CALENDAR ══ -->
+    <div class="view" id="v-calendar">
+      <div class="pg"><h1 class="pgh1">Calendario <em>integrado</em></h1><p class="pgp">Google Calendar + Microsoft Teams — Vista mensual y semanal</p></div>
+      <div class="g2">
+        <div>
+          <div class="sect">Mayo 2026</div>
+          <div class="cal" style="padding:20px">
+            <div class="calh"><h4 style="font-size:16px">Mayo 2026</h4><div style="display:flex;gap:8px;align-items:center"><span class="gcal-badge"><i class="fab fa-google"></i> Google</span><span class="teams-badge"><i class="fab fa-microsoft"></i> Teams</span><div class="caln"><button onclick="cm2(-1)">‹</button><button onclick="cm2(1)">›</button></div></div></div>
+            <div class="calg" id="cal-full" style="margin-top:12px"></div>
           </div>
         </div>
-
-        <div class="section-title">Proyectos Activos</div>
-        <div class="three-col" style="margin-bottom:28px">
-          <div class="project-card" onclick="showView('kanban')">
-            <div class="proj-header">
-              <div class="proj-dot" style="background:#00D4FF"></div>
-              <h3>CCTV Residencial Bogotá</h3>
-              <span class="chip chip-blue">Activo</span>
+        <div>
+          <div class="sect">Eventos de la semana</div>
+          <div id="week-events"></div>
+          <div class="sect" style="margin-top:16px">Agregar evento</div>
+          <div class="card">
+            <div class="fg"><label class="fl">Título del evento</label><input class="fi" placeholder="Ej: Visita técnica cliente"></div>
+            <div class="fg2">
+              <div class="fg"><label class="fl">Fecha</label><input class="fi" type="date"></div>
+              <div class="fg"><label class="fl">Hora</label><input class="fi" type="time"></div>
             </div>
-            <div class="proj-client"><i class="fa fa-building"></i> Conjunto Res. Los Pinos</div>
-            <div class="proj-desc">Instalación sistema Dahua 32 canales, 4K, analítica de video IA. NVR redundante + almacenamiento en nube.</div>
-            <div class="progress-bar"><div class="progress-fill" style="width:72%;background:var(--accent)"></div></div>
-            <div class="proj-footer">
-              <div class="proj-tags"><span class="tag">Dahua</span><span class="tag">IP</span><span class="tag">IA</span></div>
-              <span style="font-size:12px;color:var(--accent);font-family:var(--font-mono)">72%</span>
+            <div class="fg"><label class="fl">Calendario</label>
+              <select class="fs"><option>Google Calendar</option><option>Microsoft Teams</option><option>Personal</option><option>Trabajo</option></select>
             </div>
-          </div>
-          <div class="project-card" onclick="showView('kanban')">
-            <div class="proj-header">
-              <div class="proj-dot" style="background:#FF6B35"></div>
-              <h3>Control Accesos Empresa</h3>
-              <span class="chip chip-red">Urgente</span>
-            </div>
-            <div class="proj-client"><i class="fa fa-building"></i> Importadora TechCorp</div>
-            <div class="proj-desc">Sistema biométrico facial + huella. Torniquetes y control perimetral. Integración ZKTeco con AD.</div>
-            <div class="progress-bar"><div class="progress-fill" style="width:35%;background:var(--accent3)"></div></div>
-            <div class="proj-footer">
-              <div class="proj-tags"><span class="tag">ZKTeco</span><span class="tag">Biometría</span></div>
-              <span style="font-size:12px;color:var(--accent3);font-family:var(--font-mono)">35%</span>
-            </div>
-          </div>
-          <div class="project-card" onclick="showView('kanban')">
-            <div class="proj-header">
-              <div class="proj-dot" style="background:#7B5EA7"></div>
-              <h3>Sistema Alarmas Banco</h3>
-              <span class="chip chip-purple">En curso</span>
-            </div>
-            <div class="proj-client"><i class="fa fa-university"></i> Banco Popular Sucursal Norte</div>
-            <div class="proj-desc">Alarma Paradox con 48 zonas, monitoreo central UL. Detectores de vibración en bóveda. Redundancia celular.</div>
-            <div class="progress-bar"><div class="progress-fill" style="width:58%;background:var(--accent2)"></div></div>
-            <div class="proj-footer">
-              <div class="proj-tags"><span class="tag">Paradox</span><span class="tag">UL</span></div>
-              <span style="font-size:12px;color:var(--accent2);font-family:var(--font-mono)">58%</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="two-col">
-          <div>
-            <div class="section-title">Actividad Reciente</div>
-            <div class="activity-feed">
-              <div class="activity-item">
-                <div class="activity-icon" style="background:rgba(0,212,255,0.1)"><i class="fa fa-camera" style="color:var(--accent)"></i></div>
-                <div class="activity-text">
-                  <strong>Cámara #12 configurada</strong>
-                  <p>Dahua IPC-HDW3849H-AS-PV — Zona Parqueadero B</p>
-                </div>
-                <div class="activity-time">10:24</div>
-              </div>
-              <div class="activity-item">
-                <div class="activity-icon" style="background:rgba(0,255,136,0.1)"><i class="fa fa-check-circle" style="color:var(--success)"></i></div>
-                <div class="activity-text">
-                  <strong>Entrega propuesta aprobada</strong>
-                  <p>TechCorp confirmó expansión a 3 pisos adicionales</p>
-                </div>
-                <div class="activity-time">09:15</div>
-              </div>
-              <div class="activity-item">
-                <div class="activity-icon" style="background:rgba(255,184,0,0.1)"><i class="fa fa-exclamation-triangle" style="color:var(--warning)"></i></div>
-                <div class="activity-text">
-                  <strong>Alerta: DVR offline Banco Popular</strong>
-                  <p>Sin conexión 15 min — revisión programada 2pm</p>
-                </div>
-                <div class="activity-time">08:47</div>
-              </div>
-              <div class="activity-item">
-                <div class="activity-icon" style="background:rgba(123,94,167,0.1)"><i class="fa fa-file-alt" style="color:var(--accent2)"></i></div>
-                <div class="activity-text">
-                  <strong>Nota técnica creada</strong>
-                  <p>Protocolo cableado CAT6A blindado para zonas EMI</p>
-                </div>
-                <div class="activity-time">Ayer</div>
-              </div>
-              <div class="activity-item">
-                <div class="activity-icon" style="background:rgba(0,212,255,0.1)"><i class="fab fa-google" style="color:#4285F4"></i></div>
-                <div class="activity-text">
-                  <strong>Calendar sincronizado</strong>
-                  <p>4 eventos importados de Google Calendar</p>
-                </div>
-                <div class="activity-time">07:00</div>
-              </div>
-            </div>
-          </div>
-          <div>
-            <div class="section-title">Calendario — Mayo 2026</div>
-            <div class="calendar-card">
-              <div class="cal-header">
-                <h4>Mayo 2026</h4>
-                <div class="cal-nav">
-                  <button onclick="changeMonth(-1)">‹</button>
-                  <button onclick="changeMonth(1)">›</button>
-                </div>
-              </div>
-              <div class="cal-grid" id="cal-grid"></div>
-              <div class="section-title" style="margin-top:16px">Eventos de hoy</div>
-              <div class="event-list">
-                <div class="event-item"><div class="event-time">09:00</div><div class="event-dot" style="background:#4285F4"></div><div class="event-title">Reunión cliente CCTV</div></div>
-                <div class="event-item"><div class="event-time">11:30</div><div class="event-dot" style="background:#FF6B35"></div><div class="event-title">Visita técnica TechCorp</div></div>
-                <div class="event-item"><div class="event-time">14:00</div><div class="event-dot" style="background:#7B5EA7"></div><div class="event-title">Revisión DVR Banco</div></div>
-                <div class="event-item"><div class="event-time">17:00</div><div class="event-dot" style="background:#00FF88"></div><div class="event-title">Entrega propuesta Red IP</div></div>
-              </div>
-            </div>
+            <div class="fg"><label class="fl">Invitados (emails)</label><input class="fi" placeholder="email@empresa.com, ..."></div>
+            <button class="bp" style="width:100%" onclick="T('Evento creado','Sincronizado con Google Calendar','📅')">Crear evento</button>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- ── KANBAN ── -->
-      <div class="kanban-view" id="view-kanban">
-        <div class="kanban-header">
-          <h2><i class="fa fa-columns" style="color:var(--accent);margin-right:10px"></i>Tablero de Proyectos</h2>
-          <div class="kanban-filter">
-            <button class="filter-btn active" onclick="filterKanban('all',this)">Todos</button>
-            <button class="filter-btn" onclick="filterKanban('CCTV',this)">CCTV</button>
-            <button class="filter-btn" onclick="filterKanban('Acceso',this)">Accesos</button>
-            <button class="filter-btn" onclick="filterKanban('Alarma',this)">Alarmas</button>
-            <button class="filter-btn" onclick="filterKanban('Red',this)">Redes</button>
-          </div>
-        </div>
-        <div class="kanban-board" id="kanban-board"></div>
+    <!-- ══ MEETINGS ══ -->
+    <div class="view" id="v-meetings">
+      <div class="pg"><h1 class="pgh1">Reuniones <em>& Videollamadas</em></h1><p class="pgp">Microsoft Teams + Google Meet integrados</p></div>
+      <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
+        <button class="bd2b on" onclick="filterMeets('all',this)">Todas</button>
+        <button class="bd2b" onclick="filterMeets('teams',this)">Teams</button>
+        <button class="bd2b" onclick="filterMeets('meet',this)">Google Meet</button>
+        <button class="bd2b" onclick="filterMeets('presencial',this)">Presencial</button>
+        <button class="bp" style="margin-left:auto;font-size:11px" onclick="openModal('mo-meet')"><i class="fa fa-plus" style="margin-right:5px"></i>Nueva reunión</button>
       </div>
+      <div class="sect">Hoy — 17 de mayo</div>
+      <div id="meets-today"></div>
+      <div class="sect" style="margin-top:20px">Próximas reuniones</div>
+      <div id="meets-upcoming"></div>
+      <div class="sect" style="margin-top:20px">Historial reciente</div>
+      <div id="meets-past"></div>
+    </div>
 
-      <!-- ── NOTES ── -->
-      <div class="notes-view" id="view-notes">
-        <div class="notes-list">
-          <div class="notes-list-header">
-            <h3>Notas Técnicas</h3>
-            <button class="btn-icon" onclick="addNote()"><i class="fa fa-plus"></i></button>
-          </div>
-          <div id="notes-items"></div>
-        </div>
-        <div class="note-editor">
-          <div class="editor-toolbar">
-            <button class="toolbar-btn" onclick="formatText('bold')" title="Negrita"><b>B</b></button>
-            <button class="toolbar-btn" onclick="formatText('italic')" title="Cursiva"><i>I</i></button>
-            <button class="toolbar-btn" onclick="formatText('underline')" title="Subrayado"><u>U</u></button>
-            <div class="toolbar-sep"></div>
-            <button class="toolbar-btn" title="Encabezado H1">H1</button>
-            <button class="toolbar-btn" title="Encabezado H2">H2</button>
-            <div class="toolbar-sep"></div>
-            <button class="toolbar-btn" title="Lista"><i class="fa fa-list-ul"></i></button>
-            <button class="toolbar-btn" title="Lista num."><i class="fa fa-list-ol"></i></button>
-            <button class="toolbar-btn" title="Código"><i class="fa fa-code"></i></button>
-            <div class="toolbar-sep"></div>
-            <button class="toolbar-btn" title="Imagen"><i class="fa fa-image"></i></button>
-            <button class="toolbar-btn" title="Link"><i class="fa fa-link"></i></button>
-            <div class="toolbar-sep"></div>
-            <button class="toolbar-btn" onclick="saveNote()" title="Guardar" style="color:var(--accent)"><i class="fa fa-save"></i></button>
-            <span style="font-size:11px;color:var(--text-muted);margin-left:auto;font-family:var(--font-mono)" id="note-save-status">Guardado</span>
-          </div>
-          <input type="text" class="editor-title" id="note-title" placeholder="Título de la nota..." oninput="markUnsaved()">
-          <textarea class="editor-area" id="note-content" placeholder="Escribe aquí tu nota técnica...&#10;&#10;Usa Markdown: **negrita**, *cursiva*, `código`, ## Títulos..." oninput="markUnsaved()"></textarea>
-        </div>
+    <!-- ══ GOALS ══ -->
+    <div class="view" id="v-goals">
+      <div class="pg"><h1 class="pgh1">Metas & <em>Desarrollo</em></h1><p class="pgp">Objetivos personales, cursos, certificaciones y hábitos</p></div>
+      <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
+        <button class="bd2b on">Todas</button>
+        <button class="bd2b">Cursos</button>
+        <button class="bd2b">Certificaciones</button>
+        <button class="bd2b">Hábitos</button>
+        <button class="bd2b">Financieras</button>
+        <button class="bp" style="margin-left:auto;font-size:11px" onclick="openModal('mo-goal')"><i class="fa fa-plus" style="margin-right:5px"></i>Nueva meta</button>
       </div>
+      <div class="sect">Metas activas</div>
+      <div class="g3" id="goals-grid"></div>
+      <div class="sect" style="margin-top:20px">Cursos en progreso</div>
+      <div id="courses-list"></div>
+    </div>
 
-      <!-- ── TOOLS ── -->
-      <div class="tools-view" id="view-tools">
-        <div class="dash-greeting" style="margin-bottom:24px">
-          <h1 style="font-family:var(--font-display);font-size:24px;font-weight:300">Herramientas <em style="font-style:italic;color:var(--accent)">Técnicas</em></h1>
-          <p style="font-size:13px;color:var(--text-muted)">Calculadoras y utilidades para ingeniería en seguridad electrónica</p>
-        </div>
-        <div class="tools-grid">
-          <div class="tool-card" onclick="openTool('cable')">
-            <div class="tool-icon" style="background:rgba(0,212,255,0.1)"><i class="fa fa-network-wired" style="color:var(--accent)"></i></div>
-            <h3>Calc. Caída de Tensión</h3>
-            <p>Calcula pérdida de voltaje en cables de alimentación para cámaras y dispositivos</p>
-          </div>
-          <div class="tool-card" onclick="openTool('bandwidth')">
-            <div class="tool-icon" style="background:rgba(0,255,136,0.1)"><i class="fa fa-wifi" style="color:var(--success)"></i></div>
-            <h3>Calc. Ancho de Banda</h3>
-            <p>Estimación de ancho de banda para cámaras IP según resolución, FPS y compresión</p>
-          </div>
-          <div class="tool-card" onclick="openTool('storage')">
-            <div class="tool-icon" style="background:rgba(255,107,53,0.1)"><i class="fa fa-hdd" style="color:var(--accent3)"></i></div>
-            <h3>Calc. Almacenamiento</h3>
-            <p>Calcula capacidad de disco duro para grabación continua o por eventos</p>
-          </div>
-          <div class="tool-card" onclick="openTool('poe')">
-            <div class="tool-icon" style="background:rgba(123,94,167,0.1)"><i class="fa fa-bolt" style="color:var(--accent2)"></i></div>
-            <h3>Presupuesto PoE</h3>
-            <p>Calcula consumo de potencia de switches PoE y cámaras del sistema</p>
-          </div>
-          <div class="tool-card" onclick="openTool('lens')">
-            <div class="tool-icon" style="background:rgba(255,184,0,0.1)"><i class="fa fa-camera" style="color:var(--warning)"></i></div>
-            <h3>Calc. Lente / Campo</h3>
-            <p>Distancia focal y ángulo de visión para posicionamiento de cámaras</p>
-          </div>
-          <div class="tool-card" onclick="openTool('checklist')">
-            <div class="tool-icon" style="background:rgba(0,255,136,0.1)"><i class="fa fa-clipboard-check" style="color:var(--success)"></i></div>
-            <h3>Checklist Instalación</h3>
-            <p>Protocolo de verificación para entrega de proyectos de seguridad</p>
-          </div>
-        </div>
+    <!-- ══ TRAVEL ══ -->
+    <div class="view" id="v-travel">
+      <div class="pg"><h1 class="pgh1">Viajes & <em>Aventuras</em></h1><p class="pgp">Gestión de viajes, presupuestos de viaje, itinerarios y gastos</p></div>
+      <div style="display:flex;gap:8px;margin-bottom:18px">
+        <button class="bd2b on">Todos</button>
+        <button class="bd2b">Próximos</button>
+        <button class="bd2b">En curso</button>
+        <button class="bd2b">Completados</button>
+        <button class="bp" style="margin-left:auto;font-size:11px" onclick="openModal('mo-trip')"><i class="fa fa-plus" style="margin-right:5px"></i>Nuevo viaje</button>
+      </div>
+      <div class="sect">Mis viajes</div>
+      <div class="g3" id="trips-grid"></div>
+      <div class="sect" style="margin-top:20px">Presupuesto próximo viaje — Medellín</div>
+      <div class="g2">
+        <div class="card" id="trip-budget"></div>
+        <div class="card" id="trip-checklist"></div>
+      </div>
+    </div>
 
-        <!-- CALCULATOR PANELS -->
-        <div id="tool-panel" style="display:none">
-          <div class="section-title">Calculadora activa</div>
-          <div id="tool-content" style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px"></div>
+    <!-- ══ KANBAN ══ -->
+    <div class="view-full" id="v-kanban">
+      <div style="display:flex;align-items:center;gap:14px">
+        <h2 style="font-size:18px;font-weight:600"><i class="fa fa-columns" style="color:var(--ac);margin-right:8px"></i>Proyectos</h2>
+        <div style="display:flex;gap:6px;margin-left:auto;flex-wrap:wrap">
+          <button class="bd2b on" onclick="fk('all',this)">Todos</button>
+          <button class="bd2b" onclick="fk('CCTV',this)">CCTV</button>
+          <button class="bd2b" onclick="fk('Acceso',this)">Accesos</button>
+          <button class="bd2b" onclick="fk('Alarma',this)">Alarmas</button>
+          <button class="bd2b" onclick="fk('Red',this)">Redes</button>
+          <button class="bp" style="font-size:11px" onclick="openModal('mo-new')"><i class="fa fa-plus" style="margin-right:4px"></i>Tarea</button>
         </div>
       </div>
+      <div style="display:flex;gap:14px;overflow-x:auto;flex:1;padding-bottom:8px" id="kb-board"></div>
+    </div>
 
-      <!-- ── INTEGRATIONS ── -->
-      <div class="tools-view" id="view-integrations">
-        <div class="dash-greeting" style="margin-bottom:24px">
-          <h1 style="font-family:var(--font-display);font-size:24px;font-weight:300">Integraciones & <em style="font-style:italic;color:var(--accent)">Configuración</em></h1>
-          <p style="font-size:13px;color:var(--text-muted)">neuronotes.duckdns.org — Cuenta: edissonm60@gmail.com</p>
+    <!-- ══ NOTES ══ -->
+    <div class="view-full" id="v-notes" style="padding:0">
+      <div style="display:grid;grid-template-columns:240px 1fr;height:100%">
+        <div style="border-right:1px solid var(--bd);overflow-y:auto;background:var(--bg2)">
+          <div style="padding:14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px">
+            <h3 style="font-size:13px;font-weight:600;flex:1">Notas Técnicas</h3>
+            <button class="bi" onclick="addNote()"><i class="fa fa-plus"></i></button>
+          </div>
+          <div id="notes-list"></div>
         </div>
-
-        <div class="two-col">
-          <div>
-            <div class="section-title">Servicios conectados</div>
-            <div class="integrations-panel">
-              <div class="integration-row">
-                <div class="integration-logo" style="background:rgba(66,133,244,0.1)"><i class="fab fa-google" style="color:#4285F4"></i></div>
-                <div class="integration-info"><h4>Google Calendar</h4><p>Sincronización bidireccional de eventos</p></div>
-                <button class="toggle on" onclick="toggleInt(this)"></button>
-              </div>
-              <div class="integration-row">
-                <div class="integration-logo" style="background:rgba(251,188,5,0.1)"><i class="fab fa-google-drive" style="color:#FBBC05"></i></div>
-                <div class="integration-info"><h4>Google Drive</h4><p>Adjuntos y documentos técnicos</p></div>
-                <button class="toggle on" onclick="toggleInt(this)"></button>
-              </div>
-              <div class="integration-row">
-                <div class="integration-logo" style="background:rgba(234,67,53,0.1)"><i class="fab fa-google" style="color:#EA4335"></i></div>
-                <div class="integration-info"><h4>Gmail</h4><p>Notificaciones y alertas por email</p></div>
-                <button class="toggle" onclick="toggleInt(this)"></button>
-              </div>
-              <div class="integration-row">
-                <div class="integration-logo" style="background:rgba(0,212,255,0.1)"><i class="fa fa-shield-alt" style="color:var(--accent)"></i></div>
-                <div class="integration-info"><h4>neuronotes.duckdns.org</h4><p>Dominio activo — SSL activo</p></div>
-                <span class="chip chip-green"><i class="fa fa-circle" style="font-size:8px"></i> Online</span>
-              </div>
-              <div class="integration-row">
-                <div class="integration-logo" style="background:rgba(0,255,136,0.1)"><i class="fa fa-cloud" style="color:var(--success)"></i></div>
-                <div class="integration-info"><h4>Respaldo automático</h4><p>Cada 6 horas a Google Drive</p></div>
-                <button class="toggle on" onclick="toggleInt(this)"></button>
-              </div>
-            </div>
-
-            <div class="section-title">Google Calendar — Sincronización</div>
-            <div class="gcal-widget">
-              <div class="gcal-header">
-                <i class="fab fa-google" style="color:#fff;font-size:18px"></i>
-                <h4>Google Calendar</h4>
-                <div class="gcal-today" id="gcal-today">Cargando...</div>
-              </div>
-              <div class="gcal-events">
-                <div class="gcal-event" style="border-left-color:#4285F4">
-                  <div class="ge-time">09:00</div>
-                  <div class="ge-title">Reunión cliente — Sistema CCTV</div>
-                  <span class="ge-type" style="background:rgba(66,133,244,0.15);color:#4285F4">Work</span>
-                </div>
-                <div class="gcal-event" style="border-left-color:#FF6B35">
-                  <div class="ge-time">11:30</div>
-                  <div class="ge-title">Visita técnica TechCorp accesos</div>
-                  <span class="ge-type" style="background:rgba(255,107,53,0.15);color:#FF6B35">Campo</span>
-                </div>
-                <div class="gcal-event" style="border-left-color:#7B5EA7">
-                  <div class="ge-time">14:00</div>
-                  <div class="ge-title">Revisión DVR offline — Banco Popular</div>
-                  <span class="ge-type" style="background:rgba(123,94,167,0.15);color:#7B5EA7">Mant.</span>
-                </div>
-                <div class="gcal-event" style="border-left-color:#00FF88">
-                  <div class="ge-time">17:00</div>
-                  <div class="ge-title">Entrega propuesta Red IP Seguridad</div>
-                  <span class="ge-type" style="background:rgba(0,255,136,0.15);color:#00FF88">Entrega</span>
-                </div>
-              </div>
-            </div>
+        <div style="display:flex;flex-direction:column">
+          <div style="border-bottom:1px solid var(--bd);padding:8px 16px;display:flex;gap:5px;align-items:center;background:var(--bg2);flex-wrap:wrap">
+            <button class="bi" style="width:28px;height:28px;font-size:12px" onclick="fc('bold')"><b>B</b></button>
+            <button class="bi" style="width:28px;height:28px;font-size:12px" onclick="fc('italic')"><i>I</i></button>
+            <button class="bi" style="width:28px;height:28px;font-size:12px"><i class="fa fa-list-ul"></i></button>
+            <button class="bi" style="width:28px;height:28px;font-size:12px"><i class="fa fa-code"></i></button>
+            <button class="bi" style="width:28px;height:28px;font-size:12px"><i class="fa fa-link"></i></button>
+            <button class="bi" style="width:28px;height:28px;font-size:12px;color:var(--ac)" onclick="saveNote()"><i class="fa fa-save"></i></button>
+            <span style="font-size:10px;color:var(--t3);margin-left:auto;font-family:var(--mono)" id="ns-status">Guardado</span>
           </div>
-
-          <div>
-            <div class="section-title">Configuración del perfil</div>
-            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px">
-              <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
-                <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--accent3),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff">EM</div>
-                <div>
-                  <div style="font-size:16px;font-weight:600">Edisson Moreno</div>
-                  <div style="font-size:12px;color:var(--text-muted)">Ingeniero Electrónico — Seguridad Electrónica</div>
-                  <div style="font-size:11px;color:var(--accent);margin-top:2px">edissonm60@gmail.com</div>
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Nombre completo</label>
-                <input class="form-input" value="Edisson Moreno" readonly>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Especialización</label>
-                <input class="form-input" value="Ing. Electrónico — Seguridad Electrónica">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Dominio</label>
-                <input class="form-input" value="neuronotes.duckdns.org" readonly>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Token DuckDNS</label>
-                <input class="form-input" value="100bc45d-8dad-4737-92f5-9afcf82f1639" type="password">
-              </div>
-              <button class="btn-primary" style="width:100%" onclick="showToast('Guardado','Configuración actualizada','✅')">Guardar cambios</button>
-            </div>
-
-            <div class="section-title" style="margin-top:20px">Estadísticas del sistema</div>
-            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                <div style="background:var(--bg-hover);border-radius:var(--radius-sm);padding:12px;text-align:center">
-                  <div style="font-size:22px;font-weight:700;font-family:var(--font-mono);color:var(--accent)">28</div>
-                  <div style="font-size:11px;color:var(--text-muted)">Notas técnicas</div>
-                </div>
-                <div style="background:var(--bg-hover);border-radius:var(--radius-sm);padding:12px;text-align:center">
-                  <div style="font-size:22px;font-weight:700;font-family:var(--font-mono);color:var(--accent3)">4</div>
-                  <div style="font-size:11px;color:var(--text-muted)">Proyectos activos</div>
-                </div>
-                <div style="background:var(--bg-hover);border-radius:var(--radius-sm);padding:12px;text-align:center">
-                  <div style="font-size:22px;font-weight:700;font-family:var(--font-mono);color:var(--success)">14</div>
-                  <div style="font-size:11px;color:var(--text-muted)">Tareas pendientes</div>
-                </div>
-                <div style="background:var(--bg-hover);border-radius:var(--radius-sm);padding:12px;text-align:center">
-                  <div style="font-size:22px;font-weight:700;font-family:var(--font-mono);color:var(--accent2)">100%</div>
-                  <div style="font-size:11px;color:var(--text-muted)">Uptime dominio</div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <input id="note-title" style="padding:20px 24px 8px;font-size:22px;font-weight:600;background:none;border:none;outline:none;color:var(--t1);font-family:var(--fm)" placeholder="Título...">
+          <textarea id="note-body" style="flex:1;padding:4px 24px 24px;font-size:13px;line-height:1.8;background:none;border:none;outline:none;color:var(--t2);font-family:var(--fm);resize:none" placeholder="Escribe tu nota técnica...&#10;&#10;Usa Markdown: **negrita**, *cursiva*, `código`" oninput="markUns()"></textarea>
         </div>
       </div>
+    </div>
 
-    </div><!-- /content -->
-  </div><!-- /main -->
+    <!-- ══ TOOLS ══ -->
+    <div class="view" id="v-tools">
+      <div class="pg"><h1 class="pgh1">Herramientas <em>de ingeniería</em></h1><p class="pgp">Calculadoras especializadas en seguridad electrónica</p></div>
+      <div class="g3" style="margin-bottom:20px" id="tools-grid"></div>
+      <div id="tool-result" style="display:none">
+        <div class="sect">Calculadora activa</div>
+        <div class="card" id="tool-panel"></div>
+      </div>
+    </div>
+
+    <!-- ══ HOME ══ -->
+    <div class="view" id="v-home">
+      <div class="pg"><h1 class="pgh1">Hogar & <em>Gastos fijos</em></h1><p class="pgp">Gestión de gastos del hogar, servicios, mantenimiento y presupuesto familiar</p></div>
+      <div class="g4" style="margin-bottom:22px">
+        <div class="sc"><div class="sci" style="background:rgba(255,107,53,.1)"><i class="fa fa-home" style="color:var(--ac3)"></i></div><div class="scn" style="color:var(--ac3)">$1.8M</div><div class="scl">Gastos hogar/mes</div></div>
+        <div class="sc"><div class="sci" style="background:rgba(0,212,255,.1)"><i class="fa fa-bolt" style="color:var(--ac)"></i></div><div class="scn">$180K</div><div class="scl">Servicios públicos</div><div class="scc wa">Vence 20/05</div></div>
+        <div class="sc"><div class="sci" style="background:rgba(0,255,136,.1)"><i class="fa fa-wrench" style="color:var(--ok)"></i></div><div class="scn">$350K</div><div class="scl">Mantenimiento</div></div>
+        <div class="sc"><div class="sci" style="background:rgba(123,94,167,.1)"><i class="fa fa-shopping-cart" style="color:var(--ac2)"></i></div><div class="scn">$620K</div><div class="scl">Mercado/alimentos</div></div>
+      </div>
+      <div class="g2" style="margin-bottom:22px">
+        <div>
+          <div class="sect">Gastos fijos mensuales</div>
+          <div class="card" id="home-fixed"></div>
+          <button class="bp" style="margin-top:10px;font-size:11px" onclick="openModal('mo-home')"><i class="fa fa-plus" style="margin-right:5px"></i>Agregar gasto fijo</button>
+        </div>
+        <div>
+          <div class="sect">Tareas del hogar pendientes</div>
+          <div id="home-tasks"></div>
+          <div class="sect" style="margin-top:16px">Recordatorios de pago</div>
+          <div id="home-reminders"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /ct -->
+</div><!-- /main -->
 </div><!-- /app -->
 
-<!-- MODAL NEW TASK -->
-<div class="modal-overlay" id="modal-new">
-  <div class="modal">
-    <div class="modal-header">
-      <i class="fa fa-plus-circle" style="color:var(--accent)"></i>
-      <h3>Nueva Tarea / Proyecto</h3>
-      <button class="modal-close" onclick="closeModal('modal-new')"><i class="fa fa-times"></i></button>
+<!-- MODALS -->
+<div class="mo" id="mo-new">
+  <div class="md">
+    <div class="mdh"><i class="fa fa-plus-circle" style="color:var(--ac)"></i><h3>Nuevo elemento</h3><button class="xb" onclick="closeModal('mo-new')"><i class="fa fa-times"></i></button></div>
+    <div class="mdc">
+      <div class="fg"><label class="fl">Tipo</label><select class="fs" id="new-type" onchange="changeNewType(this.value)"><option value="task">Tarea</option><option value="note">Nota</option><option value="event">Evento</option><option value="goal">Meta</option><option value="expense">Gasto</option><option value="trip">Viaje</option></select></div>
+      <div class="fg"><label class="fl">Título</label><input class="fi" id="new-title" placeholder="Nombre del elemento..."></div>
+      <div class="fg2">
+        <div class="fg"><label class="fl">Fecha</label><input class="fi" type="date" id="new-date"></div>
+        <div class="fg" id="new-extra-field"><label class="fl">Categoría</label><select class="fs" id="new-cat"><option>Trabajo</option><option>Personal</option><option>Urgente</option></select></div>
+      </div>
+      <div class="fg"><label class="fl">Descripción</label><textarea class="ft" id="new-desc" placeholder="Detalles..."></textarea></div>
     </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">Título</label>
-        <input class="form-input" id="new-title" placeholder="Ej: Configurar NVR Dahua 32ch">
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="form-group">
-          <label class="form-label">Proyecto</label>
-          <select class="form-select" id="new-project">
-            <option>CCTV Residencial</option>
-            <option>Control Accesos</option>
-            <option>Sistema Alarmas</option>
-            <option>Red IP Seguridad</option>
-            <option>General</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Prioridad</label>
-          <select class="form-select" id="new-priority">
-            <option>Normal</option>
-            <option>Alta</option>
-            <option>Urgente</option>
-            <option>Baja</option>
-          </select>
+    <div class="mdf"><button class="bs" onclick="closeModal('mo-new')">Cancelar</button><button class="bp" onclick="addNew()"><i class="fa fa-check" style="margin-right:5px"></i>Crear</button></div>
+  </div>
+</div>
+
+<div class="mo" id="mo-trans">
+  <div class="md">
+    <div class="mdh"><i class="fa fa-exchange-alt" style="color:var(--ok)"></i><h3>Nueva transacción</h3><button class="xb" onclick="closeModal('mo-trans')"><i class="fa fa-times"></i></button></div>
+    <div class="mdc">
+      <div class="fg"><label class="fl">Tipo</label>
+        <div style="display:flex;gap:8px">
+          <button class="bd2b on" id="tt-in" onclick="selTT('ingreso')">Ingreso</button>
+          <button class="bd2b" id="tt-eg" onclick="selTT('egreso')">Egreso</button>
+          <button class="bd2b" id="tt-tr" onclick="selTT('transferencia')">Transferencia</button>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Descripción</label>
-        <textarea class="form-textarea" id="new-desc" placeholder="Detalles técnicos de la tarea..."></textarea>
+      <div class="fg2">
+        <div class="fg"><label class="fl">Monto (COP)</label><input class="fi" id="t-monto" type="number" placeholder="0" step="1000"></div>
+        <div class="fg"><label class="fl">Fecha</label><input class="fi" type="date" id="t-fecha"></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="form-group">
-          <label class="form-label">Fecha límite</label>
-          <input class="form-input" type="date" id="new-date">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Estado inicial</label>
-          <select class="form-select" id="new-status">
-            <option>Pendiente</option>
-            <option>En progreso</option>
-            <option>Revisión</option>
-          </select>
-        </div>
+      <div class="fg"><label class="fl">Descripción</label><input class="fi" id="t-desc" placeholder="Ej: Pago factura Codensa"></div>
+      <div class="fg"><label class="fl">Categoría</label>
+        <select class="fs" id="t-cat">
+          <option>Trabajo / Proyecto</option><option>Servicios públicos</option><option>Alimentación</option>
+          <option>Transporte</option><option>Tecnología / Equipos</option><option>Arriendo</option>
+          <option>Salud</option><option>Educación</option><option>Entretenimiento</option><option>Deuda</option>
+        </select>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" onclick="closeModal('modal-new')">Cancelar</button>
-      <button class="btn-primary" onclick="addTask()"><i class="fa fa-plus" style="margin-right:6px"></i>Crear tarea</button>
+    <div class="mdf"><button class="bs" onclick="closeModal('mo-trans')">Cancelar</button><button class="bp" onclick="addTrans()">Registrar</button></div>
+  </div>
+</div>
+
+<div class="mo" id="mo-meet">
+  <div class="md">
+    <div class="mdh"><i class="fa fa-video" style="color:#8899FF"></i><h3>Nueva reunión</h3><button class="xb" onclick="closeModal('mo-meet')"><i class="fa fa-times"></i></button></div>
+    <div class="mdc">
+      <div class="fg"><label class="fl">Título</label><input class="fi" id="m-title" placeholder="Ej: Revisión proyecto CCTV"></div>
+      <div class="fg2">
+        <div class="fg"><label class="fl">Fecha</label><input class="fi" type="date" id="m-date"></div>
+        <div class="fg"><label class="fl">Hora</label><input class="fi" type="time" id="m-time" value="09:00"></div>
+      </div>
+      <div class="fg"><label class="fl">Plataforma</label>
+        <select class="fs" id="m-plat">
+          <option>Microsoft Teams</option><option>Google Meet</option><option>Zoom</option><option>Presencial</option><option>Llamada</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Participantes</label><input class="fi" id="m-parts" placeholder="Nombre o email separados por comas"></div>
+      <div class="fg"><label class="fl">Agenda / Notas</label><textarea class="ft" id="m-agenda" placeholder="Puntos a tratar..."></textarea></div>
     </div>
+    <div class="mdf"><button class="bs" onclick="closeModal('mo-meet')">Cancelar</button><button class="bp" onclick="addMeeting()">Crear reunión</button></div>
+  </div>
+</div>
+
+<div class="mo" id="mo-goal">
+  <div class="md">
+    <div class="mdh"><i class="fa fa-bullseye" style="color:var(--warn)"></i><h3>Nueva meta</h3><button class="xb" onclick="closeModal('mo-goal')"><i class="fa fa-times"></i></button></div>
+    <div class="mdc">
+      <div class="fg"><label class="fl">Meta</label><input class="fi" id="g-title" placeholder="Ej: Certificación CCNA Security"></div>
+      <div class="fg2">
+        <div class="fg"><label class="fl">Tipo</label><select class="fs" id="g-type"><option>Certificación</option><option>Curso</option><option>Hábito</option><option>Financiera</option><option>Personal</option></select></div>
+        <div class="fg"><label class="fl">Deadline</label><input class="fi" type="date" id="g-dead"></div>
+      </div>
+      <div class="fg"><label class="fl">Progreso actual (%)</label><input class="fi" type="range" id="g-prog" min="0" max="100" value="0" oninput="document.getElementById('g-prog-v').textContent=this.value+'%'"><span id="g-prog-v" style="font-size:12px;color:var(--ac);font-family:var(--mono)">0%</span></div>
+    </div>
+    <div class="mdf"><button class="bs" onclick="closeModal('mo-goal')">Cancelar</button><button class="bp" onclick="addGoal()">Crear meta</button></div>
+  </div>
+</div>
+
+<div class="mo" id="mo-trip">
+  <div class="md">
+    <div class="mdh"><i class="fa fa-plane" style="color:var(--ac)"></i><h3>Nuevo viaje</h3><button class="xb" onclick="closeModal('mo-trip')"><i class="fa fa-times"></i></button></div>
+    <div class="mdc">
+      <div class="fg"><label class="fl">Destino</label><input class="fi" id="tr-dest" placeholder="Ej: Medellín, Colombia"></div>
+      <div class="fg2">
+        <div class="fg"><label class="fl">Fecha salida</label><input class="fi" type="date" id="tr-out"></div>
+        <div class="fg"><label class="fl">Fecha regreso</label><input class="fi" type="date" id="tr-back"></div>
+      </div>
+      <div class="fg2">
+        <div class="fg"><label class="fl">Presupuesto (COP)</label><input class="fi" type="number" id="tr-bgt" placeholder="500000"></div>
+        <div class="fg"><label class="fl">Motivo</label><select class="fs" id="tr-why"><option>Trabajo</option><option>Vacaciones</option><option>Familia</option><option>Capacitación</option></select></div>
+      </div>
+    </div>
+    <div class="mdf"><button class="bs" onclick="closeModal('mo-trip')">Cancelar</button><button class="bp" onclick="addTrip()">Agregar viaje</button></div>
+  </div>
+</div>
+
+<div class="mo" id="mo-debt">
+  <div class="md">
+    <div class="mdh"><i class="fa fa-credit-card" style="color:var(--danger)"></i><h3>Registrar deuda</h3><button class="xb" onclick="closeModal('mo-debt')"><i class="fa fa-times"></i></button></div>
+    <div class="mdc">
+      <div class="fg"><label class="fl">Nombre / Entidad</label><input class="fi" id="d-name" placeholder="Ej: Tarjeta Visa Bancolombia"></div>
+      <div class="fg2">
+        <div class="fg"><label class="fl">Monto total (COP)</label><input class="fi" type="number" id="d-total" placeholder="0"></div>
+        <div class="fg"><label class="fl">Cuota mensual (COP)</label><input class="fi" type="number" id="d-quota" placeholder="0"></div>
+      </div>
+      <div class="fg2">
+        <div class="fg"><label class="fl">Tasa de interés %</label><input class="fi" type="number" id="d-rate" placeholder="2.5" step="0.1"></div>
+        <div class="fg"><label class="fl">Fecha vencimiento</label><input class="fi" type="date" id="d-due"></div>
+      </div>
+    </div>
+    <div class="mdf"><button class="bs" onclick="closeModal('mo-debt')">Cancelar</button><button class="bp" onclick="addDebt()">Registrar</button></div>
+  </div>
+</div>
+
+<div class="mo" id="mo-home">
+  <div class="md">
+    <div class="mdh"><i class="fa fa-home" style="color:var(--ac3)"></i><h3>Gasto fijo del hogar</h3><button class="xb" onclick="closeModal('mo-home')"><i class="fa fa-times"></i></button></div>
+    <div class="mdc">
+      <div class="fg"><label class="fl">Descripción</label><input class="fi" id="h-name" placeholder="Ej: Arriendo apartamento"></div>
+      <div class="fg2">
+        <div class="fg"><label class="fl">Monto (COP)</label><input class="fi" type="number" id="h-monto" placeholder="0"></div>
+        <div class="fg"><label class="fl">Día de vencimiento</label><input class="fi" type="number" id="h-dia" placeholder="5" min="1" max="31"></div>
+      </div>
+      <div class="fg"><label class="fl">Categoría</label><select class="fs" id="h-cat"><option>Arriendo</option><option>Servicios públicos</option><option>Internet/Cable</option><option>Alimentación</option><option>Mantenimiento</option><option>Seguro</option></select></div>
+    </div>
+    <div class="mdf"><button class="bs" onclick="closeModal('mo-home')">Cancelar</button><button class="bp" onclick="addHomeExpense()">Agregar</button></div>
   </div>
 </div>
 
 <!-- AI PANEL -->
-<div class="ai-panel" id="ai-panel">
-  <div class="ai-header">
-    <i class="fa fa-robot" style="color:var(--accent);font-size:18px"></i>
-    <h3>Asistente IA</h3>
-    <span class="ai-badge">GPT</span>
-    <button class="modal-close" onclick="toggleAI()"><i class="fa fa-times"></i></button>
+<div class="aip" id="aip">
+  <div class="aih"><i class="fa fa-robot" style="color:var(--ac);font-size:17px"></i><h3>NeuroBot</h3><span style="background:rgba(0,212,255,.15);color:var(--ac);font-size:9px;padding:2px 7px;border-radius:8px;font-weight:700">IA</span><button class="xb" onclick="toggleAI()"><i class="fa fa-times"></i></button></div>
+  <div class="aim" id="ai-msgs">
+    <div class="aimsg ass">Hola <strong>Edisson</strong> 👋 Soy tu asistente IA integrado. Puedo ayudarte con:<br><br>• 💰 Análisis de tus finanzas<br>• 📅 Resumen de tu agenda<br>• 🎯 Seguimiento de metas<br>• ✈️ Planificación de viajes<br>• 🔧 Consultas técnicas de seguridad<br>• 📊 Reportes y cálculos<br><br>¿Qué necesitas hoy?</div>
   </div>
-  <div class="ai-messages" id="ai-messages">
-    <div class="ai-msg assistant">
-      👋 Hola <strong>Edisson</strong>. Soy tu asistente técnico. Puedo ayudarte con:<br><br>
-      • Documentación técnica CCTV/Alarmas<br>
-      • Cálculos de cableado e instalación<br>
-      • Propuestas comerciales<br>
-      • Diagnóstico de problemas<br>
-      • Redacción de reportes<br><br>
-      ¿En qué te ayudo hoy?
-    </div>
-  </div>
-  <div class="ai-input-area">
-    <input class="ai-input" id="ai-input" placeholder="Pregunta algo técnico..." onkeydown="if(event.key==='Enter')sendAIMessage()">
-    <button class="btn-send" onclick="sendAIMessage()"><i class="fa fa-paper-plane"></i></button>
+  <div class="aiia">
+    <input class="aiin" id="ai-in" placeholder="Pregunta algo..." onkeydown="if(event.key==='Enter')sendAI()">
+    <button class="bsnd" onclick="sendAI()"><i class="fa fa-paper-plane"></i></button>
   </div>
 </div>
 
 <!-- TOAST -->
 <div class="toast" id="toast">
-  <div class="toast-icon" id="toast-icon">✅</div>
-  <div class="toast-text">
-    <strong id="toast-title">Éxito</strong>
-    <span id="toast-msg">Operación completada</span>
-  </div>
-  <button class="toast-close" onclick="hideToast()"><i class="fa fa-times"></i></button>
+  <div class="toast-i" id="t-ico">✅</div>
+  <div class="toast-t"><strong id="t-ttl"></strong><span id="t-msg"></span></div>
+  <button style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:12px" onclick="ht()"><i class="fa fa-times"></i></button>
 </div>
 
 <script>
-// ── DATA ──
+// ══ DATA ══
+const now = new Date();
+let calM = new Date(2026,4,1), calM2 = new Date(2026,4,1);
+let curNote = 0, kbFilter = 'all';
+let ttType = 'ingreso';
+
 const NOTES = [
-  { id:1, title:"Protocolo cableado CAT6A blindado en zonas EMI", content:"## Objetivo\nEvitar interferencias electromagnéticas en instalaciones industriales.\n\n## Materiales requeridos\n- Cable CAT6A S/FTP (apantallado total)\n- Bandejas metálicas cerradas\n- Conectores blindados RJ45\n- Puesta a tierra en cada bandeja\n\n## Procedimiento\n1. Mantener distancia mínima 30cm de cables eléctricos\n2. Cruzar perpendicularmente si es necesario\n3. Verificar continuidad del apantallado\n4. Medir con fluke DSX-600 — pérdida máx 3dB\n\n## Notas adicionales\nEn zonas con variadores de frecuencia: tubo conduit metálico obligatorio.", date:"17/05/26", tags:["CCTV","Redes","EMI"] },
-  { id:2, title:"Configuración NVR Dahua — RAID y respaldo", content:"## Configuración RAID en NVR Dahua\n\nModelo: NVR5232-16P-I2\n\n## Pasos RAID 5\n1. Acceder Storage > RAID\n2. Seleccionar tipo RAID 5\n3. Asignar 4+ discos (mín 3TB cada uno)\n4. Hot spare: 1 disco adicional\n\n## Respaldo a nube\n- Activar en Storage > Cloud\n- Configurar AWS S3 o Google Drive\n- Clips de alarma: calidad máxima\n- Respaldo schedule: 02:00 AM diario", date:"16/05/26", tags:["Dahua","NVR","Storage"] },
-  { id:3, title:"ZKTeco C2 Pro — Integración con Active Directory", content:"## Integración ZKTeco con AD\n\nRequisitos:\n- ZKTeco BioTime 9.0+\n- Servidor AD Windows Server 2019\n- Puerto LDAP: 389 (o 636 SSL)\n\n## Configuración\n1. En BioTime: Personalize > LDAP\n2. Server: tu-dominio.local\n3. Base DN: DC=empresa,DC=com\n4. Sync users automático: cada 30 min\n\n## Troubleshooting común\n- Error 49: Credenciales incorrectas\n- Error 81: Servidor no alcanzable (firewall)\n- Verificar con ldap://ip:389", date:"15/05/26", tags:["ZKTeco","AD","Accesos"] },
+  {id:1,title:'Protocolo cableado CAT6A en zonas EMI',body:'## Materiales\n- Cable CAT6A S/FTP blindado\n- Bandejas metálicas cerradas\n- Conectores blindados RJ45\n\n## Distancias mínimas\n- 30cm de cables eléctricos\n- Cruzar perpendicularmente\n\n## Verificación\n- Fluke DSX-600 — pérdida máx 3dB\n- Continuidad apantallado completo',date:'17/05',tags:['CCTV','Redes']},
+  {id:2,title:'NVR Dahua — RAID y respaldo nube',body:'## RAID 5 en NVR\n1. Storage > RAID\n2. Tipo RAID 5 con 4+ discos\n3. Hot spare: 1 disco extra\n\n## Respaldo Google Drive\n- Storage > Cloud\n- Schedule: 02:00 AM diario',date:'16/05',tags:['Dahua','NVR']},
+  {id:3,title:'ZKTeco — Integración Active Directory',body:'## Requisitos\n- BioTime 9.0+\n- Windows Server 2019\n- Puerto LDAP 389\n\n## Config LDAP\n- Server: dominio.local\n- Base DN: DC=empresa,DC=com\n- Sync: cada 30 min',date:'15/05',tags:['ZKTeco','AD']},
+  {id:4,title:'Paradox EVO192 — Programación zonas banco',body:'## Zonas críticas\n- Z1-Z48: Perímetro\n- Z49-Z96: Interior\n- Z97: Bóveda (vibración)\n\n## Códigos especiales\n- Duress: activar zona 99\n- Retardo apertura: 45 seg\n- Central UL: IP + backup GSM',date:'14/05',tags:['Paradox','Alarma']},
 ];
 
-const KANBAN_DATA = {
-  "Pendiente": [
-    { id:1, title:"Actualizar firmware cámaras Dahua zona norte", priority:"Alta", project:"CCTV", tags:["CCTV","Firmware"], due:"19/05/26" },
-    { id:2, title:"Cotizar torniquetes adicionales TechCorp piso 3", priority:"Normal", project:"Acceso", tags:["Acceso","Hardware"], due:"22/05/26" },
-    { id:3, title:"Diseñar esquema eléctrico alarma Banco sucursal sur", priority:"Alta", project:"Alarma", tags:["Alarma","Esquema"], due:"20/05/26" },
+const KB = {
+  "Pendiente":[
+    {id:1,t:'Actualizar firmware cámaras Dahua zona norte',p:'Alta',proj:'CCTV',tags:['CCTV','Firmware'],due:'19/05'},
+    {id:2,t:'Cotizar torniquetes adicionales piso 3',p:'Normal',proj:'Acceso',tags:['Acceso'],due:'22/05'},
+    {id:3,t:'Diseñar esquema eléctrico alarma banco sucursal sur',p:'Alta',proj:'Alarma',tags:['Alarma'],due:'20/05'},
   ],
-  "En Progreso": [
-    { id:4, title:"Programar zonas Paradox EVO192 — Banco Popular", priority:"Urgente", project:"Alarma", tags:["Paradox","Programación"], due:"17/05/26", overdue:true },
-    { id:5, title:"Configurar VPN acceso remoto DVR cliente residencial", priority:"Normal", project:"Red", tags:["VPN","Red"], due:"21/05/26" },
-    { id:6, title:"Instalación biométrico facial piso 1 y 2 TechCorp", priority:"Urgente", project:"Acceso", tags:["ZKTeco","Biometría"], due:"18/05/26" },
+  "En Progreso":[
+    {id:4,t:'Programar zonas Paradox EVO192 — Banco Popular',p:'Urgente',proj:'Alarma',tags:['Paradox'],due:'17/05',ov:true},
+    {id:5,t:'Configurar VPN acceso remoto DVR residencial',p:'Normal',proj:'Red',tags:['VPN','Red'],due:'21/05'},
+    {id:6,t:'Instalación biométrico facial pisos 1 y 2',p:'Urgente',proj:'Acceso',tags:['ZKTeco'],due:'18/05'},
   ],
-  "Revisión": [
-    { id:7, title:"Validar cobertura cámaras parqueadero subterráneo", priority:"Normal", project:"CCTV", tags:["CCTV","Test"], due:"17/05/26" },
-    { id:8, title:"Prueba integral sistema alarmas con central UL", priority:"Alta", project:"Alarma", tags:["UL","Test"], due:"19/05/26" },
+  "Revisión":[
+    {id:7,t:'Validar cobertura cámaras parqueadero subterráneo',p:'Normal',proj:'CCTV',tags:['CCTV'],due:'17/05'},
+    {id:8,t:'Prueba integral alarmas con central UL',p:'Alta',proj:'Alarma',tags:['UL'],due:'19/05'},
   ],
-  "Completado": [
-    { id:9, title:"Instalación NVR Dahua 32ch — Conjunto Los Pinos", priority:"Normal", project:"CCTV", tags:["Dahua","NVR"], due:"14/05/26" },
-    { id:10, title:"Propuesta técnica Red IP Seguridad aprobada", priority:"Normal", project:"Red", tags:["Propuesta"], due:"15/05/26" },
+  "Completado":[
+    {id:9,t:'Instalación NVR Dahua 32ch — Conjunto Los Pinos',p:'Normal',proj:'CCTV',tags:['Dahua'],due:'14/05'},
+    {id:10,t:'Propuesta técnica Red IP Seguridad aprobada',p:'Normal',proj:'Red',tags:['Propuesta'],due:'15/05'},
   ]
 };
 
-const PRIORITY_COLORS = { "Urgente":"#FF4444", "Alta":"#FFB800", "Normal":"#00D4FF", "Baja":"#8899BB" };
-const COL_COLORS = { "Pendiente":"#8899BB", "En Progreso":"#FFB800", "Revisión":"#7B5EA7", "Completado":"#00FF88" };
+const PC = {'Urgente':'#FF4444','Alta':'#FFB800','Normal':'#00D4FF','Baja':'#8899BB'};
+const CC = {'Pendiente':'#8899BB','En Progreso':'#FFB800','Revisión':'#7B5EA7','Completado':'#00FF88'};
 
-// ── VIEWS ──
-function showView(name) {
-  document.querySelectorAll('.dashboard,.kanban-view,.notes-view,.tools-view').forEach(v => v.classList.remove('active'));
-  const map = {
-    dashboard: 'view-dashboard',
-    kanban: 'view-kanban',
-    notes: 'view-notes',
-    tools: 'view-tools',
-    integrations: 'view-integrations'
-  };
-  const el = document.getElementById(map[name]);
-  if (el) el.classList.add('active');
+const MEETS = [
+  {id:1,t:'Reunión cliente CCTV — Los Pinos',time:'09:00',date:'17/05',plat:'teams',parts:['Cliente','Carlos ING'],agenda:'Revisión avance 72%, ajuste zona parqueadero',when:'today'},
+  {id:2,t:'Standup diario — Equipo Ing.',time:'10:30',date:'17/05',plat:'teams',parts:['Equipo'],agenda:'Estado proyectos activos',when:'today'},
+  {id:3,t:'Revisión DVR offline — Banco Popular',time:'14:00',date:'17/05',plat:'presencial',parts:['Técnico banco'],agenda:'Diagnóstico falla, reemplazo HDD',when:'today'},
+  {id:4,t:'Presentación propuesta Red IP',time:'09:00',date:'19/05',plat:'meet',parts:['Director TI'],agenda:'Propuesta técnica + comercial',when:'upcoming'},
+  {id:5,t:'Capacitación Dahua AI Analytics',time:'08:00',date:'22/05',plat:'teams',parts:['Dahua Colombia'],agenda:'Nuevas funciones IA v4.0',when:'upcoming'},
+  {id:6,t:'Entrega proyecto ZKTeco TechCorp',time:'15:00',date:'15/05',plat:'presencial',parts:['Gerente TechCorp'],agenda:'Acta de entrega firmada',when:'past'},
+];
 
-  // Update nav
-  document.querySelectorAll('.nav-btn').forEach((b,i) => {
-    b.classList.remove('active');
-    const views = ['dashboard','kanban','notes','tools','integrations'];
-    if(views[i] === name) b.classList.add('active');
+const GOALS = [
+  {id:1,t:'Certificación CCTV Dahua — Nivel 3',type:'Certificación',icon:'fa-certificate',color:'#00D4FF',pct:65,dead:'15/07/26'},
+  {id:2,t:'Curso CCNA Security — Cisco',type:'Curso',icon:'fa-graduation-cap',color:'#7B5EA7',pct:40,dead:'30/08/26'},
+  {id:3,t:'Ahorro fondo emergencia $5M',type:'Financiera',icon:'fa-piggy-bank',color:'#00FF88',pct:52,dead:'31/12/26'},
+  {id:4,t:'Leer 12 libros técnicos en 2026',type:'Hábito',icon:'fa-book',color:'#FFB800',pct:33,dead:'31/12/26'},
+  {id:5,t:'Certificación Paradox — Instalador',type:'Certificación',icon:'fa-shield-alt',color:'#FF6B35',pct:20,dead:'01/09/26'},
+];
+
+const COURSES = [
+  {t:'CCNA Security — Cisco NetAcad',platform:'Cisco',pct:40,hrs:48,color:'#00D4FF'},
+  {t:'Dahua Security Solutions Level 3',platform:'Dahua Academy',pct:65,hrs:24,color:'#7B5EA7'},
+  {t:'Python para automatización de redes',platform:'Udemy',pct:15,hrs:32,color:'#FF6B35'},
+];
+
+const TRIPS = [
+  {id:1,dest:'Medellín',flag:'🏙️',dates:'02 — 05 Jun 2026',budget:800000,spent:120000,why:'Trabajo',status:'upcoming',color:'#00D4FF'},
+  {id:2,dest:'Cartagena',flag:'🌊',dates:'20 — 25 Jul 2026',budget:1500000,spent:0,why:'Vacaciones',status:'upcoming',color:'#FF6B35'},
+  {id:3,dest:'Cali',flag:'🎶',dates:'10 — 12 Abr 2026',budget:600000,spent:580000,why:'Capacitación',status:'done',color:'#7B5EA7'},
+];
+
+const TRANSACTIONS = [
+  {t:'Proyecto CCTV — Los Pinos cuota 2',cat:'Trabajo / Proyecto',amt:2100000,type:'ingreso',date:'15/05'},
+  {t:'Pago arriendo apartamento',cat:'Arriendo',amt:900000,type:'egreso',date:'05/05'},
+  {t:'Factura Codensa — servicios',cat:'Servicios públicos',amt:85000,type:'egreso',date:'12/05'},
+  {t:'Mantenimiento vehículo',cat:'Transporte',amt:320000,type:'egreso',date:'10/05'},
+  {t:'Proyecto Control Accesos anticipo',cat:'Trabajo / Proyecto',amt:1500000,type:'ingreso',date:'08/05'},
+  {t:'Compra cable CAT6A (200m)',cat:'Tecnología / Equipos',amt:280000,type:'egreso',date:'07/05'},
+  {t:'Sueldo base + prestaciones',cat:'Trabajo / Proyecto',amt:4900000,type:'ingreso',date:'01/05'},
+  {t:'Cuota tarjeta Visa',cat:'Deuda',amt:450000,type:'egreso',date:'03/05'},
+];
+
+const DEBTS = [
+  {n:'Tarjeta Visa Bancolombia',total:1200000,quota:450000,rate:2.8,due:'03/Jun',pct:62,color:var(--danger)},
+  {n:'Crédito libre inversión herramientas',total:600000,quota:120000,rate:1.9,due:'15/Jun',pct:30,color:'#FFB800'},
+];
+
+const BUDGET_CATS = [
+  {n:'Alimentación',icon:'fa-utensils',color:'#00D4FF',used:620000,total:800000},
+  {n:'Transporte',icon:'fa-car',color:'#7B5EA7',used:380000,total:400000},
+  {n:'Tecnología/Equipos',icon:'fa-microchip',color:'#FF6B35',used:280000,total:500000},
+  {n:'Entretenimiento',icon:'fa-gamepad',color:'#FFB800',used:150000,total:300000},
+  {n:'Salud',icon:'fa-heartbeat',color:'#00FF88',used:80000,total:200000},
+  {n:'Educación',icon:'fa-graduation-cap',color:'#FF4488',used:200000,total:250000},
+];
+
+const HOME_FIXED = [
+  {n:'Arriendo apartamento',cat:'Arriendo',amt:900000,dia:5,ico:'fa-building'},
+  {n:'Internet + Cable',cat:'Internet/Cable',amt:89000,dia:10,ico:'fa-wifi'},
+  {n:'Codensa — Energía',cat:'Servicios',amt:85000,dia:20,ico:'fa-bolt'},
+  {n:'Gas Natural',cat:'Servicios',amt:28000,dia:22,ico:'fa-fire'},
+  {n:'Acueducto',cat:'Servicios',amt:42000,dia:18,ico:'fa-tint'},
+  {n:'Seguro médico',cat:'Salud',amt:180000,dia:1,ico:'fa-heart'},
+];
+
+const HOME_TASKS = [
+  {t:'Cambiar filtro purificador agua',p:'Alta',due:'20/05',done:false},
+  {t:'Revisar instalación eléctrica baño',p:'Media',due:'25/05',done:false},
+  {t:'Pago administración conjunto',p:'Alta',due:'05/06',done:true},
+  {t:'Limpieza canaletas terraza',p:'Baja',due:'30/05',done:false},
+];
+
+// ══ VIEWS ══
+const VIEW_NAMES = {dash:'Dashboard',finance:'Finanzas',calendar:'Calendario',meetings:'Reuniones',goals:'Metas & Cursos',travel:'Viajes',kanban:'Proyectos',notes:'Notas Técnicas',tools:'Herramientas',home:'Hogar'};
+function V(name) {
+  document.querySelectorAll('.view,.view-full').forEach(v => v.classList.remove('on'));
+  const el = document.getElementById('v-'+name);
+  if(el) el.classList.add('on');
+  document.querySelectorAll('.rb').forEach((b,i) => {
+    b.classList.remove('on');
+    const vs = ['dash','finance','calendar','meetings','goals','travel','kanban','notes','tools','home'];
+    if(vs[i]===name) b.classList.add('on');
   });
-
-  const labels = { dashboard:'Dashboard', kanban:'Proyectos', notes:'Notas Técnicas', tools:'Herramientas', integrations:'Integraciones' };
-  document.getElementById('breadcrumb-text').textContent = labels[name] || name;
-
-  if (name === 'kanban') renderKanban();
-  if (name === 'notes') renderNotes();
+  document.querySelectorAll('.si').forEach(s => s.classList.remove('on'));
+  document.getElementById('bc').textContent = VIEW_NAMES[name]||name;
+  if(name==='kanban') renderKB();
+  if(name==='notes') renderNotes();
+  if(name==='goals') renderGoals();
+  if(name==='travel') renderTrips();
+  if(name==='finance') renderFinance();
+  if(name==='meetings') renderMeets();
+  if(name==='home') renderHome();
+  if(name==='tools') renderTools();
+  if(name==='dash') renderDash();
+  if(name==='calendar') renderCalFull();
 }
 
-// ── KANBAN ──
-let kanbanFilter = 'all';
-function renderKanban() {
-  const board = document.getElementById('kanban-board');
-  board.innerHTML = '';
-  for (const [col, cards] of Object.entries(KANBAN_DATA)) {
-    const filtered = kanbanFilter === 'all' ? cards : cards.filter(c => c.project === kanbanFilter);
-    const colEl = document.createElement('div');
-    colEl.className = 'kanban-col';
-    colEl.innerHTML = `<div class="col-header"><div class="col-dot" style="background:${COL_COLORS[col]}"></div>${col}<span class="col-count">${filtered.length}</span></div>`;
-    filtered.forEach(card => {
-      const cardEl = document.createElement('div');
-      cardEl.className = 'kanban-card';
-      cardEl.innerHTML = `
-        <div class="card-priority" style="color:${PRIORITY_COLORS[card.priority]}">
-          <i class="fa fa-circle" style="font-size:6px"></i> ${card.priority}
-        </div>
-        <h4>${card.title}</h4>
-        <div class="card-meta">${card.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
-        <div class="card-footer">
-          <div class="card-assignee">EM</div>
-          <span class="card-due ${card.overdue?'overdue':''}"><i class="fa fa-calendar-alt" style="margin-right:4px"></i>${card.due}</span>
-        </div>`;
-      cardEl.onclick = () => showToast('Tarea', card.title.substring(0,40), '📋');
-      colEl.appendChild(cardEl);
-    });
-    const addEl = document.createElement('div');
-    addEl.className = 'col-add';
-    addEl.innerHTML = '<i class="fa fa-plus"></i> Agregar tarea';
-    addEl.onclick = () => openNewModal();
-    colEl.appendChild(addEl);
-    board.appendChild(colEl);
-  }
-}
-
-function filterKanban(f, btn) {
-  kanbanFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  renderKanban();
-  if (!document.getElementById('view-kanban').classList.contains('active')) showView('kanban');
-}
-
-// ── NOTES ──
-let currentNote = 0;
-function renderNotes() {
-  const container = document.getElementById('notes-items');
-  container.innerHTML = '';
-  NOTES.forEach((note, i) => {
-    const el = document.createElement('div');
-    el.className = 'note-item' + (i === currentNote ? ' active' : '');
-    el.innerHTML = `
-      <h4>${note.title}</h4>
-      <p>${note.content.replace(/#{1,3} /g,'').substring(0,80)}...</p>
-      <div class="note-meta">
-        <span class="note-date">${note.date}</span>
-        ${note.tags.map(t => `<span class="tag">${t}</span>`).join('')}
-      </div>`;
-    el.onclick = () => { currentNote = i; loadNote(i); renderNotes(); };
-    container.appendChild(el);
-  });
-  loadNote(currentNote);
-}
-
-function loadNote(i) {
-  const note = NOTES[i];
-  if (!note) return;
-  document.getElementById('note-title').value = note.title;
-  document.getElementById('note-content').value = note.content;
-  document.getElementById('note-save-status').textContent = 'Guardado';
-}
-
-function addNote() {
-  const newNote = { id: NOTES.length+1, title: 'Nueva nota técnica', content: '## Título\n\nEscribe aquí...', date: new Date().toLocaleDateString('es-CO'), tags: [] };
-  NOTES.unshift(newNote);
-  currentNote = 0;
-  renderNotes();
-  showToast('Nota creada','Nueva nota técnica lista para editar','📝');
-}
-
-function saveNote() {
-  if (NOTES[currentNote]) {
-    NOTES[currentNote].title = document.getElementById('note-title').value;
-    NOTES[currentNote].content = document.getElementById('note-content').value;
-    document.getElementById('note-save-status').textContent = 'Guardado ✓';
-    showToast('Guardado','Nota técnica guardada correctamente','✅');
-  }
-}
-
-function markUnsaved() {
-  document.getElementById('note-save-status').textContent = '● Sin guardar';
-  document.getElementById('note-save-status').style.color = 'var(--warning)';
-}
-
-function formatText(cmd) { document.execCommand(cmd, false, null); }
-
-// ── CALENDAR ──
-let calDate = new Date(2026, 4, 1);
-const eventDays = [5, 12, 14, 17, 19, 23, 28];
-
-function renderCalendar() {
-  const grid = document.getElementById('cal-grid');
-  if (!grid) return;
+// ══ CALENDAR ══
+function renderCal(id, m) {
+  const g = document.getElementById(id); if(!g) return;
   const days = ['D','L','M','X','J','V','S'];
-  grid.innerHTML = days.map(d => `<div class="cal-day-label">${d}</div>`).join('');
-  const first = new Date(calDate.getFullYear(), calDate.getMonth(), 1).getDay();
-  const total = new Date(calDate.getFullYear(), calDate.getMonth()+1, 0).getDate();
-  const today = 17;
-  for (let i=0; i<first; i++) grid.innerHTML += `<div class="cal-day other-month"></div>`;
-  for (let d=1; d<=total; d++) {
-    const isToday = d===today && calDate.getMonth()===4;
-    const hasEv = eventDays.includes(d);
-    grid.innerHTML += `<div class="cal-day ${isToday?'today':''} ${hasEv&&!isToday?'has-event':''}">${d}</div>`;
+  g.innerHTML = days.map(d=>`<div class="caldl">${d}</div>`).join('');
+  const first = new Date(m.getFullYear(), m.getMonth(), 1).getDay();
+  const total = new Date(m.getFullYear(), m.getMonth()+1, 0).getDate();
+  const evDays = [5,10,12,14,17,19,22,23,28,30];
+  for(let i=0;i<first;i++) g.innerHTML += `<div class="cald om"></div>`;
+  for(let d=1;d<=total;d++){
+    const isT = d===17&&m.getMonth()===4;
+    const hasE = evDays.includes(d);
+    g.innerHTML += `<div class="cald ${isT?'tod':''} ${hasE&&!isT?'ev':''}">${d}</div>`;
   }
 }
+function cm(dir){ calM=new Date(calM.getFullYear(),calM.getMonth()+dir,1); renderCal('cal-main',calM); }
+function cm2(dir){ calM2=new Date(calM2.getFullYear(),calM2.getMonth()+dir,1); renderCal('cal-full',calM2); }
 
-function changeMonth(dir) {
-  calDate = new Date(calDate.getFullYear(), calDate.getMonth()+dir, 1);
-  renderCalendar();
-}
-
-// ── DATETIME ──
-function updateTime() {
-  const now = new Date();
-  const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
-  const dateStr = now.toLocaleDateString('es-CO', opts);
-  const timeStr = now.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
-  const el = document.getElementById('dash-datetime');
-  if (el) el.textContent = `${dateStr} • ${timeStr} • Bogotá, Colombia`;
-  const gcal = document.getElementById('gcal-today');
-  if (gcal) gcal.textContent = now.toLocaleDateString('es-CO', { weekday:'long', day:'numeric', month:'long' });
-}
-
-// ── TASKS ──
-function addTask() {
-  const title = document.getElementById('new-title').value.trim();
-  if (!title) { showToast('Error','Escribe un título para la tarea','⚠️'); return; }
-  const project = document.getElementById('new-project').value;
-  const priority = document.getElementById('new-priority').value;
-  const status = document.getElementById('new-status').value;
-  const date = document.getElementById('new-date').value;
-  const col = status === 'En progreso' ? 'En Progreso' : status === 'Revisión' ? 'Revisión' : 'Pendiente';
-  const tag = project.split(' ')[0];
-  KANBAN_DATA[col].unshift({ id: Date.now(), title, priority, project: tag, tags: [tag], due: date || '—' });
-  closeModal('modal-new');
-  document.getElementById('new-title').value = '';
-  showToast('Tarea creada', title.substring(0,40), '✅');
-  if (document.getElementById('view-kanban').classList.contains('active')) renderKanban();
-}
-
-// ── TOOLS ──
-const TOOLS = {
-  cable: {
-    title: 'Calculadora de Caída de Tensión',
-    html: `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-      <div class="form-group"><label class="form-label">Voltaje entrada (V)</label><input class="form-input" id="t-v" value="12" type="number"></div>
-      <div class="form-group"><label class="form-label">Corriente (A)</label><input class="form-input" id="t-i" value="0.5" type="number" step="0.1"></div>
-      <div class="form-group"><label class="form-label">Longitud cable (m)</label><input class="form-input" id="t-l" value="50" type="number"></div>
-      <div class="form-group"><label class="form-label">Calibre (AWG)</label>
-        <select class="form-select" id="t-awg">
-          <option value="0.326">AWG 22 (0.326mm²)</option>
-          <option value="0.519">AWG 20 (0.519mm²)</option>
-          <option value="0.823" selected>AWG 18 (0.823mm²)</option>
-          <option value="1.31">AWG 16 (1.31mm²)</option>
-          <option value="2.08">AWG 14 (2.08mm²)</option>
-        </select>
-      </div>
-    </div>
-    <button class="btn-primary" onclick="calcCable()">Calcular</button>
-    <div id="t-result" style="margin-top:16px;display:none;background:var(--bg-hover);border-radius:var(--radius-sm);padding:16px"></div>`
-  },
-  bandwidth: {
-    title: 'Calculadora de Ancho de Banda CCTV',
-    html: `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
-      <div class="form-group"><label class="form-label">Número de cámaras</label><input class="form-input" id="b-cams" value="16" type="number"></div>
-      <div class="form-group"><label class="form-label">Resolución</label>
-        <select class="form-select" id="b-res">
-          <option value="1">1MP (720p) — 2Mbps</option>
-          <option value="2">2MP (1080p) — 4Mbps</option>
-          <option value="4" selected>4MP (2K) — 6Mbps</option>
-          <option value="8">8MP (4K) — 12Mbps</option>
-        </select>
-      </div>
-      <div class="form-group"><label class="form-label">Compresión</label>
-        <select class="form-select" id="b-comp">
-          <option value="1">H.264 (1x)</option>
-          <option value="0.6" selected>H.265 (0.6x)</option>
-          <option value="0.4">H.265+ (0.4x)</option>
-        </select>
-      </div>
-    </div>
-    <button class="btn-primary" onclick="calcBandwidth()">Calcular</button>
-    <div id="b-result" style="margin-top:16px;display:none;background:var(--bg-hover);border-radius:var(--radius-sm);padding:16px"></div>`
-  },
-  storage: {
-    title: 'Calculadora de Almacenamiento NVR/DVR',
-    html: `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
-      <div class="form-group"><label class="form-label">Cámaras</label><input class="form-input" id="s-cams" value="16" type="number"></div>
-      <div class="form-group"><label class="form-label">Bitrate por cámara (Mbps)</label><input class="form-input" id="s-bit" value="4" type="number" step="0.5"></div>
-      <div class="form-group"><label class="form-label">Días de retención</label><input class="form-input" id="s-days" value="30" type="number"></div>
-    </div>
-    <button class="btn-primary" onclick="calcStorage()">Calcular</button>
-    <div id="s-result" style="margin-top:16px;display:none;background:var(--bg-hover);border-radius:var(--radius-sm);padding:16px"></div>`
-  },
-  poe: {
-    title: 'Presupuesto de Potencia PoE',
-    html: `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="form-group"><label class="form-label">Switch PoE budget total (W)</label><input class="form-input" id="p-budget" value="370" type="number"></div>
-      <div class="form-group"><label class="form-label">Puertos PoE disponibles</label><input class="form-input" id="p-ports" value="24" type="number"></div>
-      <div class="form-group"><label class="form-label">Cámaras domo PoE (cant.)</label><input class="form-input" id="p-dome" value="16" type="number"></div>
-      <div class="form-group"><label class="form-label">Watts por domo</label><input class="form-input" id="p-dome-w" value="9.5" type="number" step="0.5"></div>
-      <div class="form-group"><label class="form-label">Cámaras PTZ (cant.)</label><input class="form-input" id="p-ptz" value="2" type="number"></div>
-      <div class="form-group"><label class="form-label">Watts por PTZ</label><input class="form-input" id="p-ptz-w" value="30" type="number"></div>
-    </div>
-    <button class="btn-primary" onclick="calcPoE()">Calcular</button>
-    <div id="p-result" style="margin-top:16px;display:none;background:var(--bg-hover);border-radius:var(--radius-sm);padding:16px"></div>`
-  },
-  lens: {
-    title: 'Calculadora de Lente y Campo Visual',
-    html: `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="form-group"><label class="form-label">Distancia focal (mm)</label><input class="form-input" id="l-focal" value="2.8" type="number" step="0.1"></div>
-      <div class="form-group"><label class="form-label">Tamaño sensor</label>
-        <select class="form-select" id="l-sensor">
-          <option value="2.8">1/3"</option>
-          <option value="3.6">1/2.7"</option>
-          <option value="4.8" selected>1/2"</option>
-          <option value="5.5">1/1.8"</option>
-        </select>
-      </div>
-      <div class="form-group"><label class="form-label">Distancia al objetivo (m)</label><input class="form-input" id="l-dist" value="10" type="number"></div>
-    </div>
-    <button class="btn-primary" onclick="calcLens()">Calcular</button>
-    <div id="l-result" style="margin-top:16px;display:none;background:var(--bg-hover);border-radius:var(--radius-sm);padding:16px"></div>`
-  },
-  checklist: {
-    title: 'Checklist de Entrega de Instalación',
-    html: buildChecklist()
+// ══ DASHBOARD ══
+function renderDash() {
+  renderCal('cal-main', calM);
+  // bars
+  const bars = document.getElementById('dash-bars');
+  if(bars){
+    const bdata = [
+      {l:'Alim',v:620000,c:'var(--ac)'},
+      {l:'Trans',v:380000,c:'var(--ac2)'},
+      {l:'Tec',v:280000,c:'var(--ac3)'},
+      {l:'Ent',v:150000,c:'var(--warn)'},
+      {l:'Salud',v:80000,c:'var(--ok)'},
+      {l:'Edu',v:200000,c:'var(--ac6)'},
+    ];
+    const mx = Math.max(...bdata.map(b=>b.v));
+    bars.innerHTML = bdata.map(b=>`<div class="bar-wrap"><div class="bar-v">${(b.v/1000).toFixed(0)}K</div><div class="bar" style="height:${Math.round((b.v/mx)*90)}px;background:${b.c}"></div><div class="bar-l">${b.l}</div></div>`).join('');
   }
-};
+  // meets
+  const dm = document.getElementById('dash-meets');
+  if(dm) dm.innerHTML = MEETS.filter(m=>m.when==='today').slice(0,3).map(m=>meetHTML(m,true)).join('');
+  // goals
+  const dg = document.getElementById('dash-goals');
+  if(dg) dg.innerHTML = GOALS.slice(0,2).map(g=>`<div class="goal-card" style="margin-bottom:8px"><div class="gc-h"><div class="gc-ico" style="background:rgba(255,255,255,.05)"><i class="fa ${g.icon}" style="color:${g.color}"></i></div><div class="gc-info"><h4>${g.t}</h4><p>${g.type} • ${g.dead}</p></div></div><div class="pb"><div class="pf" style="width:${g.pct}%;background:${g.color}"></div></div><div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:10px;color:var(--t3)">${g.pct}% completado</span></div></div>`).join('');
+  // trip
+  const dt = document.getElementById('dash-trip');
+  if(dt){const tr=TRIPS[0];dt.innerHTML=`<div class="trip-card"><div class="trip-banner" style="background:rgba(0,212,255,.08);font-size:40px">${tr.flag}</div><div class="trip-body"><h4>${tr.dest}</h4><p>${tr.dates} • ${tr.why}</p><div class="trip-meta"><span class="chip cb">Presupuesto: $${(tr.budget/1000).toFixed(0)}K</span><span class="chip cg">Gastado: $${(tr.spent/1000).toFixed(0)}K</span></div></div></div>`;}
+}
 
-function buildChecklist() {
-  const items = [
-    ['Instalación física','Cableado estructurado certificado con Fluke','Cajas y canaletas correctamente instaladas','Dispositivos fijados y nivelados','Etiquetado de cables y equipos','Puesta a tierra verificada'],
-    ['Configuración de sistema','Firmware actualizado en todos los dispositivos','IP estáticas asignadas documentadas','NVR/DVR configurado y grabando','Acceso remoto (P2P/VPN) funcionando','Contraseñas cambiadas de default'],
-    ['Pruebas funcionales','Todas las cámaras con imagen correcta','Grabación continua y por eventos verificada','Alarmas/detectores probados zona por zona','Control de acceso con todas las credenciales','Notificaciones de alertas al cliente'],
-    ['Documentación y entrega','Plano de instalación entregado','Manual de usuario firmado','Credenciales de acceso entregadas','Contrato de mantenimiento firmado','Acta de entrega y recibido a satisfacción']
-  ];
-  let html = '';
-  items.forEach(group => {
-    html += `<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">${group[0]}</div>`;
-    group.slice(1).forEach(item => {
-      html += `<label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;transition:var(--transition)" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
-        <input type="checkbox" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer">
-        <span style="font-size:13px">${item}</span></label>`;
+// ══ MEETINGS ══
+function meetHTML(m, mini=false) {
+  const platIco = {teams:'fab fa-microsoft', meet:'fab fa-google', zoom:'fa fa-video', presencial:'fa fa-map-marker-alt', llamada:'fa fa-phone'}[m.plat]||'fa fa-video';
+  const platColor = {teams:'#6264A7', meet:'#4285F4', zoom:'#2D8CFF', presencial:'#00FF88', llamada:'#FFB800'}[m.plat]||'#00D4FF';
+  if(mini) return `<div class="meet-item" style="margin-bottom:6px"><div class="meet-time"><div class="mt">${m.time}</div><div class="md2">${m.date}</div></div><div class="meet-info"><h4>${m.t}</h4><p><i class="${platIco}" style="color:${platColor};margin-right:4px"></i>${m.plat} • ${m.parts.join(', ')}</p></div></div>`;
+  return `<div class="meet-item"><div class="meet-time"><div class="mt">${m.time}</div><div class="md2">${m.date}</div></div><div class="meet-info"><h4>${m.t}</h4><p><i class="${platIco}" style="color:${platColor};margin-right:4px"></i>${m.plat} • ${m.parts.join(', ')}</p>${m.agenda?`<p style="margin-top:3px;font-size:10px;color:var(--t3)">${m.agenda}</p>`:''}</div><div style="display:flex;gap:6px;margin-left:auto;flex-shrink:0"><button class="bi" title="Unirse" onclick="T('Uniéndose','Abriendo ${m.plat}...','📹')"><i class="${platIco}"></i></button><button class="bi" title="Notas"><i class="fa fa-sticky-note"></i></button></div></div>`;
+}
+function renderMeets() {
+  document.getElementById('meets-today').innerHTML = MEETS.filter(m=>m.when==='today').map(m=>meetHTML(m)).join('');
+  document.getElementById('meets-upcoming').innerHTML = MEETS.filter(m=>m.when==='upcoming').map(m=>meetHTML(m)).join('');
+  document.getElementById('meets-past').innerHTML = MEETS.filter(m=>m.when==='past').map(m=>meetHTML(m)).join('');
+}
+function filterMeets(f, btn) {
+  document.querySelectorAll('#v-meetings .bd2b').forEach(b=>b.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+}
+
+// ══ GOALS ══
+function renderGoals() {
+  const g = document.getElementById('goals-grid');
+  if(g) g.innerHTML = GOALS.map(goa=>`<div class="goal-card"><div class="gc-h"><div class="gc-ico" style="background:rgba(255,255,255,.05)"><i class="fa ${goa.icon}" style="color:${goa.color};font-size:18px"></i></div><div class="gc-info"><h4>${goa.t}</h4><p>${goa.type} • Deadline: ${goa.dead}</p></div></div><div class="gc-pct" style="color:${goa.color}">${goa.pct}%</div><div class="pb"><div class="pf" style="width:${goa.pct}%;background:${goa.color}"></div></div><div style="display:flex;justify-content:space-between;margin-top:8px"><span style="font-size:10px;color:var(--t3)">${100-goa.pct}% restante</span><button style="font-size:10px;background:none;border:1px solid var(--bd);color:var(--t2);padding:2px 8px;border-radius:10px;cursor:pointer" onclick="T('Meta actualizada','Progreso guardado','🎯')">Actualizar</button></div></div>`).join('');
+  const c = document.getElementById('courses-list');
+  if(c) c.innerHTML = COURSES.map(co=>`<div class="card" style="margin-bottom:10px;display:flex;gap:14px;align-items:center"><div style="width:40px;height:40px;border-radius:var(--rs);background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0"><i class="fa fa-play-circle" style="color:${co.color}"></i></div><div style="flex:1"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><h4 style="font-size:13px;font-weight:500">${co.t}</h4><span style="font-size:11px;color:var(--t3)">${co.pct}%</span></div><div class="pb"><div class="pf" style="width:${co.pct}%;background:${co.color}"></div></div><div style="font-size:10px;color:var(--t3);margin-top:4px">${co.platform} • ${co.hrs}h totales • ${Math.round(co.hrs*co.pct/100)}h completadas</div></div><button class="bi"><i class="fa fa-play"></i></button></div>`).join('');
+}
+
+// ══ TRIPS ══
+function renderTrips() {
+  const g = document.getElementById('trips-grid');
+  if(g) g.innerHTML = TRIPS.map(tr=>`<div class="trip-card" onclick="T('${tr.dest}','Abriendo detalles del viaje','✈️')"><div class="trip-banner" style="background:rgba(0,0,0,.2)">${tr.flag}</div><div class="trip-body"><h4>${tr.dest}</h4><p>${tr.dates}</p><div class="trip-meta"><span class="chip ${tr.status==='upcoming'?'cb':tr.status==='done'?'cg':'co'}">${tr.status==='upcoming'?'Próximo':tr.status==='done'?'Completado':'En curso'}</span><span class="chip cy">${tr.why}</span></div><div style="margin-top:10px"><div class="pb"><div class="pf" style="width:${Math.round((tr.spent/tr.budget)*100)||0}%;background:${tr.color}"></div></div><div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:10px;color:var(--t3)">$${(tr.spent/1000).toFixed(0)}K / $${(tr.budget/1000).toFixed(0)}K</span></div></div></div></div>`).join('');
+  const tb = document.getElementById('trip-budget');
+  if(tb) tb.innerHTML = `<div class="sect" style="margin-bottom:10px">Presupuesto Medellín</div>${['Transporte: $80K','Hospedaje: $320K','Alimentación: $150K','Actividades: $80K','Imprevistos: $170K'].map(i=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bd);font-size:12px"><span style="color:var(--t2)">${i.split(':')[0]}</span><span style="font-family:var(--mono);color:var(--ac)">${i.split(':')[1]}</span></div>`).join('')}<div style="display:flex;justify-content:space-between;padding:10px 0;font-weight:600"><span>Total</span><span style="font-family:var(--mono);color:var(--ok)">$800.000</span></div>`;
+  const tc = document.getElementById('trip-checklist');
+  if(tc) tc.innerHTML = `<div class="sect" style="margin-bottom:10px">Checklist de viaje</div>${['Reserva hotel confirmada','Tiquetes comprados','Documentos listos','Seguro de viaje','Equipos técnicos empacados','Itinerario impreso'].map((item,i)=>`<label style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--bd);cursor:pointer;font-size:12px"><input type="checkbox" style="accent-color:var(--ac)" ${i<2?'checked':''}><span style="color:var(--t2)">${item}</span></label>`).join('')}`;
+}
+
+// ══ FINANCE ══
+function renderFinance() {
+  const bp = document.getElementById('budget-panel');
+  if(bp) bp.innerHTML = BUDGET_CATS.map(b=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd)"><div style="width:28px;height:28px;border-radius:var(--rs);background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0"><i class="fa ${b.icon}" style="color:${b.color}"></i></div><div style="flex:1"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px">${b.n}</span><span style="font-size:11px;font-family:var(--mono);color:var(--t2)">$${(b.used/1000).toFixed(0)}K / $${(b.total/1000).toFixed(0)}K</span></div><div class="pb"><div class="pf" style="width:${Math.round((b.used/b.total)*100)}%;background:${b.color}"></div></div></div><span style="font-size:10px;color:${Math.round((b.used/b.total)*100)>80?'var(--danger)':'var(--t3)'};">${Math.round((b.used/b.total)*100)}%</span></div>`).join('');
+
+  const dl = document.getElementById('donut-legend');
+  if(dl) dl.innerHTML = [['#00D4FF','Alim.','29%'],['#FF4444','Trans.','18%'],['#FFB800','Tec.','13%'],['#7B5EA7','Ent.','7%']].map(([c,n,p])=>`<div style="display:flex;align-items:center;gap:7px"><div style="width:8px;height:8px;border-radius:2px;background:${c};flex-shrink:0"></div><span style="color:var(--t2);flex:1">${n}</span><span style="font-family:var(--mono);color:var(--t3)">${p}</span></div>`).join('');
+
+  const tp = document.getElementById('trans-panel');
+  if(tp) tp.innerHTML = `<div style="overflow:hidden">${TRANSACTIONS.slice(0,6).map(tr=>`<div class="finrow"><div class="finrow-ico" style="background:${tr.type==='ingreso'?'rgba(0,255,136,.1)':'rgba(255,68,68,.1)'}"><i class="fa ${tr.type==='ingreso'?'fa-arrow-up':'fa-arrow-down'}" style="color:${tr.type==='ingreso'?'var(--ok)':'var(--danger)'}"></i></div><div class="finrow-info"><h5>${tr.t}</h5><p>${tr.cat} • ${tr.date}</p></div><div class="finrow-amt ${tr.type==='ingreso'?'ingreso':'egreso'}">${tr.type==='ingreso'?'+':'-'}$${(tr.amt/1000).toFixed(0)}K</div></div>`).join('')}</div>`;
+
+  const dp = document.getElementById('debt-panel');
+  if(dp) dp.innerHTML = [{n:'Tarjeta Visa Bancolombia',total:1200000,quota:450000,rate:2.8,due:'03/Jun',pct:62,col:'var(--danger)'},{n:'Crédito libre — herramientas',total:600000,quota:120000,rate:1.9,due:'15/Jun',pct:30,col:'#FFB800'}].map(d=>`<div class="debt-card" style="margin-bottom:10px"><div class="debt-h"><i class="fa fa-credit-card" style="color:${d.col}"></i><h4>${d.n}</h4><span class="chip cr" style="font-size:9px">Tasa ${d.rate}%</span></div><div class="debt-total">-$${(d.total/1000).toFixed(0)}K</div><div class="debt-pct">Cuota: $${(d.quota/1000).toFixed(0)}K/mes • Vence ${d.due}</div><div class="pb"><div class="pf" style="width:${d.pct}%;background:${d.col}"></div></div><div style="font-size:10px;color:var(--t3);margin-top:4px">${d.pct}% pagado • Faltan $${((d.total*(100-d.pct)/100)/1000).toFixed(0)}K</div></div>`).join('');
+}
+
+// ══ HOME ══
+function renderHome() {
+  const hf = document.getElementById('home-fixed');
+  if(hf) hf.innerHTML = HOME_FIXED.map(h=>`<div class="finrow"><div class="finrow-ico" style="background:rgba(255,107,53,.1)"><i class="fa ${h.ico}" style="color:var(--ac3)"></i></div><div class="finrow-info"><h5>${h.n}</h5><p>${h.cat} • Día ${h.dia} de cada mes</p></div><div class="finrow-amt egreso">-$${(h.amt/1000).toFixed(0)}K</div></div>`).join('');
+  const ht2 = document.getElementById('home-tasks');
+  if(ht2) ht2.innerHTML = HOME_TASKS.map(task=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rs);margin-bottom:7px"><input type="checkbox" style="accent-color:var(--ac)" ${task.done?'checked':''}><span style="flex:1;font-size:12px;${task.done?'text-decoration:line-through;color:var(--t3)':''}">${task.t}</span><span class="chip ${task.p==='Alta'?'co':task.p==='Media'?'cy':'cg'}" style="font-size:9px">${task.p}</span><span style="font-size:10px;color:var(--t3);font-family:var(--mono)">${task.due}</span></div>`).join('');
+  const hr = document.getElementById('home-reminders');
+  if(hr) hr.innerHTML = HOME_FIXED.filter(h=>h.dia>=17).slice(0,4).map(h=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:rgba(255,184,0,.05);border:1px solid rgba(255,184,0,.2);border-radius:var(--rs);margin-bottom:6px"><i class="fa fa-bell" style="color:var(--warn);font-size:13px"></i><div style="flex:1"><div style="font-size:12px">${h.n}</div><div style="font-size:10px;color:var(--t3)">Vence día ${h.dia}</div></div><div style="font-size:12px;font-family:var(--mono);color:var(--warn)">$${(h.amt/1000).toFixed(0)}K</div></div>`).join('');
+}
+
+// ══ KANBAN ══
+function renderKB() {
+  const board = document.getElementById('kb-board'); if(!board) return;
+  board.innerHTML = '';
+  for(const [col, cards] of Object.entries(KB)) {
+    const fl = kbFilter==='all' ? cards : cards.filter(c=>c.proj===kbFilter);
+    const el = document.createElement('div');
+    el.style.cssText = 'min-width:260px;max-width:260px;display:flex;flex-direction:column;gap:8px;';
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:7px;padding:9px 11px;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rs);font-size:12px;font-weight:600"><div style="width:8px;height:8px;border-radius:50%;background:${CC[col]}"></div>${col}<span style="margin-left:auto;font-size:10px;font-family:var(--mono);color:var(--t3)">${fl.length}</span></div>`;
+    fl.forEach(c=>{
+      const cd = document.createElement('div');
+      cd.className = 'card card-cl';
+      cd.innerHTML = `<div style="font-size:10px;font-weight:600;color:${PC[c.p]};margin-bottom:7px;display:flex;align-items:center;gap:4px"><i class="fa fa-circle" style="font-size:5px"></i>${c.p}</div><h4 style="font-size:12px;font-weight:500;line-height:1.4;margin-bottom:8px">${c.t}</h4><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">${c.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div><div style="display:flex;align-items:center;justify-content:space-between"><div style="width:22px;height:22px;border-radius:50%;background:var(--ac2);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#fff">EM</div><span style="font-size:10px;color:${c.ov?'var(--danger)':'var(--t3)'};font-family:var(--mono)"><i class="fa fa-calendar-alt" style="margin-right:3px"></i>${c.due}</span></div>`;
+      cd.onclick = () => T('Tarea',c.t.substring(0,50),'📋');
+      el.appendChild(cd);
     });
-    html += '</div>';
-  });
-  return html;
+    const add = document.createElement('div');
+    add.style.cssText = 'padding:9px;border:1px dashed var(--bd);border-radius:var(--r);text-align:center;font-size:11px;color:var(--t3);cursor:pointer;transition:var(--tr);';
+    add.innerHTML = '<i class="fa fa-plus"></i> Agregar tarea';
+    add.onmouseenter = ()=>{ add.style.borderColor='var(--ac)'; add.style.color='var(--ac)'; };
+    add.onmouseleave = ()=>{ add.style.borderColor='var(--bd)'; add.style.color='var(--t3)'; };
+    add.onclick = ()=>openModal('mo-new');
+    el.appendChild(add);
+    board.appendChild(el);
+  }
 }
+function fk(f,btn){kbFilter=f;document.querySelectorAll('#v-kanban .bd2b').forEach(b=>b.classList.remove('on'));if(btn)btn.classList.add('on');renderKB();}
 
-function openTool(name) {
-  const t = TOOLS[name];
-  if (!t) return;
+// ══ NOTES ══
+function renderNotes(){
+  const list = document.getElementById('notes-list'); if(!list) return;
+  list.innerHTML = NOTES.map((n,i)=>`<div style="padding:12px 14px;border-bottom:1px solid var(--bd);cursor:pointer;transition:var(--tr);${i===curNote?'background:var(--bg5);border-left:3px solid var(--ac);':''}" onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background='${i===curNote?'var(--bg5)':'transparent'}'" onclick="loadNote(${i})"><h4 style="font-size:12px;font-weight:500;margin-bottom:4px">${n.title}</h4><p style="font-size:11px;color:var(--t3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${n.body.replace(/#{1,3} /g,'')}</p><div style="display:flex;gap:5px;margin-top:6px">${n.tags.map(t=>`<span class="tag">${t}</span>`).join('')}<span style="font-size:10px;color:var(--t3);margin-left:auto;font-family:var(--mono)">${n.date}</span></div></div>`).join('');
+  loadNote(curNote);
+}
+function loadNote(i){
+  curNote=i;
+  const n=NOTES[i];
+  document.getElementById('note-title').value=n.title;
+  document.getElementById('note-body').value=n.body;
+  document.getElementById('ns-status').textContent='Guardado ✓';
+  document.getElementById('ns-status').style.color='var(--ok)';
+}
+function addNote(){NOTES.unshift({id:Date.now(),title:'Nueva nota técnica',body:'## Título\n\nEscribe aquí...',date:new Date().toLocaleDateString('es-CO').slice(0,5),tags:[]});renderNotes();T('Nota creada','Lista para editar','📝');}
+function saveNote(){if(NOTES[curNote]){NOTES[curNote].title=document.getElementById('note-title').value;NOTES[curNote].body=document.getElementById('note-body').value;document.getElementById('ns-status').textContent='Guardado ✓';T('Guardado','Nota guardada correctamente','✅');}}
+function markUns(){document.getElementById('ns-status').textContent='● Sin guardar';document.getElementById('ns-status').style.color='var(--warn)';}
+function fc(cmd){document.execCommand(cmd,false,null);}
+
+// ══ TOOLS ══
+const TOOLS_DEF = [
+  {id:'cable',n:'Caída de tensión',ico:'fa-bolt',c:'rgba(0,212,255,.1)',ic:'var(--ac)',d:'Cálculo pérdida voltaje cables'},
+  {id:'bw',n:'Ancho de banda CCTV',ico:'fa-wifi',c:'rgba(0,255,136,.1)',ic2:'var(--ok)',d:'Estimación BW por resolución y FPS'},
+  {id:'storage',n:'Almacenamiento NVR',ico:'fa-hdd',c:'rgba(255,107,53,.1)',ic3:'var(--ac3)',d:'Capacidad disco grabación continua'},
+  {id:'poe',n:'Presupuesto PoE',ico:'fa-plug',c:'rgba(123,94,167,.1)',ic4:'var(--ac2)',d:'Consumo potencia switches y cámaras'},
+  {id:'lens',n:'Lente & Campo visual',ico:'fa-camera',c:'rgba(255,184,0,.1)',ic5:'var(--warn)',d:'Ángulo de visión y distancia focal'},
+  {id:'checklist',n:'Checklist instalación',ico:'fa-clipboard-check',c:'rgba(0,255,136,.1)',ic6:'var(--ok)',d:'Protocolo entrega de proyecto'},
+];
+function renderTools(){
+  const g = document.getElementById('tools-grid'); if(!g) return;
+  g.innerHTML = TOOLS_DEF.map(t=>`<div class="card card-cl" onclick="openTool('${t.id}')" style="text-align:center;padding:20px 16px"><div style="width:50px;height:50px;border-radius:var(--r);${t.c}background:${t.c};margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:22px"><i class="fa ${t.ico}" style="color:${t.ic||t.ic2||t.ic3||t.ic4||t.ic5||t.ic6}"></i></div><h3 style="font-size:13px;font-weight:500;margin-bottom:5px">${t.n}</h3><p style="font-size:11px;color:var(--t3)">${t.d}</p></div>`).join('');
+}
+function openTool(id){
   const panel = document.getElementById('tool-panel');
-  const content = document.getElementById('tool-content');
-  panel.style.display = 'block';
-  content.innerHTML = `<h3 style="font-size:16px;font-weight:600;margin-bottom:20px;color:var(--accent)">${t.title}</h3>${t.html}`;
-  panel.scrollIntoView({ behavior:'smooth' });
+  const wrap = document.getElementById('tool-result');
+  wrap.style.display='block';
+  const H = {
+    cable:`<h3 style="font-size:14px;font-weight:600;color:var(--ac);margin-bottom:16px"><i class="fa fa-bolt" style="margin-right:7px"></i>Calculadora de Caída de Tensión</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="fg"><label class="fl">Voltaje (V)</label><input class="fi" id="tv" value="12" type="number"></div><div class="fg"><label class="fl">Corriente (A)</label><input class="fi" id="ti" value="0.5" type="number" step="0.1"></div><div class="fg"><label class="fl">Longitud cable (m)</label><input class="fi" id="tl" value="50" type="number"></div><div class="fg"><label class="fl">Calibre</label><select class="fs" id="tawg"><option value="0.326">AWG 22</option><option value="0.519">AWG 20</option><option value="0.823" selected>AWG 18</option><option value="1.31">AWG 16</option><option value="2.08">AWG 14</option></select></div></div><button class="bp" onclick="calcCable()" style="margin-top:8px">Calcular</button><div id="tr-c" style="margin-top:14px"></div>`,
+    bw:`<h3 style="font-size:14px;font-weight:600;color:var(--ok);margin-bottom:16px"><i class="fa fa-wifi" style="margin-right:7px"></i>Calculadora Ancho de Banda</h3><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px"><div class="fg"><label class="fl">Cámaras</label><input class="fi" id="bc" value="16" type="number"></div><div class="fg"><label class="fl">Resolución</label><select class="fs" id="br"><option value="2">1080p — 4Mbps</option><option value="4" selected>4MP — 6Mbps</option><option value="8">4K — 12Mbps</option></select></div><div class="fg"><label class="fl">Compresión</label><select class="fs" id="bcomp"><option value="1">H.264</option><option value="0.6" selected>H.265</option><option value="0.4">H.265+</option></select></div></div><button class="bp" onclick="calcBW()">Calcular</button><div id="tr-b" style="margin-top:14px"></div>`,
+  };
+  panel.innerHTML = H[id] || `<p style="color:var(--t2);font-size:13px">Herramienta "${id}" — en construcción.</p>`;
+  wrap.scrollIntoView({behavior:'smooth'});
+}
+function resBox(items){return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;background:var(--bg4);border-radius:var(--r);padding:16px">${items.map(i=>`<div style="text-align:center"><div style="font-size:22px;font-weight:700;font-family:var(--mono);color:${i.c}">${i.v}</div><div style="font-size:10px;color:var(--t3)">${i.l}</div></div>`).join('')}</div>`;}
+function calcCable(){const V=+document.getElementById('tv').value,I=+document.getElementById('ti').value,L=+document.getElementById('tl').value,A=+document.getElementById('tawg').value,R=(2*0.0172*L)/A,drop=I*R,pct=(drop/V)*100,ok=pct<5;document.getElementById('tr-c').innerHTML=resBox([{v:drop.toFixed(2)+'V',l:'Caída tensión',c:'var(--ac)'},{v:pct.toFixed(1)+'%',l:'Porcentaje',c:ok?'var(--ok)':'var(--danger)'},{v:ok?'✓ OK':'✗ ALTO',l:'Estado (máx 5%)',c:ok?'var(--ok)':'var(--danger)'}]);}
+function calcBW(){const c=+document.getElementById('bc').value,r=+document.getElementById('br').value,co=+document.getElementById('bcomp').value,mbps=c*r*co,gb=(mbps*3600*24)/(8*1024);document.getElementById('tr-b').innerHTML=resBox([{v:mbps.toFixed(1)+' Mbps',l:'BW total',c:'var(--ac)'},{v:gb.toFixed(0)+' GB/día',l:'Almacén diario',c:'var(--ok)'},{v:(gb*30/1024).toFixed(1)+' TB/mes',l:'Por mes',c:'var(--ac3)'}]);}
+
+// ══ CALENDAR FULL ══
+function renderCalFull(){
+  renderCal('cal-full', calM2);
+  const we = document.getElementById('week-events');
+  if(we) we.innerHTML = [
+    {time:'Lun 18',title:'Seguimiento proyecto CCTV',plat:'teams',color:'#6264A7'},
+    {time:'Mar 19',title:'Presentación propuesta Red IP',plat:'meet',color:'#4285F4'},
+    {time:'Mié 21',title:'Mantenimiento preventivo DVR',plat:'presencial',color:'#00FF88'},
+    {time:'Jue 22',title:'Capacitación Dahua AI Analytics',plat:'teams',color:'#6264A7'},
+    {time:'Vie 23',title:'Entrega parcial ZKTeco',plat:'presencial',color:'#FF6B35'},
+  ].map(e=>`<div class="meet-item"><div class="meet-time"><div class="mt" style="font-size:13px">${e.time}</div></div><div class="meet-info"><h4>${e.title}</h4><p style="color:${e.color}">${e.plat}</p></div></div>`).join('');
 }
 
-// Calculators
-function calcCable() {
-  const V = parseFloat(document.getElementById('t-v').value);
-  const I = parseFloat(document.getElementById('t-i').value);
-  const L = parseFloat(document.getElementById('t-l').value);
-  const A = parseFloat(document.getElementById('t-awg').value);
-  const rho = 0.0172; // cobre
-  const R = (2 * rho * L) / A;
-  const drop = I * R;
-  const pct = (drop / V) * 100;
-  const ok = pct < 5;
-  document.getElementById('t-result').style.display = 'block';
-  document.getElementById('t-result').innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-      <div style="text-align:center"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:var(--accent)">${drop.toFixed(2)}V</div><div style="font-size:11px;color:var(--text-muted)">Caída de tensión</div></div>
-      <div style="text-align:center"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:${ok?'var(--success)':'var(--danger)'}">${pct.toFixed(1)}%</div><div style="font-size:11px;color:var(--text-muted)">Porcentaje caída</div></div>
-      <div style="text-align:center"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:${ok?'var(--success)':'var(--danger)'}">${ok?'✓ OK':'✗ ALTO'}</div><div style="font-size:11px;color:var(--text-muted)">Estado (máx 5%)</div></div>
-    </div>
-    <div style="margin-top:12px;font-size:12px;color:var(--text-secondary);background:var(--bg-card);padding:10px;border-radius:8px">Tensión en dispositivo: <strong style="color:var(--accent)">${(V-drop).toFixed(2)}V</strong> — Resistencia total: ${R.toFixed(3)}Ω — ${ok?'✅ Instalación correcta':'⚠️ Aumentar calibre de cable'}</div>`;
+// ══ MODALS ══
+function openModal(id){document.getElementById(id).classList.add('op'); const d = document.querySelector('#'+id+' input[type=date]'); if(d) d.valueAsDate = new Date();}
+function closeModal(id){document.getElementById(id).classList.remove('op');}
+document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',function(e){if(e.target===this)this.classList.remove('op');}));
+
+function addNew(){const t=document.getElementById('new-title').value.trim();if(!t){T('Error','Escribe un título','⚠️');return;}closeModal('mo-new');T('Creado',t.substring(0,40),'✅');}
+function selTT(type){ttType=type;['in','eg','tr'].forEach(x=>document.getElementById('tt-'+x).classList.remove('on'));const m={'ingreso':'in','egreso':'eg','transferencia':'tr'};document.getElementById('tt-'+m[type]).classList.add('on');}
+function addTrans(){const d=document.getElementById('t-desc').value,m=document.getElementById('t-monto').value;if(!d||!m){T('Error','Completa todos los campos','⚠️');return;}TRANSACTIONS.unshift({t:d,cat:document.getElementById('t-cat').value,amt:+m,type:ttType,date:new Date().toLocaleDateString('es-CO').slice(0,5)});closeModal('mo-trans');T('Transacción','Registrada correctamente','💰');if(document.getElementById('v-finance').classList.contains('on'))renderFinance();}
+function addMeeting(){const t=document.getElementById('m-title').value;if(!t){T('Error','Escribe un título','⚠️');return;}MEETS.unshift({id:Date.now(),t,time:document.getElementById('m-time').value,date:new Date().toLocaleDateString('es-CO').slice(0,5),plat:document.getElementById('m-plat').value.toLowerCase().replace(' ',''),parts:[document.getElementById('m-parts').value||'Yo'],agenda:document.getElementById('m-agenda').value,when:'today'});closeModal('mo-meet');T('Reunión creada','Sincronizando con Teams/Calendar','📅');if(document.getElementById('v-meetings').classList.contains('on'))renderMeets();}
+function addGoal(){const t=document.getElementById('g-title').value;if(!t){T('Error','Escribe la meta','⚠️');return;}GOALS.push({id:Date.now(),t,type:document.getElementById('g-type').value,icon:'fa-star',color:'var(--ac)',pct:+document.getElementById('g-prog').value,dead:document.getElementById('g-dead').value||'31/12/26'});closeModal('mo-goal');T('Meta creada',t.substring(0,40),'🎯');if(document.getElementById('v-goals').classList.contains('on'))renderGoals();}
+function addTrip(){const d=document.getElementById('tr-dest').value;if(!d){T('Error','Escribe el destino','⚠️');return;}TRIPS.unshift({id:Date.now(),dest:d,flag:'✈️',dates:`${document.getElementById('tr-out').value} — ${document.getElementById('tr-back').value}`,budget:+document.getElementById('tr-bgt').value||0,spent:0,why:document.getElementById('tr-why').value,status:'upcoming',color:'var(--ac)'});closeModal('mo-trip');T('Viaje agregado',d,'✈️');if(document.getElementById('v-travel').classList.contains('on'))renderTrips();}
+function addDebt(){const n=document.getElementById('d-name').value;if(!n){T('Error','Escribe el nombre de la deuda','⚠️');return;}closeModal('mo-debt');T('Deuda registrada',n.substring(0,40),'💳');}
+function addHomeExpense(){const n=document.getElementById('h-name').value;if(!n){T('Error','Escribe la descripción','⚠️');return;}HOME_FIXED.push({n,cat:document.getElementById('h-cat').value,amt:+document.getElementById('h-monto').value||0,dia:+document.getElementById('h-dia').value||1,ico:'fa-home'});closeModal('mo-home');T('Gasto fijo agregado',n,'🏠');if(document.getElementById('v-home').classList.contains('on'))renderHome();}
+function changeNewType(){}
+function gsrch(v){if(v.length>2)T('Buscando',`"${v}" en todo NeuroNotes`,'🔍');}
+
+// ══ AI ══
+function toggleAI(){document.getElementById('aip').classList.toggle('op');}
+const AI_R = [
+  'Basado en tus finanzas de mayo, tus ingresos están un 12% por encima del mes anterior. Tu balance neto de $4.2M está bien — ¿quieres proyectar el ahorro para el año?',
+  'Tienes 3 reuniones hoy. La de Banco Popular (14:00) es la más crítica — el DVR offline puede requerir reemplazo de HDD. ¿Genero un reporte técnico previo?',
+  'Tu meta de certificación Dahua está al 65% — estás en buen camino para julio. Para CCNA Security al 40% necesitas acelerar el ritmo. ¿Te genero un plan de estudio?',
+  'Para el viaje a Medellín tienes presupuestado $800K. Con los gastos actuales de $120K ya usaste el 15%. ¿Quieres que te recuerde los límites por categoría?',
+  'Tu deuda de tarjeta Visa Bancolombia al 2.8% mensual es la más costosa. Pagarla antes reduciría $28.000 COP en intereses. ¿Análisis completo de deudas?',
+  'Tus gastos fijos del hogar suman $1.32M/mes. El seguro médico y el arriendo representan el 82%. ¿Quieres explorar opciones de optimización?',
+];
+let aiI=0;
+function sendAI(){
+  const inp=document.getElementById('ai-in');
+  const msg=inp.value.trim(); if(!msg) return;
+  inp.value='';
+  const msgs=document.getElementById('ai-msgs');
+  msgs.innerHTML+=`<div class="aimsg usr">${msg}</div>`;
+  const th=document.createElement('div');
+  th.className='aimsg ass';
+  th.innerHTML='<div class="dots"><span></span><span></span><span></span></div>';
+  msgs.appendChild(th);
+  msgs.scrollTop=msgs.scrollHeight;
+  setTimeout(()=>{
+    msgs.removeChild(th);
+    const lower=msg.toLowerCase();
+    let resp=AI_R[aiI%AI_R.length]; aiI++;
+    if(lower.includes('finanza')||lower.includes('dinero')||lower.includes('gasto')) resp=AI_R[0];
+    else if(lower.includes('reunion')||lower.includes('teams')||lower.includes('meet')) resp=AI_R[1];
+    else if(lower.includes('meta')||lower.includes('curso')||lower.includes('certif')) resp=AI_R[2];
+    else if(lower.includes('viaje')||lower.includes('medellin')||lower.includes('trip')) resp=AI_R[3];
+    else if(lower.includes('deuda')||lower.includes('tarjeta')||lower.includes('credito')) resp=AI_R[4];
+    else if(lower.includes('hogar')||lower.includes('casa')||lower.includes('arriendo')) resp=AI_R[5];
+    msgs.innerHTML+=`<div class="aimsg ass">${resp}</div>`;
+    msgs.scrollTop=msgs.scrollHeight;
+  },1200);
 }
 
-function calcBandwidth() {
-  const cams = parseInt(document.getElementById('b-cams').value);
-  const res = parseFloat(document.getElementById('b-res').value);
-  const comp = parseFloat(document.getElementById('b-comp').value);
-  const totalMbps = cams * res * comp * 2;
-  const totalGB_day = (totalMbps * 3600 * 24) / (8 * 1024);
-  document.getElementById('b-result').style.display = 'block';
-  document.getElementById('b-result').innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-      <div style="text-align:center"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:var(--accent)">${totalMbps.toFixed(1)}</div><div style="font-size:11px;color:var(--text-muted)">Mbps total</div></div>
-      <div style="text-align:center"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:var(--success)">${totalGB_day.toFixed(0)}</div><div style="font-size:11px;color:var(--text-muted)">GB/día</div></div>
-      <div style="text-align:center"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:var(--accent3)">${(totalGB_day*30/1024).toFixed(1)}</div><div style="font-size:11px;color:var(--text-muted)">TB/mes</div></div>
-    </div>
-    <div style="margin-top:12px;font-size:12px;color:var(--text-secondary);background:var(--bg-card);padding:10px;border-radius:8px">Switch recomendado: <strong style="color:var(--accent)">${totalMbps < 100 ? '100Mbps' : totalMbps < 400 ? 'Gigabit' : '10G'}</strong> — Uplink NVR mínimo: <strong style="color:var(--accent)">${Math.ceil(totalMbps/100)*100}Mbps</strong></div>`;
+// ══ DATETIME ══
+function updateDT(){
+  const el=document.getElementById('dt-now');
+  if(el){const n=new Date();el.textContent=n.toLocaleDateString('es-CO',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' • '+n.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})+' • Bogotá, Colombia';}
 }
 
-function calcStorage() {
-  const cams = parseInt(document.getElementById('s-cams').value);
-  const bit = parseFloat(document.getElementById('s-bit').value);
-  const days = parseInt(document.getElementById('s-days').value);
-  const total_TB = (cams * bit * 3600 * 24 * days) / (8 * 1024 * 1024 * 1024) * 1024;
-  const disks = Math.ceil(total_TB / 8);
-  document.getElementById('s-result').style.display = 'block';
-  document.getElementById('s-result').innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-      <div style="text-align:center"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:var(--accent)">${total_TB.toFixed(1)}</div><div style="font-size:11px;color:var(--text-muted)">TB requeridos</div></div>
-      <div style="text-align:center"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:var(--success)">${(total_TB*1024).toFixed(0)}</div><div style="font-size:11px;color:var(--text-muted)">GB totales</div></div>
-      <div style="text-align:center"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:var(--accent3)">${disks}</div><div style="font-size:11px;color:var(--text-muted)">HDDs x8TB sugeridos</div></div>
-    </div>
-    <div style="margin-top:12px;font-size:12px;color:var(--text-secondary);background:var(--bg-card);padding:10px;border-radius:8px">NVR sugerido: <strong style="color:var(--accent)">Dahua DHI-NVR5232 (max 256TB)</strong> — HDDs recomendados: WD Purple Pro ${Math.ceil(total_TB/cams)}TB por canal</div>`;
+// ══ TOAST ══
+let tt;
+function T(title,msg,ico='✅'){
+  const t=document.getElementById('toast');
+  document.getElementById('t-ttl').textContent=title;
+  document.getElementById('t-msg').textContent=msg;
+  document.getElementById('t-ico').textContent=ico;
+  t.classList.add('sh');
+  clearTimeout(tt);
+  tt=setTimeout(()=>ht(),3500);
 }
+function ht(){document.getElementById('toast').classList.remove('sh');}
 
-function calcPoE() {
-  const budget = parseFloat(document.getElementById('p-budget').value);
-  const dome = parseInt(document.getElementById('p-dome').value);
-  const domeW = parseFloat(document.getElementById('p-dome-w').value);
-  const ptz = parseInt(document.getElementById('p-ptz').value);
-  const ptzW = parseFloat(document.getElementById('p-ptz-w').value);
-  const total = (dome * domeW) + (ptz * ptzW);
-  const pct = (total / budget) * 100;
-  const ok = pct < 80;
-  document.getElementById('p-result').style.display = 'block';
-  document.getElementById('p-result').innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-      <div style="text-align:center"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:var(--accent)">${total.toFixed(1)}W</div><div style="font-size:11px;color:var(--text-muted)">Consumo total</div></div>
-      <div style="text-align:center"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:${ok?'var(--success)':'var(--danger)'}">${pct.toFixed(1)}%</div><div style="font-size:11px;color:var(--text-muted)">Del budget PoE</div></div>
-      <div style="text-align:center"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:var(--text-secondary)">${(budget-total).toFixed(1)}W</div><div style="font-size:11px;color:var(--text-muted)">Disponible</div></div>
-    </div>
-    <div style="margin-top:12px;font-size:12px;color:var(--text-secondary);background:var(--bg-card);padding:10px;border-radius:8px">${ok?'✅ Budget PoE suficiente':'⚠️ Budget excedido — usar inyectores PoE adicionales'} — Máximo recomendado: 80% = ${(budget*0.8).toFixed(0)}W</div>`;
-}
+// ══ INIT ══
+renderCal('cal-main',calM);
+updateDT();
+setInterval(updateDT,60000);
+renderDash();
 
-function calcLens() {
-  const focal = parseFloat(document.getElementById('l-focal').value);
-  const sensor = parseFloat(document.getElementById('l-sensor').value);
-  const dist = parseFloat(document.getElementById('l-dist').value);
-  const angleH = 2 * Math.atan(sensor / (2 * focal)) * (180 / Math.PI) * 1.33;
-  const widthAtDist = 2 * dist * Math.tan((angleH / 2) * Math.PI / 180);
-  document.getElementById('l-result').style.display = 'block';
-  document.getElementById('l-result').innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-      <div style="text-align:center"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:var(--accent)">${angleH.toFixed(1)}°</div><div style="font-size:11px;color:var(--text-muted)">Ángulo horizontal</div></div>
-      <div style="text-align:center"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:var(--success)">${widthAtDist.toFixed(1)}m</div><div style="font-size:11px;color:var(--text-muted)">Ancho a ${dist}m</div></div>
-      <div style="text-align:center"><div style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:var(--accent3)">${focal}mm</div><div style="font-size:11px;color:var(--text-muted)">Focal seleccionada</div></div>
-    </div>
-    <div style="margin-top:12px;font-size:12px;color:var(--text-secondary);background:var(--bg-card);padding:10px;border-radius:8px">Tipo de visión: <strong style="color:var(--accent)">${angleH > 90 ? '🔴 Gran angular' : angleH > 60 ? '🟡 Normal' : '🟢 Teleobjetivo'}</strong> — Lente sugerida: ${focal <= 2.8 ? '2.8mm (gran angular)' : focal <= 4 ? '4mm (estándar)' : focal <= 8 ? '8mm (medio)' : '12mm+ (tele)'}</div>`;
-}
-
-// ── INTEGRATIONS ──
-function toggleInt(btn) {
-  btn.classList.toggle('on');
-  showToast(btn.classList.contains('on') ? 'Activado' : 'Desactivado', 'Integración actualizada', btn.classList.contains('on') ? '✅' : '⚠️');
-}
-
-// ── MODAL ──
-function openNewModal() {
-  document.getElementById('modal-new').classList.add('open');
-  document.getElementById('new-date').valueAsDate = new Date(Date.now() + 3*24*3600*1000);
-}
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.getElementById('modal-new').addEventListener('click', function(e) { if(e.target===this) closeModal('modal-new'); });
-
-// ── AI PANEL ──
-function toggleAI() { document.getElementById('ai-panel').classList.toggle('open'); }
-
-const AI_RESPONSES = {
-  default: [
-    "Como ingeniero en seguridad electrónica, te recomiendo documentar cada instalación con fotos georreferenciadas. ¿Necesitas una plantilla de reporte técnico?",
-    "Para sistemas Dahua, la integración con ONVIF permite compatibilidad con plataformas de terceros. ¿Quieres que genere la configuración?",
-    "Recuerda que para instalaciones en bancos, la norma UL 681 exige detectores de vibración certificados en bóvedas.",
-    "Para optimizar el ancho de banda en sistemas de 32+ cámaras, H.265+ puede reducir el almacenamiento hasta un 60% vs H.264.",
-  ],
-  cctv: "Para el sistema CCTV de Los Pinos, te sugiero configurar AI Line Crossing en la entrada vehicular y Face Detection en portería. ¿Genero el manual de configuración paso a paso?",
-  paradox: "El Paradox EVO192 soporta hasta 192 zonas con expansores EVO641. Para el banco, asegúrate de programar la zona de apertura de bóveda con tiempo de retardo y código duress.",
-  camara: "Para elegir el lente correcto: con una cámara a 10m queriendo cubrir 6m de ancho, necesitas aproximadamente focal = (distancia × tamaño_sensor) / ancho = (10 × 4.8) / 6000 ≈ 2.8mm. ¿Usas la calculadora integrada?"
-};
-
-function sendAIMessage() {
-  const input = document.getElementById('ai-input');
-  const msg = input.value.trim();
-  if (!msg) return;
-  input.value = '';
-
-  const msgs = document.getElementById('ai-messages');
-  msgs.innerHTML += `<div class="ai-msg user">${msg}</div>`;
-
-  const thinking = document.createElement('div');
-  thinking.className = 'ai-msg thinking';
-  thinking.innerHTML = '<div class="dots"><span></span><span></span><span></span></div>';
-  msgs.appendChild(thinking);
-  msgs.scrollTop = msgs.scrollHeight;
-
-  setTimeout(() => {
-    msgs.removeChild(thinking);
-    const lower = msg.toLowerCase();
-    let resp = AI_RESPONSES.default[Math.floor(Math.random() * AI_RESPONSES.default.length)];
-    if (lower.includes('cctv') || lower.includes('cámara') || lower.includes('dahua')) resp = AI_RESPONSES.cctv;
-    if (lower.includes('paradox') || lower.includes('alarma') || lower.includes('zona')) resp = AI_RESPONSES.paradox;
-    if (lower.includes('lente') || lower.includes('focal') || lower.includes('campo')) resp = AI_RESPONSES.camara;
-    msgs.innerHTML += `<div class="ai-msg assistant">${resp}</div>`;
-    msgs.scrollTop = msgs.scrollHeight;
-  }, 1400);
-}
-
-// ── SEARCH ──
-function handleSearch(val) {
-  if (val.length < 2) return;
-  showToast('Buscando', `Resultados para: "${val}"`, '🔍');
-}
-
-// ── TOAST ──
-let toastTimer;
-function showToast(title, msg, icon='✅') {
-  const t = document.getElementById('toast');
-  document.getElementById('toast-title').textContent = title;
-  document.getElementById('toast-msg').textContent = msg;
-  document.getElementById('toast-icon').textContent = icon;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => hideToast(), 3500);
-}
-function hideToast() { document.getElementById('toast').classList.remove('show'); }
-
-// ── INIT ──
-renderCalendar();
-updateTime();
-setInterval(updateTime, 60000);
-showToast('NeuroNotes listo', 'neuronotes.duckdns.org — Sistema operativo', '🧠');
+setTimeout(()=>{T('NeuroNotes v2 listo','15 módulos activos — neuronotes.duckdns.org','🧠');},800);
 </script>
 </body>
 </html>
