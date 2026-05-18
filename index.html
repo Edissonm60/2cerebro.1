@@ -2856,22 +2856,10 @@ let calM2 = new Date(now.getFullYear(), now.getMonth(), 1);
 let curNote = 0, kbFilter = 'all';
 let ttType = 'ingreso';
 
-let NOTES = [];
-const KB_COLS = ['Pendiente','Iniciado','En Progreso','Revisión','Completado','Cancelado'];
-const KB_COL_COLORS = {
-  'Pendiente':'#8899BB','Iniciado':'#00D4FF','En Progreso':'#FFB800',
-  'Revisión':'#7B5EA7','Completado':'#00FF88','Cancelado':'#FF4444'
-};
-let KB = {'Pendiente':[],'Iniciado':[],'En Progreso':[],'Revisión':[],'Completado':[],'Cancelado':[]};
-const PC = {'Urgente':'#FF4444','Alta':'#FFB800','Normal':'#00D4FF','Baja':'#8899BB'};
+// ══ PERSISTENCIA LOCAL — Guarda y carga todos los datos automáticamente ══
+const NN_KEY = 'neuronotes_v2_data';
 
-let MEETS = [];
-let GOALS = [];
-let COURSES = [];
-let TRIPS = [];
-let TRANSACTIONS = [];
-let DEBTS = [];
-let BUDGET_CATS = [
+const DEFAULT_BUDGET_CATS = [
   {n:'Alimentación',  icon:'fa-utensils',     color:'#00D4FF', used:0, total:0},
   {n:'Transporte',    icon:'fa-car',           color:'#7B5EA7', used:0, total:0},
   {n:'Tecnología',    icon:'fa-microchip',     color:'#FF6B35', used:0, total:0},
@@ -2881,8 +2869,46 @@ let BUDGET_CATS = [
   {n:'Arriendo',      icon:'fa-building',      color:'#8899BB', used:0, total:0},
   {n:'Deudas',        icon:'fa-credit-card',   color:'#FF4444', used:0, total:0},
 ];
-let HOME_FIXED = [];
-let HOME_TASKS = [];
+const DEFAULT_KB = {'Pendiente':[],'Iniciado':[],'En Progreso':[],'Revisión':[],'Completado':[],'Cancelado':[]};
+
+function nnSave() {
+  try {
+    const data = {
+      NOTES, KB, MEETS, GOALS, COURSES, TRIPS,
+      TRANSACTIONS, DEBTS, BUDGET_CATS, HOME_FIXED, HOME_TASKS
+    };
+    localStorage.setItem(NN_KEY, JSON.stringify(data));
+  } catch(e) { console.warn('NeuroNotes: error guardando', e); }
+}
+
+function nnLoad() {
+  try {
+    const raw = localStorage.getItem(NN_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch(e) { return null; }
+}
+
+const _saved = nnLoad();
+
+let NOTES        = _saved ? (_saved.NOTES        || []) : [];
+const KB_COLS    = ['Pendiente','Iniciado','En Progreso','Revisión','Completado','Cancelado'];
+const KB_COL_COLORS = {
+  'Pendiente':'#8899BB','Iniciado':'#00D4FF','En Progreso':'#FFB800',
+  'Revisión':'#7B5EA7','Completado':'#00FF88','Cancelado':'#FF4444'
+};
+let KB           = _saved ? (_saved.KB           || {...DEFAULT_KB}) : {...DEFAULT_KB};
+const PC         = {'Urgente':'#FF4444','Alta':'#FFB800','Normal':'#00D4FF','Baja':'#8899BB'};
+
+let MEETS        = _saved ? (_saved.MEETS        || []) : [];
+let GOALS        = _saved ? (_saved.GOALS        || []) : [];
+let COURSES      = _saved ? (_saved.COURSES      || []) : [];
+let TRIPS        = _saved ? (_saved.TRIPS        || []) : [];
+let TRANSACTIONS = _saved ? (_saved.TRANSACTIONS || []) : [];
+let DEBTS        = _saved ? (_saved.DEBTS        || []) : [];
+let BUDGET_CATS  = _saved ? (_saved.BUDGET_CATS  || DEFAULT_BUDGET_CATS.map(c=>({...c}))) : DEFAULT_BUDGET_CATS.map(c=>({...c}));
+let HOME_FIXED   = _saved ? (_saved.HOME_FIXED   || []) : [];
+let HOME_TASKS   = _saved ? (_saved.HOME_TASKS   || []) : [];
 
 // ══ FINANCE SUB-TAB ══
 let finTab = 'all'; // 'all' | 'ingresos' | 'egresos' | 'deudas' | 'presupuesto'
@@ -3030,7 +3056,7 @@ function renderMeets() {
   document.getElementById('meets-upcoming').innerHTML = up.length ? up.map(m=>meetHTML(m)).join('') : empty;
   document.getElementById('meets-past').innerHTML     = ps.length ? ps.map(m=>meetHTML(m)).join('') : '<div style=&quot;text-align:center;padding:20px;color:var(--t3);font-size:12px&quot;>Sin historial aún</div>';
 }
-function deleteMeet(id){MEETS=MEETS.filter(m=>m.id!==id);renderMeets();renderDash();T('Reunión eliminada','','🗑️');}
+function deleteMeet(id){MEETS=MEETS.filter(m=>m.id!==id);nnSave();renderMeets();renderDash();T('Reunión eliminada','','🗑️');}
 function filterMeets(f,btn){
   document.querySelectorAll('#v-meetings .bd2b').forEach(b=>b.classList.remove('on'));
   if(btn)btn.classList.add('on');
@@ -3216,11 +3242,11 @@ function moveTask(fromCol,taskId,toCol){
   const task=KB[fromCol].splice(idx,1)[0];
   if(!KB[toCol])KB[toCol]=[];
   KB[toCol].push(task);
-  renderKB(); T('Estado cambiado',task.t.substring(0,35)+' → '+toCol,'🔄');
+  nnSave();  renderKB(); T('Estado cambiado',task.t.substring(0,35)+' → '+toCol,'🔄');
 }
 function deleteTask(col,taskId){
   const idx=KB[col].findIndex(c=>c.id===taskId); if(idx===-1)return;
-  const name=KB[col][idx].t; KB[col].splice(idx,1); renderKB(); T('Eliminado',name.substring(0,40),'🗑️');
+  const name=KB[col][idx].t; KB[col].splice(idx,1); nnSave(); renderKB(); T('Eliminado',name.substring(0,40),'🗑️');
 }
 function fk(f,btn){kbFilter=f;document.querySelectorAll('#v-kanban .bd2b').forEach(b=>b.classList.remove('on'));if(btn)btn.classList.add('on');renderKB();}
 
@@ -3237,9 +3263,9 @@ function renderNotes(){
   loadNote(Math.min(curNote,NOTES.length-1));
 }
 function loadNote(i){curNote=i;const n=NOTES[i];document.getElementById('note-title').value=n.title;document.getElementById('note-body').value=n.body;document.getElementById('ns-status').textContent='Guardado ✓';document.getElementById('ns-status').style.color='var(--ok)';}
-function addNote(){NOTES.unshift({id:Date.now(),title:'Nueva nota técnica',body:'## Título\n\nEscribe aquí...',date:new Date().toLocaleDateString('es-CO').slice(0,5),tags:[]});curNote=0;renderNotes();T('Nota creada','Lista para editar','📝');}
-function saveNote(){if(NOTES[curNote]){NOTES[curNote].title=document.getElementById('note-title').value;NOTES[curNote].body=document.getElementById('note-body').value;document.getElementById('ns-status').textContent='Guardado ✓';document.getElementById('ns-status').style.color='var(--ok)';T('Guardado','Nota guardada correctamente','✅');}}
-function deleteNote(i){if(!confirm('¿Eliminar esta nota?'))return;NOTES.splice(i,1);curNote=Math.max(0,Math.min(curNote,NOTES.length-1));renderNotes();T('Nota eliminada','','🗑️');}
+function addNote(){NOTES.unshift({id:Date.now(),title:'Nueva nota técnica',body:'## Título\n\nEscribe aquí...',date:new Date().toLocaleDateString('es-CO').slice(0,5),tags:[]});curNote=0;nnSave();renderNotes();T('Nota creada','Lista para editar','📝');}
+function saveNote(){if(NOTES[curNote]){NOTES[curNote].title=document.getElementById('note-title').value;NOTES[curNote].body=document.getElementById('note-body').value;nnSave();document.getElementById('ns-status').textContent='Guardado ✓';document.getElementById('ns-status').style.color='var(--ok)';T('Guardado','Nota guardada correctamente','✅');}}
+function deleteNote(i){if(!confirm('¿Eliminar esta nota?'))return;NOTES.splice(i,1);curNote=Math.max(0,Math.min(curNote,NOTES.length-1));nnSave();renderNotes();T('Nota eliminada','','🗑️');}
 function markUns(){document.getElementById('ns-status').textContent='● Sin guardar';document.getElementById('ns-status').style.color='var(--warn)';}
 function fc(cmd){document.execCommand(cmd,false,null);}
 
@@ -3310,6 +3336,7 @@ function addNew(){
   }
   document.getElementById('new-title').value='';
   document.getElementById('new-desc').value='';
+  nnSave();
   renderDash();
 }
 
@@ -3325,6 +3352,7 @@ function addTrans(){
   document.getElementById('t-desc').value='';
   document.getElementById('t-monto').value='';
   closeModal('mo-trans');
+  nnSave();
   T('Transacción','Registrada correctamente','💰');
   if(document.getElementById('v-finance').classList.contains('on'))renderFinance();
   renderDash();
@@ -3353,6 +3381,7 @@ function addMeeting(){
   pushNotif('📅 Reunión agendada: '+t,
     (newM.time||'')+'  '+newM.date+'  — '+document.getElementById('m-plat').value,'📅');
   scheduleAlarm(newM);
+  nnSave();
   if(document.getElementById('v-meetings').classList.contains('on'))renderMeets();
   renderDash();
 }
@@ -3370,6 +3399,7 @@ function addGoal(){
   T('Meta creada',t.substring(0,40),'🎯');
   playAlarmSound('task');
   pushNotif('🎯 Nueva meta: '+t.substring(0,50),'¡A por ella! Progreso: 0%','🎯');
+  nnSave();
   if(document.getElementById('v-goals').classList.contains('on'))renderGoals();
   renderDash();
 }
@@ -3383,6 +3413,7 @@ function addTrip(){
   TRIPS.unshift({id:Date.now(),dest:d,flag:'✈️',dates:`${fmtDate(out)} — ${fmtDate(back)}`,budget:+document.getElementById('tr-bgt').value||0,spent:0,why:document.getElementById('tr-why').value,status:'upcoming',color:'var(--ac)'});
   document.getElementById('tr-dest').value='';
   closeModal('mo-trip');
+  nnSave();
   T('Viaje agregado',d,'✈️');
   if(document.getElementById('v-travel').classList.contains('on'))renderTrips();
   renderDash();
@@ -3402,6 +3433,7 @@ function addDebt(){
   document.getElementById('d-quota').value='';
   document.getElementById('d-rate').value='';
   closeModal('mo-debt');
+  nnSave();
   T('Deuda registrada',n.substring(0,40),'💳');
   if(document.getElementById('v-finance').classList.contains('on'))renderFinance();
   renderDash();
@@ -3416,6 +3448,7 @@ function addHomeExpense(){
   document.getElementById('h-name').value='';
   document.getElementById('h-monto').value='';
   closeModal('mo-home');
+  nnSave();
   T('Gasto fijo agregado',n,'🏠');
   if(document.getElementById('v-home').classList.contains('on'))renderHome();
 }
@@ -3470,16 +3503,16 @@ function sendAI(){
 }
 
 // ══ DELETE &amp; HELPERS ══
-function deleteGoal(i){if(!confirm('¿Eliminar esta meta?'))return;GOALS.splice(i,1);renderGoals();renderDash();T('Meta eliminada','','🗑️');}
-function deleteCourse(i){if(!confirm('¿Eliminar este curso?'))return;COURSES.splice(i,1);renderGoals();T('Curso eliminado','','🗑️');}
-function deleteTrip(i){if(!confirm('¿Eliminar este viaje?'))return;TRIPS.splice(i,1);renderTrips();renderDash();T('Viaje eliminado','','🗑️');}
-function changeTripStatus(i,status){TRIPS[i].status=status;renderTrips();T('Estado actualizado',TRIPS[i].dest+' → '+status,'✈️');}
-function deleteTrans(i){TRANSACTIONS.splice(i,1);renderFinance();renderDash();T('Transacción eliminada','','🗑️');}
-function deleteDebt(i){if(!confirm('¿Eliminar esta deuda?'))return;DEBTS.splice(i,1);renderFinance();renderDash();T('Deuda eliminada','','🗑️');}
-function deleteHomeFixed(i){HOME_FIXED.splice(i,1);renderHome();T('Gasto fijo eliminado','','🗑️');}
-function deleteHomeTask(i){HOME_TASKS.splice(i,1);renderHome();T('Tarea eliminada','','🗑️');}
-function toggleHomeTask(i){HOME_TASKS[i].done=!HOME_TASKS[i].done;renderHome();}
-function updateGoalProgress(i){const pct=parseInt(prompt('Nuevo porcentaje de avance (0-100):',GOALS[i].pct));if(isNaN(pct)||pct<0||pct>100){T('Error','Ingresa un número entre 0 y 100','⚠️');return;}GOALS[i].pct=pct;renderGoals();renderDash();T('Meta actualizada',GOALS[i].t.substring(0,35)+' — '+pct+'%','🎯');}
+function deleteGoal(i){if(!confirm('¿Eliminar esta meta?'))return;GOALS.splice(i,1);nnSave();renderGoals();renderDash();T('Meta eliminada','','🗑️');}
+function deleteCourse(i){if(!confirm('¿Eliminar este curso?'))return;COURSES.splice(i,1);nnSave();renderGoals();T('Curso eliminado','','🗑️');}
+function deleteTrip(i){if(!confirm('¿Eliminar este viaje?'))return;TRIPS.splice(i,1);nnSave();renderTrips();renderDash();T('Viaje eliminado','','🗑️');}
+function changeTripStatus(i,status){TRIPS[i].status=status;nnSave();renderTrips();T('Estado actualizado',TRIPS[i].dest+' → '+status,'✈️');}
+function deleteTrans(i){TRANSACTIONS.splice(i,1);nnSave();renderFinance();renderDash();T('Transacción eliminada','','🗑️');}
+function deleteDebt(i){if(!confirm('¿Eliminar esta deuda?'))return;DEBTS.splice(i,1);nnSave();renderFinance();renderDash();T('Deuda eliminada','','🗑️');}
+function deleteHomeFixed(i){HOME_FIXED.splice(i,1);nnSave();renderHome();T('Gasto fijo eliminado','','🗑️');}
+function deleteHomeTask(i){HOME_TASKS.splice(i,1);nnSave();renderHome();T('Tarea eliminada','','🗑️');}
+function toggleHomeTask(i){HOME_TASKS[i].done=!HOME_TASKS[i].done;nnSave();renderHome();}
+function updateGoalProgress(i){const pct=parseInt(prompt('Nuevo porcentaje de avance (0-100):',GOALS[i].pct));if(isNaN(pct)||pct<0||pct>100){T('Error','Ingresa un número entre 0 y 100','⚠️');return;}GOALS[i].pct=pct;nnSave();renderGoals();renderDash();T('Meta actualizada',GOALS[i].t.substring(0,35)+' — '+pct+'%','🎯');}
 
 function getDashStats(){
   const ingresos=TRANSACTIONS.filter(t=>t.type==='ingreso').reduce((s,t)=>s+t.amt,0);
@@ -3523,7 +3556,14 @@ renderDash();
 setTimeout(initNotifications, 500);
 setTimeout(checkAlarms, 1000);
 setInterval(checkAlarms, 60000);
-setTimeout(()=>{T('NeuroNotes v2 listo','Todos los datos vacíos — empieza a ingresar los tuyos 🚀','🧠');},800);
+setTimeout(()=>{
+  if(_saved) {
+    const total = NOTES.length + MEETS.length + GOALS.length + TRIPS.length + TRANSACTIONS.length + Object.values(KB).flat().length;
+    T('NeuroNotes v2 listo', total > 0 ? `${total} elementos cargados desde tu historial ✅` : 'Empieza a ingresar tus datos 🚀','🧠');
+  } else {
+    T('NeuroNotes v2 listo','Todos los datos vacíos — empieza a ingresar los tuyos 🚀','🧠');
+  }
+},800);
 
 // ═══════════════════════════════════════════════════════════
 // 🔔 SISTEMA DE NOTIFICACIONES, ALARMAS Y EXPORTACIÓN .ICS
