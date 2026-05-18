@@ -25,7 +25,7 @@ html,body{height:100%;overflow:hidden;background:#080C14;color:#E8F0FE;font-fami
 .tbtn{display:flex;align-items:center;gap:8px;padding:8px 20px;font-size:13px;
   font-weight:600;border:1px solid #1E2E44;border-radius:8px;cursor:pointer;
   background:#111927;color:#8899BB;white-space:nowrap;transition:all .18s;
-  min-height:38px;user-select:none;}
+  min-height:38px;user-select:none;touch-action:manipulation;}
 .tbtn:hover{background:#162035;color:#E8F0FE;border-color:#263d5a;}
 .tbtn.on{background:linear-gradient(135deg,rgba(14,165,233,.2),rgba(0,212,255,.1));
   color:#fff;border-color:#00D4FF;box-shadow:0 2px 14px rgba(0,212,255,.15);}
@@ -56,7 +56,7 @@ html,body{height:100%;overflow:hidden;background:#080C14;color:#E8F0FE;font-fami
     <div class="ver">Ing. Edisson Macias</div>
   </div>
   <div id="frames">
-    <iframe class="fr on"  id="f1" title="Planos" srcdoc="<!DOCTYPE html>
+    <iframe class="fr on"  id="f1" title="Planos"      srcdoc="<!DOCTYPE html>
 <html lang=&quot;es&quot;>
 <head>
 <meta charset=&quot;UTF-8&quot;/>
@@ -2072,7 +2072,7 @@ setTimeout(()=>showToast(&quot;EM Seguridad PRO — Ing. Edisson Macias ✓&quot
 </body>
 </html>
 "></iframe>
-    <iframe class="fr off" id="f2" title="NeuroNotes" srcdoc="<!DOCTYPE html>
+    <iframe class="fr off" id="f2" title="NeuroNotes"  srcdoc="<!DOCTYPE html>
 <html lang=&quot;es&quot;>
 <head>
 <meta charset=&quot;UTF-8&quot;>
@@ -2393,26 +2393,26 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
   </div>
   <div class=&quot;sbs&quot;>
     <div class=&quot;sl&quot;>Principal</div>
-    <div class=&quot;si on&quot; onclick=&quot;V('dash')&quot;><i class=&quot;fa fa-th-large&quot;></i> Dashboard<span class=&quot;sib&quot;>!</span></div>
-    <div class=&quot;si&quot; onclick=&quot;V('finance')&quot;><i class=&quot;fa fa-coins&quot;></i> Finanzas<span class=&quot;sib g&quot;>OK</span></div>
+    <div class=&quot;si on&quot; onclick=&quot;V('dash')&quot;><i class=&quot;fa fa-th-large&quot;></i> Dashboard</div>
+    <div class=&quot;si&quot; onclick=&quot;V('finance')&quot;><i class=&quot;fa fa-coins&quot;></i> Finanzas</div>
     <div class=&quot;si&quot; onclick=&quot;V('calendar')&quot;><i class=&quot;fa fa-calendar-alt&quot;></i> Calendario</div>
-    <div class=&quot;si&quot; onclick=&quot;V('meetings')&quot;><i class=&quot;fa fa-video&quot;></i> Reuniones<span class=&quot;sib&quot;>3</span></div>
+    <div class=&quot;si&quot; onclick=&quot;V('meetings')&quot;><i class=&quot;fa fa-video&quot;></i> Reuniones</div>
     <div class=&quot;sl&quot;>Personal</div>
-    <div class=&quot;si&quot; onclick=&quot;V('goals')&quot;><i class=&quot;fa fa-bullseye&quot;></i> Metas &amp; Cursos<span class=&quot;sib w&quot;>5</span></div>
+    <div class=&quot;si&quot; onclick=&quot;V('goals')&quot;><i class=&quot;fa fa-bullseye&quot;></i> Metas &amp; Cursos</div>
     <div class=&quot;si&quot; onclick=&quot;V('travel')&quot;><i class=&quot;fa fa-plane&quot;></i> Viajes &amp; Trips</div>
     <div class=&quot;si&quot; onclick=&quot;V('home')&quot;><i class=&quot;fa fa-house-user&quot;></i> Hogar &amp; Gastos</div>
     <div class=&quot;sl&quot;>Trabajo</div>
-    <div class=&quot;si&quot; onclick=&quot;V('kanban')&quot;><i class=&quot;fa fa-tasks&quot;></i> Proyectos<span class=&quot;sib w&quot;>7</span></div>
-    <div class=&quot;si&quot; onclick=&quot;V('notes')&quot;><i class=&quot;fa fa-file-alt&quot;></i> Notas Técnicas<span class=&quot;sib&quot;>12</span></div>
+    <div class=&quot;si&quot; onclick=&quot;V('kanban')&quot;><i class=&quot;fa fa-tasks&quot;></i> Proyectos</div>
+    <div class=&quot;si&quot; onclick=&quot;V('notes')&quot;><i class=&quot;fa fa-file-alt&quot;></i> Notas Técnicas</div>
     <div class=&quot;si&quot; onclick=&quot;V('tools')&quot;><i class=&quot;fa fa-tools&quot;></i> Herramientas</div>
     <div class=&quot;sl&quot;>Finanzas detalle</div>
     <div class=&quot;si&quot; onclick=&quot;goFinance('ingresos')&quot;><i class=&quot;fa fa-arrow-up&quot; style=&quot;color:var(--ok)&quot;></i> Ingresos</div>
-    <div class=&quot;si&quot; onclick=&quot;goFinance('egresos')&quot;><i class=&quot;fa fa-arrow-down&quot; style=&quot;color:var(--danger)&quot;></i> Egresos<span class=&quot;sib d&quot;>!</span></div>
-    <div class=&quot;si&quot; onclick=&quot;goFinance('deudas')&quot;><i class=&quot;fa fa-credit-card&quot; style=&quot;color:var(--warn)&quot;></i> Deudas<span class=&quot;sib w&quot;>0</span></div>
+    <div class=&quot;si&quot; onclick=&quot;goFinance('egresos')&quot;><i class=&quot;fa fa-arrow-down&quot; style=&quot;color:var(--danger)&quot;></i> Egresos</div>
+    <div class=&quot;si&quot; onclick=&quot;goFinance('deudas')&quot;><i class=&quot;fa fa-credit-card&quot; style=&quot;color:var(--warn)&quot;></i> Deudas</div>
     <div class=&quot;si&quot; onclick=&quot;goFinance('presupuesto')&quot;><i class=&quot;fa fa-piggy-bank&quot; style=&quot;color:var(--ac)&quot;></i> Presupuesto</div>
     <div class=&quot;sl&quot;>Integraciones</div>
-    <div class=&quot;si&quot;><i class=&quot;fab fa-microsoft&quot; style=&quot;color:#6264A7&quot;></i> Microsoft Teams<span class=&quot;sib&quot; style=&quot;background:#6264A7&quot;>Sync</span></div>
-    <div class=&quot;si&quot;><i class=&quot;fab fa-google&quot; style=&quot;color:#4285F4&quot;></i> Google Calendar<span class=&quot;sib g&quot;>ON</span></div>
+    <div class=&quot;si&quot;><i class=&quot;fab fa-microsoft&quot; style=&quot;color:#6264A7&quot;></i> Microsoft Teams</div>
+    <div class=&quot;si&quot;><i class=&quot;fab fa-google&quot; style=&quot;color:#4285F4&quot;></i> Google Calendar</div>
     <div class=&quot;si&quot;><i class=&quot;fab fa-google-drive&quot; style=&quot;color:#FBBC05&quot;></i> Google Drive</div>
   </div>
   <button class=&quot;bna&quot; onclick=&quot;openModal('mo-new')&quot;><i class=&quot;fa fa-plus&quot;></i> Nuevo elemento</button>
@@ -2671,10 +2671,10 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
     <div class=&quot;view&quot; id=&quot;v-home&quot;>
       <div class=&quot;pg&quot;><h1 class=&quot;pgh1&quot;>Hogar &amp; <em>Gastos fijos</em></h1><p class=&quot;pgp&quot;>Gestión de gastos del hogar, servicios, mantenimiento y presupuesto familiar</p></div>
       <div class=&quot;g4&quot; style=&quot;margin-bottom:22px&quot;>
-        <div class=&quot;sc&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(255,107,53,.1)&quot;><i class=&quot;fa fa-home&quot; style=&quot;color:var(--ac3)&quot;></i></div><div class=&quot;scn&quot; style=&quot;color:var(--ac3)&quot;>$1.8M</div><div class=&quot;scl&quot;>Gastos hogar/mes</div></div>
-        <div class=&quot;sc&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(0,212,255,.1)&quot;><i class=&quot;fa fa-bolt&quot; style=&quot;color:var(--ac)&quot;></i></div><div class=&quot;scn&quot;>$180K</div><div class=&quot;scl&quot;>Servicios públicos</div><div class=&quot;scc wa&quot;>Vence 20/05</div></div>
-        <div class=&quot;sc&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(0,255,136,.1)&quot;><i class=&quot;fa fa-wrench&quot; style=&quot;color:var(--ok)&quot;></i></div><div class=&quot;scn&quot;>$350K</div><div class=&quot;scl&quot;>Mantenimiento</div></div>
-        <div class=&quot;sc&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(123,94,167,.1)&quot;><i class=&quot;fa fa-shopping-cart&quot; style=&quot;color:var(--ac2)&quot;></i></div><div class=&quot;scn&quot;>$620K</div><div class=&quot;scl&quot;>Mercado/alimentos</div></div>
+        <div class=&quot;sc&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(255,107,53,.1)&quot;><i class=&quot;fa fa-home&quot; style=&quot;color:var(--ac3)&quot;></i></div><div class=&quot;scn&quot; style=&quot;color:var(--ac3)&quot; id=&quot;home-stat-total&quot;>$0</div><div class=&quot;scl&quot;>Gastos hogar/mes</div></div>
+        <div class=&quot;sc&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(0,212,255,.1)&quot;><i class=&quot;fa fa-bolt&quot; style=&quot;color:var(--ac)&quot;></i></div><div class=&quot;scn&quot; id=&quot;home-stat-serv&quot;>$0</div><div class=&quot;scl&quot;>Servicios públicos</div></div>
+        <div class=&quot;sc&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(0,255,136,.1)&quot;><i class=&quot;fa fa-wrench&quot; style=&quot;color:var(--ok)&quot;></i></div><div class=&quot;scn&quot; id=&quot;home-stat-mant&quot;>$0</div><div class=&quot;scl&quot;>Mantenimiento</div></div>
+        <div class=&quot;sc&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(123,94,167,.1)&quot;><i class=&quot;fa fa-shopping-cart&quot; style=&quot;color:var(--ac2)&quot;></i></div><div class=&quot;scn&quot; id=&quot;home-stat-merc&quot;>$0</div><div class=&quot;scl&quot;>Mercado/alimentos</div></div>
       </div>
       <div class=&quot;g2&quot; style=&quot;margin-bottom:22px&quot;>
         <div>
@@ -3162,6 +3162,16 @@ function renderHome() {
     ? '<div style=&quot;text-align:center;padding:20px;color:var(--t3);font-size:12px&quot;>Sin tareas del hogar</div>'
     : HOME_TASKS.map((task,thi)=>`<div style=&quot;display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rs);margin-bottom:7px&quot;><input type=&quot;checkbox&quot; style=&quot;accent-color:var(--ac)&quot; ${task.done?'checked':''} onchange=&quot;toggleHomeTask(${thi})&quot;><span style=&quot;flex:1;font-size:12px;${task.done?'text-decoration:line-through;color:var(--t3)':''}&quot;>${task.t}</span><span class=&quot;chip ${task.p==='Alta'?'co':task.p==='Media'?'cy':'cg'}&quot; style=&quot;font-size:9px&quot;>${task.p}</span><button onclick=&quot;deleteHomeTask(${thi})&quot; style=&quot;background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px&quot; onmouseover=&quot;this.style.color='#FF4444'&quot; onmouseout=&quot;this.style.color='var(--t3)'&quot;><i class=&quot;fa fa-trash&quot;></i></button></div>`).join('');
   const hr = document.getElementById('home-reminders');
+  // Update home stat cards dynamically
+  var fmt=function(v){return v>=1000000?'$'+(v/1000000).toFixed(1)+'M':v>=1000?'$'+(v/1000).toFixed(0)+'K':'$'+v;};
+  var totalFijo=HOME_FIXED.reduce(function(s,h){return s+h.amt;},0);
+  var serv=HOME_FIXED.filter(function(h){return h.cat==='Servicios públicos';}).reduce(function(s,h){return s+h.amt;},0);
+  var mant=HOME_FIXED.filter(function(h){return h.cat==='Mantenimiento';}).reduce(function(s,h){return s+h.amt;},0);
+  var alim=HOME_FIXED.filter(function(h){return h.cat==='Alimentación';}).reduce(function(s,h){return s+h.amt;},0);
+  var el1=document.getElementById('home-stat-total'); if(el1)el1.textContent=fmt(totalFijo);
+  var el2=document.getElementById('home-stat-serv');  if(el2)el2.textContent=fmt(serv);
+  var el3=document.getElementById('home-stat-mant');  if(el3)el3.textContent=fmt(mant);
+  var el4=document.getElementById('home-stat-merc');  if(el4)el4.textContent=fmt(alim);
   if(hr) hr.innerHTML = HOME_FIXED.filter(h=>h.dia>=(new Date().getDate())).slice(0,4).map(h=>`<div style=&quot;display:flex;align-items:center;gap:10px;padding:9px 12px;background:rgba(255,184,0,.05);border:1px solid rgba(255,184,0,.2);border-radius:var(--rs);margin-bottom:6px&quot;><i class=&quot;fa fa-bell&quot; style=&quot;color:var(--warn);font-size:13px&quot;></i><div style=&quot;flex:1&quot;><div style=&quot;font-size:12px&quot;>${h.n}</div><div style=&quot;font-size:10px;color:var(--t3)&quot;>Vence día ${h.dia}</div></div><div style=&quot;font-size:12px;font-family:var(--mono);color:var(--warn)&quot;>$${(h.amt/1000).toFixed(0)}K</div></div>`).join('') || '<div style=&quot;text-align:center;padding:12px;color:var(--t3);font-size:12px&quot;>Sin pagos próximos este mes</div>';
 }
 
@@ -3510,14 +3520,14 @@ var cur=1;
 function sw(n){
   if(n===cur)return;
   cur=n;
-  document.getElementById('f1').className='fr '+(n===1?'on':'off');
-  document.getElementById('f2').className='fr '+(n===2?'on':'off');
-  document.getElementById('t1').className='tbtn'+(n===1?' on':'');
-  document.getElementById('t2').className='tbtn'+(n===2?' on':'');
+  document.getElementById("f1").className="fr "+(n===1?"on":"off");
+  document.getElementById("f2").className="fr "+(n===2?"on":"off");
+  document.getElementById("t1").className="tbtn"+(n===1?" on":"");
+  document.getElementById("t2").className="tbtn"+(n===2?" on":"");
 }
-document.addEventListener('keydown',function(e){
-  if(e.altKey&&e.key==='1')sw(1);
-  if(e.altKey&&e.key==='2')sw(2);
+document.addEventListener("keydown",function(e){
+  if(e.altKey&&e.key==="1")sw(1);
+  if(e.altKey&&e.key==="2")sw(2);
 });
 </script>
 </body>
