@@ -2570,6 +2570,7 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
         <button class=&quot;bd2b&quot; onclick=&quot;filterMeets('meet',this)&quot;>Google Meet</button>
         <button class=&quot;bd2b&quot; onclick=&quot;filterMeets('presencial',this)&quot;>Presencial</button>
         <button class=&quot;bp&quot; style=&quot;margin-left:auto;font-size:11px&quot; onclick=&quot;openModal('mo-meet')&quot;><i class=&quot;fa fa-plus&quot; style=&quot;margin-right:5px&quot;></i>Nueva reunión</button>
+        <button class=&quot;bs&quot; style=&quot;font-size:11px&quot; onclick=&quot;exportAllICS()&quot; title=&quot;Exportar todo a Google Calendar / Outlook&quot;><i class=&quot;fa fa-calendar-export&quot; style=&quot;margin-right:5px&quot;></i>Exportar .ics</button>
       </div>
       <div class=&quot;sect&quot;>Hoy — 17 de mayo</div>
       <div id=&quot;meets-today&quot;></div>
@@ -3018,7 +3019,7 @@ function meetHTML(m, mini=false) {
   const platIco = {teams:'fab fa-microsoft',meet:'fab fa-google',zoom:'fa fa-video',presencial:'fa fa-map-marker-alt',llamada:'fa fa-phone'}[m.plat]||'fa fa-video';
   const platColor = {teams:'#6264A7',meet:'#4285F4',zoom:'#2D8CFF',presencial:'#00FF88',llamada:'#FFB800'}[m.plat]||'#00D4FF';
   if(mini) return `<div class=&quot;meet-item&quot; style=&quot;margin-bottom:6px&quot;><div class=&quot;meet-time&quot;><div class=&quot;mt&quot;>${m.time}</div><div class=&quot;md2&quot;>${m.date}</div></div><div class=&quot;meet-info&quot;><h4>${m.t}</h4><p><i class=&quot;${platIco}&quot; style=&quot;color:${platColor};margin-right:4px&quot;></i>${m.plat}</p></div></div>`;
-  return `<div class=&quot;meet-item&quot;><div class=&quot;meet-time&quot;><div class=&quot;mt&quot;>${m.time}</div><div class=&quot;md2&quot;>${m.date}</div></div><div class=&quot;meet-info&quot;><h4>${m.t}</h4><p><i class=&quot;${platIco}&quot; style=&quot;color:${platColor};margin-right:4px&quot;></i>${m.plat} • ${(m.parts||[]).join(', ')}</p>${m.agenda?`<p style=&quot;margin-top:3px;font-size:10px;color:var(--t3)&quot;>${m.agenda}</p>`:''}</div><div style=&quot;display:flex;gap:6px;margin-left:auto;flex-shrink:0&quot;><button class=&quot;bi&quot; title=&quot;Unirse&quot; onclick=&quot;T('Uniéndose','Abriendo ${m.plat}...','📹')&quot;><i class=&quot;${platIco}&quot;></i></button><button class=&quot;bi&quot; title=&quot;Eliminar&quot; onclick=&quot;deleteMeet(${m.id})&quot; style=&quot;color:var(--t3)&quot; onmouseover=&quot;this.style.color='#FF4444'&quot; onmouseout=&quot;this.style.color='var(--t3)'&quot;><i class=&quot;fa fa-trash&quot;></i></button></div></div>`;
+  return `<div class=&quot;meet-item&quot;><div class=&quot;meet-time&quot;><div class=&quot;mt&quot;>${m.time}</div><div class=&quot;md2&quot;>${m.date}</div></div><div class=&quot;meet-info&quot;><h4>${m.t}</h4><p><i class=&quot;${platIco}&quot; style=&quot;color:${platColor};margin-right:4px&quot;></i>${m.plat} • ${(m.parts||[]).join(', ')}</p>${m.agenda?`<p style=&quot;margin-top:3px;font-size:10px;color:var(--t3)&quot;>${m.agenda}</p>`:''}</div><div style=&quot;display:flex;gap:6px;margin-left:auto;flex-shrink:0&quot;><button class=&quot;bi&quot; title=&quot;Unirse&quot; onclick=&quot;T('Uniéndose','Abriendo ${m.plat}...','📹')&quot;><i class=&quot;${platIco}&quot;></i></button><button class=&quot;bi&quot; title=&quot;Exportar a Google Calendar / Outlook (.ics)&quot; onclick=&quot;exportICS(MEETS.find(x=>x.id===${m.id}))&quot;><i class=&quot;fa fa-calendar-plus&quot;></i></button><button class=&quot;bi&quot; title=&quot;Eliminar&quot; onclick=&quot;deleteMeet(${m.id})&quot; style=&quot;color:var(--t3)&quot; onmouseover=&quot;this.style.color='#FF4444'&quot; onmouseout=&quot;this.style.color='var(--t3)'&quot;><i class=&quot;fa fa-trash&quot;></i></button></div></div>`;
 }
 function renderMeets() {
   const empty = '<div style=&quot;text-align:center;padding:20px;color:var(--t3);font-size:12px&quot;>Sin reuniones — pulsa + para agregar</div>';
@@ -3294,6 +3295,8 @@ function addNew(){
     document.getElementById('new-title').value='';
     document.getElementById('new-desc').value='';
     T('Tarea creada',t.substring(0,40),'✅');
+    playAlarmSound('task');
+    pushNotif('✅ Tarea creada: '+t.substring(0,50),'Agregada a '+col,'✅');
     if(document.getElementById('v-kanban').classList.contains('on'))renderKB();
   } else if(type==='note'){
     const d2=new Date().toLocaleDateString('es-CO').slice(0,5);
@@ -3344,6 +3347,12 @@ function addMeeting(){
   document.getElementById('m-parts').value='';
   closeModal('mo-meet');
   T('Reunión creada','Agregada correctamente','📅');
+  // 🔔 Notificación + alarma automática
+  const newM = MEETS[0];
+  playAlarmSound('task');
+  pushNotif('📅 Reunión agendada: '+t,
+    (newM.time||'')+'  '+newM.date+'  — '+document.getElementById('m-plat').value,'📅');
+  scheduleAlarm(newM);
   if(document.getElementById('v-meetings').classList.contains('on'))renderMeets();
   renderDash();
 }
@@ -3359,6 +3368,8 @@ function addGoal(){
   document.getElementById('g-title').value='';
   closeModal('mo-goal');
   T('Meta creada',t.substring(0,40),'🎯');
+  playAlarmSound('task');
+  pushNotif('🎯 Nueva meta: '+t.substring(0,50),'¡A por ella! Progreso: 0%','🎯');
   if(document.getElementById('v-goals').classList.contains('on'))renderGoals();
   renderDash();
 }
@@ -3508,7 +3519,224 @@ renderCal('cal-main',calM);
 updateDT();
 setInterval(updateDT,60000);
 renderDash();
+// 🔔 Init notificaciones y alarmas
+setTimeout(initNotifications, 500);
+setTimeout(checkAlarms, 1000);
+setInterval(checkAlarms, 60000);
 setTimeout(()=>{T('NeuroNotes v2 listo','Todos los datos vacíos — empieza a ingresar los tuyos 🚀','🧠');},800);
+
+// ═══════════════════════════════════════════════════════════
+// 🔔 SISTEMA DE NOTIFICACIONES, ALARMAS Y EXPORTACIÓN .ICS
+// ═══════════════════════════════════════════════════════════
+
+// ── Solicitar permiso de notificaciones al cargar ──
+function initNotifications(){
+  if('Notification' in window &amp;&amp; Notification.permission === 'default'){
+    Notification.requestPermission().then(p=>{
+      if(p==='granted') pushNotif('NeuroNotes activado 🔔','Recibirás alertas de reuniones y eventos importantes.');
+    });
+  }
+}
+
+// ── Lanzar notificación nativa del navegador ──
+function pushNotif(title, body, icon='🧠'){
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  try{
+    new Notification(title, {
+      body: body,
+      icon: 'data:image/svg+xml,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 100 100&quot;><text y=&quot;.9em&quot; font-size=&quot;90&quot;>'+icon+'</text></svg>',
+      badge: 'data:image/svg+xml,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 100 100&quot;><text y=&quot;.9em&quot; font-size=&quot;90&quot;>🧠</text></svg>',
+      tag: 'neuronotes-'+Date.now(),
+      silent: false
+    });
+  } catch(e){}
+}
+
+// ── Sonido de alarma generado con Web Audio API ──
+function playAlarmSound(tipo='meeting'){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const patterns = {
+      meeting: [[523,0.1],[659,0.1],[784,0.2],[1047,0.3]],
+      reminder:[[440,0.15],[550,0.15],[440,0.15],[550,0.3]],
+      task:    [[330,0.1],[440,0.2]]
+    };
+    const notes = patterns[tipo] || patterns.meeting;
+    let t = ctx.currentTime;
+    notes.forEach(([freq, dur])=>{
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = 'sine';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.25, t+0.02);
+      g.gain.linearRampToValueAtTime(0, t+dur);
+      o.start(t); o.stop(t+dur+0.05);
+      t += dur + 0.02;
+    });
+  } catch(e){}
+}
+
+// ── Programar alarma para un evento ──
+var ALARM_TIMERS = {};
+var ALARMED_IDS  = new Set();
+
+function scheduleAlarm(meet){
+  if(!meet.date || !meet.time) return;
+  var id = meet.id;
+  if(ALARM_TIMERS[id]) clearTimeout(ALARM_TIMERS[id]);
+
+  // Parse date/time
+  var parts = meet.date.split('/'); // dd/mm
+  var now   = new Date();
+  var year  = now.getFullYear();
+  var month = parseInt(parts[1])-1;
+  var day   = parseInt(parts[0]);
+  var timeParts = meet.time.split(':');
+  var hour  = parseInt(timeParts[0]);
+  var min   = parseInt(timeParts[1]||0);
+
+  var eventTime = new Date(year, month, day, hour, min, 0);
+  if(isNaN(eventTime.getTime())) return;
+
+  // Warn 15 min before
+  var warnTime = new Date(eventTime.getTime() - 15*60*1000);
+  var msToWarn = warnTime.getTime() - Date.now();
+  var msToEvent = eventTime.getTime() - Date.now();
+
+  if(msToWarn > 0){
+    ALARM_TIMERS['w'+id] = setTimeout(function(){
+      if(ALARMED_IDS.has('w'+id)) return;
+      ALARMED_IDS.add('w'+id);
+      playAlarmSound('reminder');
+      pushNotif('⏰ En 15 minutos: '+meet.t,
+        meet.plat+' • '+meet.time+' • '+meet.date, '⏰');
+      T('⏰ En 15 min', meet.t.substring(0,40), '⏰');
+    }, msToWarn);
+  }
+  if(msToEvent > 0 &amp;&amp; msToEvent < 24*60*60*1000){
+    ALARM_TIMERS['e'+id] = setTimeout(function(){
+      if(ALARMED_IDS.has('e'+id)) return;
+      ALARMED_IDS.add('e'+id);
+      playAlarmSound('meeting');
+      pushNotif('📅 AHORA: '+meet.t,
+        'Es la hora — '+meet.plat+' • '+meet.time, '📅');
+      T('📅 ¡AHORA!', meet.t.substring(0,40)+' — '+meet.plat, '📅');
+    }, msToEvent);
+  }
+}
+
+// ── Cancelar alarma ──
+function cancelAlarm(id){
+  if(ALARM_TIMERS['w'+id]) clearTimeout(ALARM_TIMERS['w'+id]);
+  if(ALARM_TIMERS['e'+id]) clearTimeout(ALARM_TIMERS['e'+id]);
+}
+
+// ── Exportar UN evento a .ics ──
+function exportICS(meet){
+  var now   = new Date();
+  var parts = (meet.date||'').split('/');
+  var year  = now.getFullYear();
+  var month = String(parseInt(parts[1]||now.getMonth()+1)).padStart(2,'0');
+  var day   = String(parseInt(parts[0]||now.getDate())).padStart(2,'0');
+  var tp    = (meet.time||'09:00').split(':');
+  var h     = String(parseInt(tp[0])).padStart(2,'0');
+  var m     = String(parseInt(tp[1]||0)).padStart(2,'0');
+  var dtstart = year+month+day+'T'+h+m+'00';
+  // End = start + 1h
+  var endH = String((parseInt(h)+1)%24).padStart(2,'0');
+  var dtend   = year+month+day+'T'+endH+m+'00';
+  var stamp   = now.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+  var uid     = 'nn-'+meet.id+'@neuronotes.app';
+  var platMap = {teams:'Microsoft Teams',meet:'Google Meet',zoom:'Zoom',presencial:'Presencial',llamada:'Llamada telefónica'};
+  var location = platMap[meet.plat] || meet.plat || '';
+  var ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//NeuroNotes v2//ES',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    'UID:'+uid,
+    'DTSTAMP:'+stamp,
+    'DTSTART:'+dtstart,
+    'DTEND:'+dtend,
+    'SUMMARY:'+meet.t,
+    'DESCRIPTION:'+(meet.agenda||'').replace(/\n/g,'\\n'),
+    'LOCATION:'+location,
+    'STATUS:CONFIRMED',
+    'BEGIN:VALARM',
+    'TRIGGER:-PT15M',
+    'ACTION:DISPLAY',
+    'DESCRIPTION:Recordatorio: '+meet.t,
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n');
+
+  var blob = new Blob([ics], {type:'text/calendar;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = meet.t.replace(/[^a-z0-9]/gi,'-').toLowerCase()+'.ics';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  T('Exportado a calendario', meet.t.substring(0,35), '📅');
+}
+
+// ── Exportar TODOS los eventos a .ics ──
+function exportAllICS(){
+  if(MEETS.length===0){T('Sin eventos','Agrega reuniones primero','⚠️');return;}
+  var now   = new Date();
+  var blocks = MEETS.map(function(meet){
+    var parts = (meet.date||'').split('/');
+    var year  = now.getFullYear();
+    var month = String(parseInt(parts[1]||now.getMonth()+1)).padStart(2,'0');
+    var day   = String(parseInt(parts[0]||now.getDate())).padStart(2,'0');
+    var tp    = (meet.time||'09:00').split(':');
+    var h     = String(parseInt(tp[0])).padStart(2,'0');
+    var m2    = String(parseInt(tp[1]||0)).padStart(2,'0');
+    var dtstart = year+month+day+'T'+h+m2+'00';
+    var endH  = String((parseInt(h)+1)%24).padStart(2,'0');
+    var dtend   = year+month+day+'T'+endH+m2+'00';
+    var stamp   = now.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+    var platMap = {teams:'Microsoft Teams',meet:'Google Meet',zoom:'Zoom',presencial:'Presencial',llamada:'Llamada telefónica'};
+    return [
+      'BEGIN:VEVENT',
+      'UID:nn-'+meet.id+'@neuronotes.app',
+      'DTSTAMP:'+stamp,
+      'DTSTART:'+dtstart,
+      'DTEND:'+dtend,
+      'SUMMARY:'+meet.t,
+      'DESCRIPTION:'+(meet.agenda||'').replace(/\n/g,'\\n'),
+      'LOCATION:'+(platMap[meet.plat]||meet.plat||''),
+      'STATUS:CONFIRMED',
+      'BEGIN:VALARM',
+      'TRIGGER:-PT15M',
+      'ACTION:DISPLAY',
+      'DESCRIPTION:Recordatorio: '+meet.t,
+      'END:VALARM',
+      'END:VEVENT'
+    ].join('\r\n');
+  });
+  var ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//NeuroNotes v2//ES\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\n'
+    + blocks.join('\r\n') + '\r\nEND:VCALENDAR';
+  var blob = new Blob([ics], {type:'text/calendar;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'neuronotes-reuniones.ics';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  T('Exportadas '+MEETS.length+' reuniones', 'Importa el .ics en Google Calendar o Outlook', '📅');
+}
+
+// ── Checker cada minuto para alarmas pendientes ──
+function checkAlarms(){
+  MEETS.forEach(function(m){
+    if(m.when==='today' || m.when==='upcoming') scheduleAlarm(m);
+  });
+}
+
 </script>
 </body>
 </html>
