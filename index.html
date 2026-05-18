@@ -68,15 +68,15 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
 .bi:hover{background:var(--bg4);color:var(--ac);border-color:var(--ac);}
 .online{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pu 2s infinite;}
 @keyframes pu{0%,100%{opacity:1}50%{opacity:.4}}
-#ct{overflow-y:auto;overflow-x:hidden;background:var(--bg);}
+#ct{overflow-y:auto;overflow-x:hidden;background:var(--bg);height:100%;}
 #ct::-webkit-scrollbar{width:3px;}
 #ct::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px;}
 
 /* VIEWS */
 .view{display:none;padding:24px;}
 .view.on{display:block;}
-.view-full{display:none;height:100%;}
-.view-full.on{display:flex;flex-direction:column;padding:24px;gap:16px;}
+.view-full{display:none;height:calc(100vh - 52px);}
+.view-full.on{display:flex;flex-direction:column;padding:24px;gap:16px;overflow:hidden;}
 
 /* TYPOGRAPHY */
 .pg{margin-bottom:22px;}
@@ -842,7 +842,7 @@ const TRANSACTIONS = [
 ];
 
 const DEBTS = [
-  {n:'Tarjeta Visa Bancolombia',total:1200000,quota:450000,rate:2.8,due:'03/Jun',pct:62,color:var(--danger)},
+  {n:'Tarjeta Visa Bancolombia',total:1200000,quota:450000,rate:2.8,due:'03/Jun',pct:62,color:'#FF4444'},
   {n:'Crédito libre inversión herramientas',total:600000,quota:120000,rate:1.9,due:'15/Jun',pct:30,color:'#FFB800'},
 ];
 
