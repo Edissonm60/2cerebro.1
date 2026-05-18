@@ -56,6 +56,11 @@ html,body{height:100%;overflow:hidden;background:#080C14;color:#E8F0FE;font-fami
       <span class="dot" style="background:#a855f7;color:#a855f7;"></span>
       ✏️&nbsp; Notas &amp; Canvas
     </button>
+<button class="tbtn" id="t4" onclick="sw(4)" style="position:relative;">
+      <span class="dot" style="background:#f59e0b;color:#f59e0b;"></span>
+      🔔&nbsp; Alertas &amp; Recordatorios
+      <span id="notif-badge" style="display:none;position:absolute;top:4px;right:4px;background:#ef4444;color:#fff;font-size:9px;font-weight:800;border-radius:50%;width:16px;height:16px;line-height:16px;text-align:center;">0</span>
+    </button>
     <div class="sp"></div>
     <div class="ver">Ing. Edisson Macias</div>
   </div>
@@ -4705,6 +4710,992 @@ function toast(msg, type){
 </body>
 </html>
 "></iframe>
+<iframe class="fr off" id="f4" title="Alertas" srcdoc="<!DOCTYPE html>
+<html lang='es'>
+<head>
+<meta charset='UTF-8'/>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'/>
+<title>Alertas &amp; Recordatorios</title>
+<link href='https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&amp;family=IBM+Plex+Sans:wght@400;600;700&amp;display=swap' rel='stylesheet'/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#080C14;--bg2:#0D1320;--bg3:#121d2e;--bg4:#172236;
+  --bd:#1E2E44;--bd2:#263d5a;
+  --acc:#f59e0b;--acc2:#d97706;
+  --ok:#22c55e;--warn:#f59e0b;--danger:#ef4444;--info:#0ea5e9;
+  --pur:#a855f7;
+  --txt:#E8F0FE;--txt2:#8899BB;--txt3:#445566;
+  --font:'IBM Plex Sans',sans-serif;--mono:'IBM Plex Mono',monospace;
+  --rs:8px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:var(--font);}
+#app{display:flex;flex-direction:column;height:100%;height:100dvh;}
+
+/* TOPBAR */
+#topbar{
+  display:flex;align-items:center;gap:8px;padding:0 16px;
+  background:var(--bg2);border-bottom:2px solid var(--bd);
+  height:52px;flex-shrink:0;
+}
+.logo{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--acc);}
+.logo-badge{background:var(--acc);color:#000;font-size:10px;font-weight:800;padding:3px 8px;border-radius:5px;}
+.sp{flex:1;}
+.tb-btn{
+  display:flex;align-items:center;gap:6px;padding:7px 14px;font-size:12px;
+  font-weight:600;border:1px solid var(--bd);border-radius:var(--rs);cursor:pointer;
+  background:var(--bg3);color:var(--txt2);transition:all .15s;min-height:36px;
+}
+.tb-btn:hover{background:var(--bg4);color:var(--txt);border-color:var(--bd2);}
+.tb-btn.prim{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#000;border-color:var(--acc2);font-weight:700;}
+.tb-btn.ok{background:rgba(34,197,94,.15);color:var(--ok);border-color:rgba(34,197,94,.3);}
+.tb-btn.danger{background:rgba(239,68,68,.1);color:var(--danger);border-color:rgba(239,68,68,.25);}
+
+/* BODY */
+#body{flex:1;display:flex;overflow:hidden;min-height:0;}
+
+/* SIDEBAR */
+#sidebar{width:280px;min-width:280px;background:var(--bg2);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden;}
+.sb-head{padding:14px 16px 8px;border-bottom:1px solid var(--bd);}
+.sb-title{font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--txt3);margin-bottom:10px;}
+.sb-tabs{display:flex;gap:4px;}
+.sb-tab{
+  flex:1;padding:7px 4px;font-size:11px;font-family:var(--mono);font-weight:600;
+  text-transform:uppercase;letter-spacing:.5px;color:var(--txt3);cursor:pointer;
+  text-align:center;border:1px solid var(--bd);border-radius:6px;background:var(--bg3);
+  transition:.12s;
+}
+.sb-tab.on{color:var(--acc);border-color:var(--acc);background:rgba(245,158,11,.1);}
+#event-list{flex:1;overflow-y:auto;padding:8px;scrollbar-width:thin;}
+#event-list::-webkit-scrollbar{width:3px;}
+#event-list::-webkit-scrollbar-thumb{background:var(--bd);}
+.ev-card{
+  background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rs);
+  padding:10px 12px;margin-bottom:6px;cursor:pointer;transition:all .15s;
+  border-left:3px solid var(--bd);
+}
+.ev-card:hover{border-color:var(--bd2);background:var(--bg4);}
+.ev-card.meet{border-left-color:var(--info);}
+.ev-card.task{border-left-color:var(--ok);}
+.ev-card.proj{border-left-color:var(--pur);}
+.ev-card.overdue{border-left-color:var(--danger);}
+.ev-card.today{border-left-color:var(--acc);background:rgba(245,158,11,.05);}
+.ev-top{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.ev-icon{font-size:14px;flex-shrink:0;}
+.ev-title{font-size:12px;font-weight:600;color:var(--txt);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ev-time{font-size:10px;font-family:var(--mono);color:var(--txt3);}
+.ev-meta{font-size:10px;color:var(--txt3);}
+.ev-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px;}
+.eb-meet{background:rgba(14,165,233,.15);color:var(--info);}
+.eb-task{background:rgba(34,197,94,.15);color:var(--ok);}
+.eb-proj{background:rgba(168,85,247,.15);color:var(--pur);}
+.eb-over{background:rgba(239,68,68,.15);color:var(--danger);}
+.eb-today{background:rgba(245,158,11,.15);color:var(--acc);}
+.empty-state{text-align:center;padding:40px 20px;color:var(--txt3);font-size:12px;}
+.empty-state div{font-size:32px;margin-bottom:10px;}
+
+/* MAIN CONTENT */
+#main{flex:1;overflow-y:auto;padding:20px;scrollbar-width:thin;}
+#main::-webkit-scrollbar{width:4px;}
+#main::-webkit-scrollbar-thumb{background:var(--bd);}
+
+/* CARDS */
+.section-title{font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;color:var(--txt3);margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--bd);}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+.stat-card{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rs);padding:12px 14px;text-align:center;}
+.stat-num{font-size:26px;font-family:var(--mono);font-weight:700;}
+.stat-lbl{font-size:10px;color:var(--txt3);margin-top:3px;}
+.stat-card.warn .stat-num{color:var(--warn);}
+.stat-card.danger .stat-num{color:var(--danger);}
+.stat-card.ok .stat-num{color:var(--ok);}
+.stat-card.info .stat-num{color:var(--info);}
+
+/* FORM PANEL */
+.form-panel{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:18px;margin-bottom:20px;}
+.form-panel h4{font-size:13px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.fg{margin-bottom:12px;}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;}
+label{display:block;font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;color:var(--txt3);margin-bottom:5px;}
+input,select,textarea{
+  width:100%;padding:9px 12px;background:var(--bg);border:1px solid var(--bd);
+  border-radius:6px;color:var(--txt);font-size:13px;font-family:var(--font);outline:none;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--acc);}
+select option{background:var(--bg2);}
+.form-footer{display:flex;gap:10px;margin-top:6px;}
+.btn-prim{flex:1;padding:11px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#000;border:none;border-radius:7px;font-size:13px;font-family:var(--font);font-weight:700;cursor:pointer;}
+.btn-sec{flex:1;padding:11px;background:var(--bg3);color:var(--txt2);border:1px solid var(--bd);border-radius:7px;font-size:13px;font-family:var(--font);cursor:pointer;}
+textarea{min-height:60px;resize:vertical;}
+
+/* NOTIF SETTINGS */
+.notif-config{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:18px;margin-bottom:20px;}
+.notif-config h4{font-size:13px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.notif-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--bd);}
+.notif-row:last-child{border-bottom:none;}
+.notif-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.notif-info{flex:1;}
+.notif-info strong{font-size:13px;display:block;margin-bottom:2px;}
+.notif-info span{font-size:11px;color:var(--txt3);}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;border-radius:12px;background:var(--bd2);cursor:pointer;transition:.3s;}
+.toggle input:checked + .toggle-slider{background:var(--acc);}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;border-radius:50%;background:#fff;transition:.3s;}
+.toggle input:checked + .toggle-slider:before{transform:translateX(20px);}
+
+/* UPCOMING PANEL */
+.upcoming-item{
+  display:flex;align-items:flex-start;gap:12px;padding:12px 14px;
+  background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rs);
+  margin-bottom:8px;border-left:3px solid var(--bd);
+}
+.upcoming-item.meet{border-left-color:var(--info);}
+.upcoming-item.task{border-left-color:var(--ok);}
+.upcoming-item.proj{border-left-color:var(--pur);}
+.upcoming-item.overdue{border-left-color:var(--danger);background:rgba(239,68,68,.04);}
+.upcoming-item.today{border-left-color:var(--acc);background:rgba(245,158,11,.04);}
+.up-dot{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;background:var(--bg3);}
+.up-content{flex:1;}
+.up-title{font-size:13px;font-weight:600;margin-bottom:3px;}
+.up-sub{font-size:11px;color:var(--txt3);}
+.up-badges{display:flex;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap;}
+.up-time{font-family:var(--mono);font-size:11px;color:var(--txt2);}
+.up-actions{display:flex;flex-direction:column;gap:6px;align-items:flex-end;}
+.act-btn{padding:5px 10px;font-size:11px;border-radius:5px;cursor:pointer;border:1px solid var(--bd);background:var(--bg3);color:var(--txt2);white-space:nowrap;}
+.act-btn:hover{color:var(--txt);}
+.act-btn.del{color:var(--danger);border-color:rgba(239,68,68,.25);}
+
+/* WHATSAPP STATUS */
+.wa-status{display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:8px;margin-bottom:16px;}
+.wa-dot{width:10px;height:10px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.wa-info{flex:1;font-size:12px;}
+.wa-info strong{display:block;color:var(--ok);}
+.wa-info span{font-size:11px;color:var(--txt3);}
+.wa-test{padding:6px 14px;background:rgba(34,197,94,.15);color:var(--ok);border:1px solid rgba(34,197,94,.3);border-radius:6px;font-size:12px;cursor:pointer;font-weight:600;}
+
+/* TOAST */
+#toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(10px);
+  background:var(--bg2);border:1px solid var(--bd2);border-radius:10px;
+  padding:10px 20px;font-size:13px;color:var(--txt);z-index:1000;opacity:0;
+  pointer-events:none;transition:all .2s;white-space:nowrap;
+  box-shadow:0 4px 24px rgba(0,0,0,.6);
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast.ok{border-color:rgba(34,197,94,.4);color:var(--ok);}
+#toast.warn{border-color:rgba(245,158,11,.4);color:var(--warn);}
+#toast.err{border-color:rgba(239,68,68,.4);color:var(--danger);}
+#toast.info{border-color:rgba(14,165,233,.4);color:var(--info);}
+</style>
+</head>
+<body>
+<div id='app'>
+
+<!-- TOPBAR -->
+<div id='topbar'>
+  <div class='logo'><span class='logo-badge'>🔔</span> Alertas &amp; Recordatorios</div>
+  <div class='sp'></div>
+  <button class='tb-btn prim' onclick='openForm()'>＋ Nuevo recordatorio</button>
+  <button class='tb-btn ok' onclick='checkAndSendAll()' style='margin-left:6px'>📲 Enviar pendientes</button>
+  <button class='tb-btn' onclick='requestNotifPerm()' style='margin-left:6px'>🔔 Activar alertas</button>
+</div>
+
+<!-- BODY -->
+<div id='body'>
+
+<!-- SIDEBAR: lista de eventos -->
+<div id='sidebar'>
+  <div class='sb-head'>
+    <div class='sb-title'>Mis recordatorios</div>
+    <div id='nn-sync-banner' style='display:none;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:11px;color:#00D4FF;display:flex;align-items:center;gap:6px'>
+      <span>🧠</span><span id='nn-sync-count'>0 eventos de NeuroNotes sincronizados</span>
+    </div>
+    <div class='sb-tabs'>
+      <button class='sb-tab on' id='stab-all' onclick='setSbTab(\&quot;all\&quot;)'>Todos</button>
+      <button class='sb-tab' id='stab-today' onclick='setSbTab(\&quot;today\&quot;)'>Hoy</button>
+      <button class='sb-tab' id='stab-over' onclick='setSbTab(\&quot;over\&quot;)'>Vencidos</button>
+    </div>
+  </div>
+  <div id='event-list'></div>
+</div>
+
+<!-- MAIN -->
+<div id='main'>
+
+  <!-- Stats -->
+  <div class='section-title'>📊 Resumen de hoy</div>
+  <div class='stat-row'>
+    <div class='stat-card warn'><div class='stat-num' id='cnt-today'>0</div><div class='stat-lbl'>Para hoy</div></div>
+    <div class='stat-card danger'><div class='stat-num' id='cnt-over'>0</div><div class='stat-lbl'>Vencidos</div></div>
+    <div class='stat-card info'><div class='stat-num' id='cnt-meet'>0</div><div class='stat-lbl'>Reuniones</div></div>
+    <div class='stat-card ok'><div class='stat-num' id='cnt-task'>0</div><div class='stat-lbl'>Tareas</div></div>
+  </div>
+
+  <!-- WhatsApp status -->
+  <div class='wa-status' id='wa-status'>
+    <div class='wa-dot'></div>
+    <div class='wa-info'>
+      <strong>📱 WhatsApp activado — +57 3108864803</strong>
+      <span>Notificaciones via CallMeBot • <span id='wa-last'>Sin envíos aún</span></span>
+    </div>
+    <button class='wa-test' onclick='testWhatsApp()'>Probar</button>
+  </div>
+
+  <!-- FORMULARIO nuevo recordatorio -->
+  <div class='form-panel' id='form-panel' style='display:none'>
+    <h4>🗓️ <span id='form-title'>Nuevo recordatorio</span></h4>
+    <div class='fg2'>
+      <div class='fg' style='margin:0'>
+        <label>Tipo</label>
+        <select id='ev-type'>
+          <option value='meet'>📅 Reunión</option>
+          <option value='task'>✅ Tarea</option>
+          <option value='proj'>🗂️ Proyecto</option>
+          <option value='deadline'>⚠️ Fecha límite</option>
+          <option value='call'>📞 Llamada</option>
+          <option value='other'>🔔 Otro</option>
+        </select>
+      </div>
+      <div class='fg' style='margin:0'>
+        <label>Prioridad</label>
+        <select id='ev-prio'>
+          <option value='alta'>🔴 Alta</option>
+          <option value='media' selected>🟡 Media</option>
+          <option value='baja'>🟢 Baja</option>
+        </select>
+      </div>
+    </div>
+    <div class='fg'>
+      <label>Título *</label>
+      <input type='text' id='ev-title' placeholder='Ej: Reunión con cliente ABC' maxlength='100'/>
+    </div>
+    <div class='fg2'>
+      <div class='fg' style='margin:0'>
+        <label>Fecha *</label>
+        <input type='date' id='ev-date'/>
+      </div>
+      <div class='fg' style='margin:0'>
+        <label>Hora</label>
+        <input type='time' id='ev-time' value='09:00'/>
+      </div>
+    </div>
+    <div class='fg'>
+      <label>Proyecto / Contexto</label>
+      <input type='text' id='ev-proj' placeholder='Ej: Proyecto CCTV Bancolombia'/>
+    </div>
+    <div class='fg'>
+      <label>Notas</label>
+      <textarea id='ev-notes' placeholder='Detalles adicionales...'></textarea>
+    </div>
+    <div class='fg2'>
+      <div class='fg' style='margin:0'>
+        <label>Recordar con anticipación</label>
+        <select id='ev-remind'>
+          <option value='0'>Al momento exacto</option>
+          <option value='15'>15 minutos antes</option>
+          <option value='30'>30 minutos antes</option>
+          <option value='60' selected>1 hora antes</option>
+          <option value='120'>2 horas antes</option>
+          <option value='1440'>1 día antes</option>
+          <option value='2880'>2 días antes</option>
+        </select>
+      </div>
+      <div class='fg' style='margin:0'>
+        <label>Notificar por</label>
+        <select id='ev-notif-ch'>
+          <option value='both'>📱 WhatsApp + Navegador</option>
+          <option value='wa'>📱 Solo WhatsApp</option>
+          <option value='browser'>🔔 Solo Navegador</option>
+        </select>
+      </div>
+    </div>
+    <div class='form-footer'>
+      <button class='btn-sec' onclick='closeForm()'>Cancelar</button>
+      <button class='btn-prim' onclick='saveEvent()'>💾 Guardar y programar</button>
+    </div>
+  </div>
+
+  <!-- PRÓXIMOS EVENTOS -->
+  <div class='section-title' style='margin-top:8px'>📋 Próximos eventos</div>
+  <div id='upcoming-list'><div class='empty-state'><div>🗓️</div>Sin eventos programados<br>Pulsa &quot;Nuevo recordatorio&quot; para empezar</div></div>
+
+  <!-- CONFIGURACIÓN WhatsApp -->
+  <div class='notif-config' style='margin-top:20px'>
+    <h4>⚙️ Configuración de notificaciones</h4>
+    <div class='notif-row'>
+      <div class='notif-icon' style='background:rgba(34,197,94,.1)'>📱</div>
+      <div class='notif-info'>
+        <strong>WhatsApp (+57 3108864803)</strong>
+        <span>Mensajes automáticos vía CallMeBot — Gratis hasta 100 msg/día</span>
+      </div>
+      <label class='toggle'><input type='checkbox' id='tog-wa' checked onchange='saveConfig()'><div class='toggle-slider'></div></label>
+    </div>
+    <div class='notif-row'>
+      <div class='notif-icon' style='background:rgba(14,165,233,.1)'>🔔</div>
+      <div class='notif-info'>
+        <strong>Notificaciones del navegador</strong>
+        <span>Alertas emergentes en pantalla aunque la app esté minimizada</span>
+      </div>
+      <label class='toggle'><input type='checkbox' id='tog-browser' checked onchange='saveConfig()'><div class='toggle-slider'></div></label>
+    </div>
+    <div class='notif-row'>
+      <div class='notif-icon' style='background:rgba(245,158,11,.1)'>⏰</div>
+      <div class='notif-info'>
+        <strong>Recordatorio 1h antes</strong>
+        <span>Recibe alerta automática 1 hora antes de cada evento</span>
+      </div>
+      <label class='toggle'><input type='checkbox' id='tog-1h' checked onchange='saveConfig()'><div class='toggle-slider'></div></label>
+    </div>
+    <div class='notif-row'>
+      <div class='notif-icon' style='background:rgba(239,68,68,.1)'>🚨</div>
+      <div class='notif-info'>
+        <strong>Alerta de vencimiento</strong>
+        <span>Notifica cuando una tarea o proyecto esté vencido</span>
+      </div>
+      <label class='toggle'><input type='checkbox' id='tog-over' checked onchange='saveConfig()'><div class='toggle-slider'></div></label>
+    </div>
+    <div class='notif-row'>
+      <div class='notif-icon' style='background:rgba(168,85,247,.1)'>🌅</div>
+      <div class='notif-info'>
+        <strong>Resumen diario</strong>
+        <span>Recibe por WhatsApp un resumen de tu agenda cada mañana a las 7:00 AM</span>
+      </div>
+      <label class='toggle'><input type='checkbox' id='tog-daily' checked onchange='saveConfig()'><div class='toggle-slider'></div></label>
+    </div>
+    <div style='margin-top:14px;padding:12px;background:var(--bg3);border-radius:8px;border:1px solid var(--bd)'>
+      <div style='font-size:11px;font-family:var(--mono);color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px'>⚙️ API Key CallMeBot</div>
+      <div style='display:flex;gap:8px;'>
+        <input type='text' id='wa-apikey' placeholder='Tu API key de CallMeBot...' style='flex:1'/>
+        <button class='btn-sec' style='width:auto;padding:8px 14px;font-size:12px' onclick='saveApiKey()'>Guardar</button>
+        <button class='btn-sec' style='width:auto;padding:8px 14px;font-size:12px;color:var(--info);border-color:rgba(14,165,233,.3)' onclick='openCallMeBotGuide()'>¿Cómo obtenerla?</button>
+      </div>
+      <div style='font-size:10px;color:var(--txt3);margin-top:6px'>Escribe &quot;I allow callmebot to send me messages&quot; al número +34 644 93 89 01 en WhatsApp para obtener tu API Key gratuita.</div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /body -->
+</div><!-- /app -->
+
+<div id='toast'></div>
+
+<script>
+'use strict';
+const PHONE = '573108864803';
+const EMAIL = 'edissonm60@gmail.com';
+const STORAGE_KEY = 'em_alerts_v1';
+let editId = null;
+let sbTab = 'all';
+
+// ─── STORAGE ────────────────────────────────
+function load() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {events:[], config:{wa:true,browser:true,h1:true,over:true,daily:true}, apikey:''}; }
+  catch(e) { return {events:[], config:{wa:true,browser:true,h1:true,over:true,daily:true}, apikey:''}; }
+}
+function save(data) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e){}
+}
+function getData() { return load(); }
+
+// ─── LEER NEURONOTES ──────────────────────────
+// Lee el localStorage de NeuroNotes (misma pestaña) y convierte
+// MEETS, KB tasks con due-date y GOALS con deadline a eventos del módulo de alertas
+function getNNData() {
+  try {
+    const raw = localStorage.getItem('neuronotes_v2_data');
+    if(!raw) return null;
+    return JSON.parse(raw);
+  } catch(e) { return null; }
+}
+
+function parseDateES(str) {
+  // Formats: DD/MM or DD/MM/YY or DD/MM/YYYY
+  if(!str) return null;
+  const parts = str.split('/');
+  if(parts.length < 2) return null;
+  const d = parseInt(parts[0]), mo = parseInt(parts[1]) - 1;
+  const y = parts[2] ? (parts[2].length === 2 ? 2000 + parseInt(parts[2]) : parseInt(parts[2])) : new Date().getFullYear();
+  const dt = new Date(y, mo, d);
+  if(isNaN(dt)) return null;
+  return dt.toISOString().split('T')[0]; // YYYY-MM-DD
+}
+
+function getNNEvents() {
+  const nn = getNNData();
+  if(!nn) return [];
+  const evs = [];
+
+  // ── Reuniones (MEETS) ──
+  (nn.MEETS || []).forEach(m => {
+    if(m.when === 'past') return; // skip past
+    // date format DD/MM or DD/MM/YY
+    const dateISO = parseDateES(m.date);
+    if(!dateISO) return;
+    evs.push({
+      id: 'nn_meet_' + m.id,
+      title: m.t,
+      type: 'meet',
+      prio: 'alta',
+      date: dateISO,
+      time: m.time || '',
+      project: m.plat || '',
+      notes: m.agenda || (m.parts ? 'Participantes: ' + (Array.isArray(m.parts) ? m.parts.join(', ') : m.parts) : ''),
+      remindMin: 60,
+      channel: 'both',
+      done: false,
+      source: 'neuronotes',
+      notified: false
+    });
+  });
+
+  // ── Tareas Kanban con fecha límite (KB) ──
+  const KB = nn.KB || {};
+  const doneStates = ['Completado', 'Cancelado'];
+  Object.keys(KB).forEach(col => {
+    if(doneStates.includes(col)) return;
+    (KB[col] || []).forEach(task => {
+      if(!task.due) return;
+      const dateISO = parseDateES(task.due);
+      if(!dateISO) return;
+      evs.push({
+        id: 'nn_task_' + task.id,
+        title: task.t,
+        type: 'task',
+        prio: task.p === 'Urgente' || task.p === 'Alta' ? 'alta' : task.p === 'Normal' ? 'media' : 'baja',
+        date: dateISO,
+        time: '',
+        project: task.proj || task.tags?.[0] || '',
+        notes: 'Estado: ' + col,
+        remindMin: 60,
+        channel: 'both',
+        done: false,
+        source: 'neuronotes',
+        notified: false
+      });
+    });
+  });
+
+  // ── Metas con fecha límite (GOALS) ──
+  (nn.GOALS || []).forEach(g => {
+    if(g.pct >= 100) return;
+    const dateISO = parseDateES(g.dead);
+    if(!dateISO) return;
+    evs.push({
+      id: 'nn_goal_' + g.id,
+      title: g.t,
+      type: 'proj',
+      prio: 'media',
+      date: dateISO,
+      time: '',
+      project: g.type || 'Meta',
+      notes: 'Progreso: ' + g.pct + '%',
+      remindMin: 1440,
+      channel: 'both',
+      done: false,
+      source: 'neuronotes',
+      notified: false
+    });
+  });
+
+  return evs;
+}
+
+// Merge: devuelve eventos propios + los de NeuroNotes (sin duplicar)
+function getAllEvents() {
+  const d = getData();
+  const own = d.events || [];
+  const nn = getNNEvents();
+  // nn events keyed by id; override with own if same id exists
+  const ownIds = new Set(own.map(e => e.id));
+  const merged = [...own, ...nn.filter(e => !ownIds.has(e.id))];
+  return merged;
+}
+
+// ─── INIT ────────────────────────────────────
+window.addEventListener('load', function() {
+  const d = getData();
+  // Load config toggles
+  document.getElementById('tog-wa').checked = d.config.wa !== false;
+  document.getElementById('tog-browser').checked = d.config.browser !== false;
+  document.getElementById('tog-1h').checked = d.config.h1 !== false;
+  document.getElementById('tog-over').checked = d.config.over !== false;
+  document.getElementById('tog-daily').checked = d.config.daily !== false;
+  if(d.apikey) document.getElementById('wa-apikey').value = d.apikey;
+  // Set default date to today
+  document.getElementById('ev-date').value = todayStr();
+  render();
+  startChecker();
+  requestNotifPerm();
+});
+
+function todayStr() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function saveConfig() {
+  const d = getData();
+  d.config = {
+    wa: document.getElementById('tog-wa').checked,
+    browser: document.getElementById('tog-browser').checked,
+    h1: document.getElementById('tog-1h').checked,
+    over: document.getElementById('tog-over').checked,
+    daily: document.getElementById('tog-daily').checked
+  };
+  save(d);
+  toast('Configuración guardada', 'ok');
+}
+
+function saveApiKey() {
+  const key = document.getElementById('wa-apikey').value.trim();
+  if(!key) { toast('Ingresa una API key válida', 'err'); return; }
+  const d = getData();
+  d.apikey = key;
+  save(d);
+  toast('API Key guardada ✓', 'ok');
+}
+
+function openCallMeBotGuide() {
+  window.open('https://www.callmebot.com/blog/free-api-whatsapp-messages/', '_blank');
+}
+
+// ─── RENDER ──────────────────────────────────
+function render() {
+  const d = getData();
+  const now = new Date();
+  const todayS = todayStr();
+
+  let events = getAllEvents();
+
+  // Sort: overdue first, then by date/time
+  events = events.sort((a,b) => {
+    const da = new Date(a.date + 'T' + (a.time||'00:00'));
+    const db = new Date(b.date + 'T' + (b.time||'00:00'));
+    return da - db;
+  });
+
+  // Stats
+  const todayEvs = events.filter(e => e.date === todayS && !e.done);
+  const overEvs = events.filter(e => e.date < todayS && !e.done);
+  const meetEvs = events.filter(e => e.type === 'meet' && !e.done);
+  const taskEvs = events.filter(e => (e.type === 'task' || e.type === 'deadline') && !e.done);
+
+  // NeuroNotes sync banner
+  const nnEvs = getNNEvents();
+  const nnBanner = document.getElementById('nn-sync-banner');
+  if(nnBanner) {
+    if(nnEvs.length > 0) {
+      nnBanner.style.display = 'flex';
+      document.getElementById('nn-sync-count').textContent = nnEvs.length + ' evento' + (nnEvs.length===1?'':'s') + ' de NeuroNotes';
+    } else {
+      nnBanner.style.display = 'none';
+    }
+  }
+  document.getElementById('cnt-today').textContent = todayEvs.length;
+  document.getElementById('cnt-over').textContent = overEvs.length;
+  document.getElementById('cnt-meet').textContent = meetEvs.length;
+  document.getElementById('cnt-task').textContent = taskEvs.length;
+
+  // Update parent badge
+  try {
+    const badge = window.parent.document.getElementById('notif-badge');
+    if(badge) {
+      const pending = todayEvs.length + overEvs.length;
+      badge.textContent = pending;
+      badge.style.display = pending > 0 ? 'block' : 'none';
+    }
+  } catch(e){}
+
+  // Sidebar list
+  let sideEvs = events;
+  if(sbTab === 'today') sideEvs = events.filter(e => e.date === todayS);
+  else if(sbTab === 'over') sideEvs = events.filter(e => e.date < todayS && !e.done);
+
+  const el = document.getElementById('event-list');
+  if(sideEvs.length === 0) {
+    el.innerHTML = '<div class=\&quot;empty-state\&quot;><div>📭</div>' + (sbTab==='over'?'Sin vencidos 🎉':sbTab==='today'?'Sin eventos hoy':'Sin recordatorios') + '</div>';
+  } else {
+    el.innerHTML = sideEvs.map(ev => {
+      const cls = evClass(ev, todayS);
+      const icon = typeIcon(ev.type);
+      const badge = typeBadge(ev.type);
+      const dateLabel = evDateLabel(ev.date, todayS);
+      return '<div class=\&quot;ev-card ' + cls + '\&quot; onclick=\&quot;openDetail(\'' + ev.id + '\')\&quot;>' +
+        '<div class=\&quot;ev-top\&quot;><span class=\&quot;ev-icon\&quot;>' + icon + '</span>' +
+        '<span class=\&quot;ev-title\&quot;>' + esc(ev.title) + '</span>' +
+        '<span class=\&quot;ev-badge ' + badge + '\&quot;>' + typeLabel(ev.type) + '</span></div>' +
+        '<div class=\&quot;ev-meta\&quot;>' + dateLabel + (ev.time?' · '+ev.time:'') + (ev.project?' · '+esc(ev.project):'') + '</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  // Upcoming list
+  const ul = document.getElementById('upcoming-list');
+  const upcoming = events.filter(e => !e.done).slice(0, 20);
+  if(upcoming.length === 0) {
+    ul.innerHTML = '<div class=\&quot;empty-state\&quot;><div>🗓️</div>Sin eventos programados<br>Pulsa &quot;Nuevo recordatorio&quot; para empezar</div>';
+  } else {
+    ul.innerHTML = upcoming.map(ev => {
+      const cls = evClass(ev, todayS);
+      const icon = typeIcon(ev.type);
+      const dateLabel = evDateLabel(ev.date, todayS);
+      const prioColor = ev.prio==='alta'?'#ef4444':ev.prio==='media'?'#f59e0b':'#22c55e';
+      const prioLabel = ev.prio==='alta'?'🔴 Alta':ev.prio==='media'?'🟡 Media':'🟢 Baja';
+      return '<div class=\&quot;upcoming-item ' + cls + '\&quot;>' +
+        '<div class=\&quot;up-dot\&quot;>' + icon + '</div>' +
+        '<div class=\&quot;up-content\&quot;>' +
+          '<div class=\&quot;up-title\&quot;>' + esc(ev.title) + '</div>' +
+          '<div class=\&quot;up-sub\&quot;>' + (ev.project ? esc(ev.project) + ' · ' : '') + (ev.notes ? esc(ev.notes.slice(0,60)) + (ev.notes.length>60?'...':'') : '') + '</div>' +
+          '<div class=\&quot;up-badges\&quot;>' +
+            '<span class=\&quot;ev-badge ' + typeBadge(ev.type) + '\&quot;>' + typeLabel(ev.type) + '</span>' +
+            '<span class=\&quot;up-time\&quot;>' + dateLabel + (ev.time?' '+ev.time:'') + '</span>' +
+            '<span style=\&quot;font-size:10px;color:' + prioColor + '\&quot;>' + prioLabel + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class=\&quot;up-actions\&quot;>' +
+          '<button class=\&quot;act-btn\&quot; onclick=\&quot;markDone(\'' + ev.id + '\')\&quot;>✓ Listo</button>' +
+          '<button class=\&quot;act-btn\&quot; onclick=\&quot;editEvent(\'' + ev.id + '\')\&quot;>✏️</button>' +
+          '<button class=\&quot;act-btn del\&quot; onclick=\&quot;deleteEvent(\'' + ev.id + '\')\&quot;>🗑️</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+}
+
+function evClass(ev, todayS) {
+  if(ev.done) return 'done';
+  if(ev.date < todayS) return 'overdue';
+  if(ev.date === todayS) return 'today';
+  if(ev.type === 'meet' || ev.type === 'call') return 'meet';
+  if(ev.type === 'task' || ev.type === 'deadline') return 'task';
+  if(ev.type === 'proj') return 'proj';
+  return '';
+}
+function typeIcon(t) { return {meet:'📅',task:'✅',proj:'🗂️',deadline:'⚠️',call:'📞',other:'🔔'}[t]||'🔔'; }
+function typeLabel(t) { return {meet:'Reunión',task:'Tarea',proj:'Proyecto',deadline:'Límite',call:'Llamada',other:'Otro'}[t]||'Evento'; }
+function typeBadge(t) { return {meet:'eb-meet',task:'eb-task',proj:'eb-proj',deadline:'eb-over',call:'eb-meet',other:'eb-today'}[t]||''; }
+function evDateLabel(date, todayS) {
+  if(date === todayS) return '🟡 HOY';
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+  if(date === tomorrow.toISOString().split('T')[0]) return '📅 Mañana';
+  const dt = new Date(date + 'T12:00:00');
+  if(date < todayS) return '🔴 Venció ' + dt.toLocaleDateString('es-CO',{day:'numeric',month:'short'});
+  return dt.toLocaleDateString('es-CO',{weekday:'short',day:'numeric',month:'short'});
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ─── FORM ────────────────────────────────────
+function openForm() {
+  editId = null;
+  document.getElementById('form-title').textContent = 'Nuevo recordatorio';
+  document.getElementById('ev-title').value = '';
+  document.getElementById('ev-type').value = 'meet';
+  document.getElementById('ev-prio').value = 'media';
+  document.getElementById('ev-date').value = todayStr();
+  document.getElementById('ev-time').value = '09:00';
+  document.getElementById('ev-proj').value = '';
+  document.getElementById('ev-notes').value = '';
+  document.getElementById('ev-remind').value = '60';
+  document.getElementById('ev-notif-ch').value = 'both';
+  const fp = document.getElementById('form-panel');
+  fp.style.display = 'block';
+  fp.scrollIntoView({behavior:'smooth'});
+  document.getElementById('ev-title').focus();
+}
+
+function closeForm() {
+  document.getElementById('form-panel').style.display = 'none';
+  editId = null;
+}
+
+function editEvent(id) {
+  const d = getData();
+  const ev = d.events.find(e => e.id === id);
+  if(!ev) return;
+  editId = id;
+  document.getElementById('form-title').textContent = 'Editar recordatorio';
+  document.getElementById('ev-title').value = ev.title;
+  document.getElementById('ev-type').value = ev.type;
+  document.getElementById('ev-prio').value = ev.prio;
+  document.getElementById('ev-date').value = ev.date;
+  document.getElementById('ev-time').value = ev.time || '09:00';
+  document.getElementById('ev-proj').value = ev.project || '';
+  document.getElementById('ev-notes').value = ev.notes || '';
+  document.getElementById('ev-remind').value = ev.remindMin || 60;
+  document.getElementById('ev-notif-ch').value = ev.channel || 'both';
+  const fp = document.getElementById('form-panel');
+  fp.style.display = 'block';
+  fp.scrollIntoView({behavior:'smooth'});
+}
+
+function saveEvent() {
+  const title = document.getElementById('ev-title').value.trim();
+  const date = document.getElementById('ev-date').value;
+  if(!title) { toast('Escribe un título', 'err'); return; }
+  if(!date) { toast('Selecciona una fecha', 'err'); return; }
+
+  const d = getData();
+  const ev = {
+    id: editId || ('ev_' + Date.now()),
+    title: title,
+    type: document.getElementById('ev-type').value,
+    prio: document.getElementById('ev-prio').value,
+    date: date,
+    time: document.getElementById('ev-time').value,
+    project: document.getElementById('ev-proj').value.trim(),
+    notes: document.getElementById('ev-notes').value.trim(),
+    remindMin: parseInt(document.getElementById('ev-remind').value),
+    channel: document.getElementById('ev-notif-ch').value,
+    done: false,
+    created: new Date().toISOString(),
+    notified: false
+  };
+
+  if(editId) {
+    const idx = d.events.findIndex(e => e.id === editId);
+    if(idx >= 0) { d.events[idx] = ev; } else { d.events.push(ev); }
+    toast('Recordatorio actualizado ✓', 'ok');
+  } else {
+    d.events.push(ev);
+    // Send immediate confirmation via WhatsApp
+    const msg = buildMsg(ev, 'nuevo');
+    sendWhatsApp(msg);
+    showBrowserNotif('📅 Nuevo recordatorio creado', ev.title + (ev.project?' — '+ev.project:''));
+    toast('Recordatorio guardado y notificación enviada 🚀', 'ok');
+  }
+
+  save(d);
+  closeForm();
+  render();
+}
+
+function markDone(id) {
+  const d = getData();
+  const ev = d.events.find(e => e.id === id);
+  if(!ev) return;
+  ev.done = true;
+  save(d);
+  toast('✅ Marcado como completado', 'ok');
+  render();
+}
+
+function deleteEvent(id) {
+  if(!confirm('¿Eliminar este recordatorio?')) return;
+  const d = getData();
+  d.events = d.events.filter(e => e.id !== id);
+  save(d);
+  toast('Recordatorio eliminado', 'warn');
+  render();
+}
+
+function openDetail(id) {
+  const d = getData();
+  const ev = d.events.find(e => e.id === id);
+  if(!ev) return;
+  // Scroll to upcoming item and highlight
+  render();
+}
+
+function setSbTab(tab) {
+  sbTab = tab;
+  document.querySelectorAll('.sb-tab').forEach(t => t.classList.remove('on'));
+  document.getElementById('stab-' + tab).classList.add('on');
+  render();
+}
+
+// ─── WHATSAPP ────────────────────────────────
+function buildMsg(ev, mode) {
+  const icon = typeIcon(ev.type);
+  const label = typeLabel(ev.type);
+  const prio = ev.prio==='alta'?'🔴 ALTA':ev.prio==='media'?'🟡 Media':'🟢 Baja';
+  let header = '';
+  if(mode === 'nuevo') header = '✅ *Nuevo recordatorio creado*';
+  else if(mode === 'remind') header = '⏰ *RECORDATORIO — ' + label.toUpperCase() + '*';
+  else if(mode === 'overdue') header = '🚨 *VENCIDO — ' + label.toUpperCase() + '*';
+  else if(mode === 'daily') header = '🌅 *Resumen diario — Edisson*';
+  else if(mode === 'test') header = '👋 *Prueba de conexión EM Suite PRO*';
+
+  let body = header + '\n\n';
+  body += icon + ' *' + ev.title + '*\n';
+  if(ev.project) body += '🗂️ Proyecto: ' + ev.project + '\n';
+  body += '📅 Fecha: ' + evDateLabel(ev.date, todayStr()) + (ev.time?' a las '+ev.time:'') + '\n';
+  body += '🎯 Prioridad: ' + prio + '\n';
+  if(ev.notes) body += '📝 ' + ev.notes.slice(0,100) + '\n';
+  body += '\n_EM Suite PRO — Ing. Edisson Macias_';
+  return body;
+}
+
+function buildDailySummary(events) {
+  const todayS = todayStr();
+  const todays = events.filter(e => e.date === todayS && !e.done);
+  const overdue = events.filter(e => e.date < todayS && !e.done);
+  let msg = '🌅 *Buenos días Edisson!*\n';
+  msg += '📋 *Resumen del día — ' + new Date().toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'}) + '*\n\n';
+
+  if(todays.length > 0) {
+    msg += '📅 *Para hoy (' + todays.length + ')*\n';
+    todays.forEach(ev => {
+      msg += typeIcon(ev.type) + ' ' + ev.title + (ev.time?' 🕐'+ev.time:'') + '\n';
+    });
+    msg += '\n';
+  }
+
+  if(overdue.length > 0) {
+    msg += '🚨 *Vencidos (' + overdue.length + ')*\n';
+    overdue.forEach(ev => {
+      msg += '⚠️ ' + ev.title + ' — ' + ev.date + '\n';
+    });
+    msg += '\n';
+  }
+
+  if(todays.length === 0 && overdue.length === 0) {
+    msg += '✅ Sin eventos pendientes para hoy. ¡Excelente!\n';
+  }
+
+  msg += '_EM Suite PRO — ' + new Date().toLocaleTimeString('es-CO') + '_';
+  return msg;
+}
+
+function sendWhatsApp(msg) {
+  const d = getData();
+  if(!d.config.wa) return;
+  const apiKey = d.apikey;
+  if(!apiKey) {
+    console.warn('CallMeBot API key no configurada');
+    // Show instruction toast
+    toast('⚠️ Configura tu API Key de CallMeBot para recibir WhatsApp', 'warn');
+    return;
+  }
+  const encoded = encodeURIComponent(msg);
+  const url = 'https://api.callmebot.com/whatsapp.php?phone=' + PHONE + '&text=' + encoded + '&apikey=' + apiKey;
+
+  fetch(url, {mode:'no-cors'})
+    .then(() => {
+      const waLast = document.getElementById('wa-last');
+      if(waLast) waLast.textContent = 'Enviado ' + new Date().toLocaleTimeString('es-CO');
+      console.log('WhatsApp sent');
+    })
+    .catch(err => console.warn('WA error:', err));
+}
+
+function testWhatsApp() {
+  const d = getData();
+  if(!d.apikey) {
+    toast('Primero configura tu API Key de CallMeBot arriba ⬇️', 'warn');
+    document.getElementById('wa-apikey').focus();
+    return;
+  }
+  const msg = '👋 *Prueba de conexión exitosa!*\n\n✅ EM Suite PRO está conectado a tu WhatsApp.\n📱 Número: +57 3108864803\n\n_Ing. Edisson Macias — ' + new Date().toLocaleTimeString('es-CO') + '_';
+  sendWhatsApp(msg);
+  toast('Mensaje de prueba enviado a WhatsApp 📲', 'ok');
+}
+
+function checkAndSendAll() {
+  const d = getData();
+  const todayS = todayStr();
+  const allEvs = getAllEvents();
+  const overdue = allEvs.filter(e => e.date < todayS && !e.done);
+  const todays = allEvs.filter(e => e.date === todayS && !e.done);
+  const all = [...overdue, ...todays];
+  if(all.length === 0) { toast('No hay pendientes para hoy 🎉', 'ok'); return; }
+  const summary = buildDailySummary(getAllEvents());
+  sendWhatsApp(summary);
+  all.forEach(ev => showBrowserNotif(typeIcon(ev.type) + ' ' + typeLabel(ev.type), ev.title + (ev.time?' — '+ev.time:'')));
+  toast(all.length + ' recordatorios enviados a WhatsApp 📲', 'ok');
+}
+
+// ─── BROWSER NOTIFICATIONS ───────────────────
+function requestNotifPerm() {
+  if(!('Notification' in window)) { toast('Tu navegador no soporta notificaciones', 'warn'); return; }
+  if(Notification.permission === 'granted') { toast('✅ Notificaciones del navegador activas', 'ok'); return; }
+  Notification.requestPermission().then(p => {
+    if(p === 'granted') toast('✅ Notificaciones activadas', 'ok');
+    else toast('Notificaciones del navegador bloqueadas. Actívalas en configuración del navegador.', 'warn');
+  });
+}
+
+function showBrowserNotif(title, body) {
+  const d = getData();
+  if(!d.config.browser) return;
+  if(Notification.permission !== 'granted') return;
+  try {
+    new Notification(title, { body: body, icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔔</text></svg>' });
+  } catch(e){}
+}
+
+// ─── CHECKER — revisa cada minuto ────────────
+function startChecker() {
+  checkReminders();
+  setInterval(checkReminders, 60000); // every minute
+}
+
+function checkReminders() {
+  const d = getData();
+  if(!d.events && !getNNData()) return;
+  const now = new Date();
+  const todayS = todayStr();
+  const h = now.getHours();
+  const m = now.getMinutes();
+  const config = d.config || {};
+  let changed = false;
+
+  // Daily summary at 7:00 AM
+  if(config.daily && h === 7 && m === 0) {
+    const lastDaily = d.lastDaily || '';
+    if(lastDaily !== todayS) {
+      const msg = buildDailySummary(d.events);
+      sendWhatsApp(msg);
+      d.lastDaily = todayS;
+      changed = true;
+    }
+  }
+
+  getAllEvents().forEach(ev => {
+    if(ev.done) return;
+    const evDate = new Date(ev.date + 'T' + (ev.time || '00:00') + ':00');
+    const diffMin = (evDate - now) / 60000;
+    const remindMin = ev.remindMin || 60;
+    const channel = ev.channel || 'both';
+    const notifKey = 'notif_' + ev.id + '_' + remindMin;
+
+    // Check if should remind (within ±1 min window)
+    if(diffMin >= 0 && diffMin <= remindMin + 1 && diffMin >= remindMin - 1) {
+      if(!ev[notifKey]) {
+        ev[notifKey] = true;
+        changed = true;
+        const msg = buildMsg(ev, 'remind');
+        if(channel !== 'browser') sendWhatsApp(msg);
+        if(channel !== 'wa') showBrowserNotif('⏰ ' + typeLabel(ev.type) + ': ' + ev.title, (remindMin > 0 ? 'En ' + remindMin + ' min' : 'Ahora') + (ev.project?' — '+ev.project:''));
+      }
+    }
+
+    // Overdue check (only once)
+    if(config.over && ev.date < todayS && !ev.notifiedOverdue) {
+      ev.notifiedOverdue = true;
+      changed = true;
+      const msg = buildMsg(ev, 'overdue');
+      if(channel !== 'browser') sendWhatsApp(msg);
+      if(channel !== 'wa') showBrowserNotif('🚨 Vencido: ' + ev.title, 'Fecha: ' + ev.date + (ev.project?' — '+ev.project:''));
+    }
+  });
+
+  if(changed) save(d);
+}
+
+// ─── TOAST ───────────────────────────────────
+let _tt = null;
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + (type||'');
+  if(_tt) clearTimeout(_tt);
+  _tt = setTimeout(() => el.className='', 3000);
+}
+</script>
+</body>
+</html>
+"></iframe>
   </div>
 </div>
 <script>
@@ -4715,14 +5706,17 @@ function sw(n){
   document.getElementById("f1").className="fr "+(n===1?"on":"off");
   document.getElementById("f2").className="fr "+(n===2?"on":"off");
   document.getElementById("f3").className="fr "+(n===3?"on":"off");
+  document.getElementById("f4").className="fr "+(n===4?"on":"off");
   document.getElementById("t1").className="tbtn"+(n===1?" on":"");
   document.getElementById("t2").className="tbtn"+(n===2?" on":"");
   document.getElementById("t3").className="tbtn"+(n===3?" on":"");
+  document.getElementById("t4").className="tbtn"+(n===4?" on":"");
 }
 document.addEventListener("keydown",function(e){
   if(e.altKey&&e.key==="1")sw(1);
   if(e.altKey&&e.key==="2")sw(2);
   if(e.altKey&&e.key==="3")sw(3);
+  if(e.altKey&&e.key==="4")sw(4);
 });
 </script>
 </body>
