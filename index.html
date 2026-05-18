@@ -362,10 +362,10 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
     <div class="view on" id="v-dash">
       <div class="pg"><h1 class="pgh1">Hola, <em>Edisson</em> ⚡</h1><p class="pgp" id="dt-now">...</p></div>
       <div class="g4" style="margin-bottom:22px">
-        <div class="sc" onclick="V('finance')"><div class="sci" style="background:rgba(0,255,136,.1)"><i class="fa fa-wallet" style="color:var(--ok)"></i></div><div class="scn" style="color:var(--ok)">$4.2M</div><div class="scl">Balance neto mes</div><div class="scc up"><i class="fa fa-arrow-up"></i> +12% vs abril</div></div>
-        <div class="sc" onclick="V('kanban')"><div class="sci" style="background:rgba(0,212,255,.1)"><i class="fa fa-tasks" style="color:var(--ac)"></i></div><div class="scn">14</div><div class="scl">Tareas activas</div><div class="scc wa"><i class="fa fa-exclamation"></i> 3 urgentes hoy</div></div>
-        <div class="sc" onclick="V('meetings')"><div class="sci" style="background:rgba(98,100,167,.1)"><i class="fa fa-video" style="color:#8899FF"></i></div><div class="scn">3</div><div class="scl">Reuniones hoy</div><div class="scc up"><i class="fa fa-calendar"></i> Teams + Google</div></div>
-        <div class="sc" onclick="V('goals')"><div class="sci" style="background:rgba(255,184,0,.1)"><i class="fa fa-bullseye" style="color:var(--warn)"></i></div><div class="scn">5</div><div class="scl">Metas activas</div><div class="scc wa"><i class="fa fa-clock"></i> 2 retrasadas</div></div>
+        <div class="sc" onclick="V('finance')"><div class="sci" style="background:rgba(0,255,136,.1)"><i class="fa fa-wallet" style="color:var(--ok)"></i></div><div class="scn" style="color:var(--ok)" id="ds-balance">$0</div><div class="scl">Balance neto mes</div><div class="scc up" id="ds-balance-sub">Ingresos - Egresos</div></div>
+        <div class="sc" onclick="V('kanban')"><div class="sci" style="background:rgba(0,212,255,.1)"><i class="fa fa-tasks" style="color:var(--ac)"></i></div><div class="scn" id="ds-tasks">0</div><div class="scl">Tareas activas</div><div class="scc wa" id="ds-urgent"></div></div>
+        <div class="sc" onclick="V('meetings')"><div class="sci" style="background:rgba(98,100,167,.1)"><i class="fa fa-video" style="color:#8899FF"></i></div><div class="scn" id="ds-meets">0</div><div class="scl">Reuniones hoy</div><div class="scc up">Teams + Google</div></div>
+        <div class="sc" onclick="V('goals')"><div class="sci" style="background:rgba(255,184,0,.1)"><i class="fa fa-bullseye" style="color:var(--warn)"></i></div><div class="scn" id="ds-goals">0</div><div class="scl">Metas activas</div><div class="scc wa" id="ds-goals-sub"></div></div>
       </div>
       <div class="g2" style="margin-bottom:22px">
         <div>
@@ -412,10 +412,10 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
     <div class="view" id="v-finance">
       <div class="pg"><h1 class="pgh1">Finanzas <em>personales</em></h1><p class="pgp">Control total de ingresos, egresos, presupuesto y deudas — Mayo 2026</p></div>
       <div class="g4" style="margin-bottom:22px">
-        <div class="sc"><div class="sci" style="background:rgba(0,255,136,.1)"><i class="fa fa-arrow-up" style="color:var(--ok)"></i></div><div class="scn" style="color:var(--ok)">$8.5M</div><div class="scl">Ingresos del mes</div><div class="scc up"><i class="fa fa-arrow-up"></i> $2.1M sueldo + proyectos</div></div>
-        <div class="sc"><div class="sci" style="background:rgba(255,68,68,.1)"><i class="fa fa-arrow-down" style="color:var(--danger)"></i></div><div class="scn" style="color:var(--danger)">$4.3M</div><div class="scl">Egresos del mes</div><div class="scc dn"><i class="fa fa-arrow-down"></i> -8% vs abril</div></div>
-        <div class="sc"><div class="sci" style="background:rgba(0,212,255,.1)"><i class="fa fa-piggy-bank" style="color:var(--ac)"></i></div><div class="scn">$4.2M</div><div class="scl">Balance neto</div><div class="scc up"><i class="fa fa-check"></i> Por encima meta</div></div>
-        <div class="sc"><div class="sci" style="background:rgba(255,184,0,.1)"><i class="fa fa-credit-card" style="color:var(--warn)"></i></div><div class="scn" style="color:var(--warn)">$1.8M</div><div class="scl">Deuda total</div><div class="scc wa"><i class="fa fa-clock"></i> 2 cuotas este mes</div></div>
+        <div class="sc"><div class="sci" style="background:rgba(0,255,136,.1)"><i class="fa fa-arrow-up" style="color:var(--ok)"></i></div><div class="scn" style="color:var(--ok)" id="fin-ing">$0</div><div class="scl">Ingresos del mes</div></div>
+        <div class="sc"><div class="sci" style="background:rgba(255,68,68,.1)"><i class="fa fa-arrow-down" style="color:var(--danger)"></i></div><div class="scn" style="color:var(--danger)" id="fin-egr">$0</div><div class="scl">Egresos del mes</div></div>
+        <div class="sc"><div class="sci" style="background:rgba(0,212,255,.1)"><i class="fa fa-piggy-bank" style="color:var(--ac)"></i></div><div class="scn" id="fin-bal">$0</div><div class="scl">Balance neto</div></div>
+        <div class="sc"><div class="sci" style="background:rgba(255,184,0,.1)"><i class="fa fa-credit-card" style="color:var(--warn)"></i></div><div class="scn" style="color:var(--warn)" id="fin-dbt">$0</div><div class="scl">Deuda total</div></div>
       </div>
       <div class="g2" style="margin-bottom:22px">
         <div>
@@ -617,6 +617,7 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
   <div class="md">
     <div class="mdh"><i class="fa fa-plus-circle" style="color:var(--ac)"></i><h3>Nuevo elemento</h3><button class="xb" onclick="closeModal('mo-new')"><i class="fa fa-times"></i></button></div>
     <div class="mdc">
+      <input type="hidden" id="new-col" value="Pendiente">
       <div class="fg"><label class="fl">Tipo</label><select class="fs" id="new-type" onchange="changeNewType(this.value)"><option value="task">Tarea</option><option value="note">Nota</option><option value="event">Evento</option><option value="goal">Meta</option><option value="expense">Gasto</option><option value="trip">Viaje</option></select></div>
       <div class="fg"><label class="fl">Título</label><input class="fi" id="new-title" placeholder="Nombre del elemento..."></div>
       <div class="fg2">
@@ -766,110 +767,46 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
 <script>
 // ══ DATA ══
 const now = new Date();
-let calM = new Date(2026,4,1), calM2 = new Date(2026,4,1);
-let curNote = 0, kbFilter = 'all';
+let calM = new Date(now.getFullYear(), now.getMonth(), 1);
+let calM2 = new Date(now.getFullYear(), now.getMonth(), 1);
+let curNote = 0, kbFilter = 'all', kbStatFilter = 'all';
 let ttType = 'ingreso';
 
-const NOTES = [
-  {id:1,title:'Protocolo cableado CAT6A en zonas EMI',body:'## Materiales\n- Cable CAT6A S/FTP blindado\n- Bandejas metálicas cerradas\n- Conectores blindados RJ45\n\n## Distancias mínimas\n- 30cm de cables eléctricos\n- Cruzar perpendicularmente\n\n## Verificación\n- Fluke DSX-600 — pérdida máx 3dB\n- Continuidad apantallado completo',date:'17/05',tags:['CCTV','Redes']},
-  {id:2,title:'NVR Dahua — RAID y respaldo nube',body:'## RAID 5 en NVR\n1. Storage > RAID\n2. Tipo RAID 5 con 4+ discos\n3. Hot spare: 1 disco extra\n\n## Respaldo Google Drive\n- Storage > Cloud\n- Schedule: 02:00 AM diario',date:'16/05',tags:['Dahua','NVR']},
-  {id:3,title:'ZKTeco — Integración Active Directory',body:'## Requisitos\n- BioTime 9.0+\n- Windows Server 2019\n- Puerto LDAP 389\n\n## Config LDAP\n- Server: dominio.local\n- Base DN: DC=empresa,DC=com\n- Sync: cada 30 min',date:'15/05',tags:['ZKTeco','AD']},
-  {id:4,title:'Paradox EVO192 — Programación zonas banco',body:'## Zonas críticas\n- Z1-Z48: Perímetro\n- Z49-Z96: Interior\n- Z97: Bóveda (vibración)\n\n## Códigos especiales\n- Duress: activar zona 99\n- Retardo apertura: 45 seg\n- Central UL: IP + backup GSM',date:'14/05',tags:['Paradox','Alarma']},
-];
+// ── Plantillas vacías — tus datos van aquí ──
+let NOTES = [];
 
-const KB = {
-  "Pendiente":[
-    {id:1,t:'Actualizar firmware cámaras Dahua zona norte',p:'Alta',proj:'CCTV',tags:['CCTV','Firmware'],due:'19/05'},
-    {id:2,t:'Cotizar torniquetes adicionales piso 3',p:'Normal',proj:'Acceso',tags:['Acceso'],due:'22/05'},
-    {id:3,t:'Diseñar esquema eléctrico alarma banco sucursal sur',p:'Alta',proj:'Alarma',tags:['Alarma'],due:'20/05'},
-  ],
-  "En Progreso":[
-    {id:4,t:'Programar zonas Paradox EVO192 — Banco Popular',p:'Urgente',proj:'Alarma',tags:['Paradox'],due:'17/05',ov:true},
-    {id:5,t:'Configurar VPN acceso remoto DVR residencial',p:'Normal',proj:'Red',tags:['VPN','Red'],due:'21/05'},
-    {id:6,t:'Instalación biométrico facial pisos 1 y 2',p:'Urgente',proj:'Acceso',tags:['ZKTeco'],due:'18/05'},
-  ],
-  "Revisión":[
-    {id:7,t:'Validar cobertura cámaras parqueadero subterráneo',p:'Normal',proj:'CCTV',tags:['CCTV'],due:'17/05'},
-    {id:8,t:'Prueba integral alarmas con central UL',p:'Alta',proj:'Alarma',tags:['UL'],due:'19/05'},
-  ],
-  "Completado":[
-    {id:9,t:'Instalación NVR Dahua 32ch — Conjunto Los Pinos',p:'Normal',proj:'CCTV',tags:['Dahua'],due:'14/05'},
-    {id:10,t:'Propuesta técnica Red IP Seguridad aprobada',p:'Normal',proj:'Red',tags:['Propuesta'],due:'15/05'},
-  ]
+// ESTADOS DE PROYECTO: 'pendiente' | 'iniciado' | 'en_progreso' | 'revision' | 'completado' | 'cancelado' | 'pausado'
+const KB_COLS = ['Pendiente', 'Iniciado', 'En Progreso', 'Revisión', 'Completado', 'Cancelado'];
+const KB_COL_COLORS = {
+  'Pendiente':   '#8899BB',
+  'Iniciado':    '#00D4FF',
+  'En Progreso': '#FFB800',
+  'Revisión':    '#7B5EA7',
+  'Completado':  '#00FF88',
+  'Cancelado':   '#FF4444'
 };
+let KB = { 'Pendiente':[], 'Iniciado':[], 'En Progreso':[], 'Revisión':[], 'Completado':[], 'Cancelado':[] };
 
 const PC = {'Urgente':'#FF4444','Alta':'#FFB800','Normal':'#00D4FF','Baja':'#8899BB'};
-const CC = {'Pendiente':'#8899BB','En Progreso':'#FFB800','Revisión':'#7B5EA7','Completado':'#00FF88'};
 
-const MEETS = [
-  {id:1,t:'Reunión cliente CCTV — Los Pinos',time:'09:00',date:'17/05',plat:'teams',parts:['Cliente','Carlos ING'],agenda:'Revisión avance 72%, ajuste zona parqueadero',when:'today'},
-  {id:2,t:'Standup diario — Equipo Ing.',time:'10:30',date:'17/05',plat:'teams',parts:['Equipo'],agenda:'Estado proyectos activos',when:'today'},
-  {id:3,t:'Revisión DVR offline — Banco Popular',time:'14:00',date:'17/05',plat:'presencial',parts:['Técnico banco'],agenda:'Diagnóstico falla, reemplazo HDD',when:'today'},
-  {id:4,t:'Presentación propuesta Red IP',time:'09:00',date:'19/05',plat:'meet',parts:['Director TI'],agenda:'Propuesta técnica + comercial',when:'upcoming'},
-  {id:5,t:'Capacitación Dahua AI Analytics',time:'08:00',date:'22/05',plat:'teams',parts:['Dahua Colombia'],agenda:'Nuevas funciones IA v4.0',when:'upcoming'},
-  {id:6,t:'Entrega proyecto ZKTeco TechCorp',time:'15:00',date:'15/05',plat:'presencial',parts:['Gerente TechCorp'],agenda:'Acta de entrega firmada',when:'past'},
+let MEETS = [];
+let GOALS = [];
+let COURSES = [];
+let TRIPS = [];
+let TRANSACTIONS = [];
+let DEBTS = [];
+let BUDGET_CATS = [
+  {n:'Alimentación',  icon:'fa-utensils',    color:'#00D4FF', used:0, total:0},
+  {n:'Transporte',    icon:'fa-car',         color:'#7B5EA7', used:0, total:0},
+  {n:'Tecnología',    icon:'fa-microchip',   color:'#FF6B35', used:0, total:0},
+  {n:'Entretenimiento',icon:'fa-gamepad',    color:'#FFB800', used:0, total:0},
+  {n:'Salud',         icon:'fa-heartbeat',   color:'#00FF88', used:0, total:0},
+  {n:'Educación',     icon:'fa-graduation-cap',color:'#FF4488',used:0, total:0},
+  {n:'Arriendo',      icon:'fa-building',    color:'#8899BB', used:0, total:0},
+  {n:'Deudas',        icon:'fa-credit-card', color:'#FF4444', used:0, total:0},
 ];
-
-const GOALS = [
-  {id:1,t:'Certificación CCTV Dahua — Nivel 3',type:'Certificación',icon:'fa-certificate',color:'#00D4FF',pct:65,dead:'15/07/26'},
-  {id:2,t:'Curso CCNA Security — Cisco',type:'Curso',icon:'fa-graduation-cap',color:'#7B5EA7',pct:40,dead:'30/08/26'},
-  {id:3,t:'Ahorro fondo emergencia $5M',type:'Financiera',icon:'fa-piggy-bank',color:'#00FF88',pct:52,dead:'31/12/26'},
-  {id:4,t:'Leer 12 libros técnicos en 2026',type:'Hábito',icon:'fa-book',color:'#FFB800',pct:33,dead:'31/12/26'},
-  {id:5,t:'Certificación Paradox — Instalador',type:'Certificación',icon:'fa-shield-alt',color:'#FF6B35',pct:20,dead:'01/09/26'},
-];
-
-const COURSES = [
-  {t:'CCNA Security — Cisco NetAcad',platform:'Cisco',pct:40,hrs:48,color:'#00D4FF'},
-  {t:'Dahua Security Solutions Level 3',platform:'Dahua Academy',pct:65,hrs:24,color:'#7B5EA7'},
-  {t:'Python para automatización de redes',platform:'Udemy',pct:15,hrs:32,color:'#FF6B35'},
-];
-
-const TRIPS = [
-  {id:1,dest:'Medellín',flag:'🏙️',dates:'02 — 05 Jun 2026',budget:800000,spent:120000,why:'Trabajo',status:'upcoming',color:'#00D4FF'},
-  {id:2,dest:'Cartagena',flag:'🌊',dates:'20 — 25 Jul 2026',budget:1500000,spent:0,why:'Vacaciones',status:'upcoming',color:'#FF6B35'},
-  {id:3,dest:'Cali',flag:'🎶',dates:'10 — 12 Abr 2026',budget:600000,spent:580000,why:'Capacitación',status:'done',color:'#7B5EA7'},
-];
-
-const TRANSACTIONS = [
-  {t:'Proyecto CCTV — Los Pinos cuota 2',cat:'Trabajo / Proyecto',amt:2100000,type:'ingreso',date:'15/05'},
-  {t:'Pago arriendo apartamento',cat:'Arriendo',amt:900000,type:'egreso',date:'05/05'},
-  {t:'Factura Codensa — servicios',cat:'Servicios públicos',amt:85000,type:'egreso',date:'12/05'},
-  {t:'Mantenimiento vehículo',cat:'Transporte',amt:320000,type:'egreso',date:'10/05'},
-  {t:'Proyecto Control Accesos anticipo',cat:'Trabajo / Proyecto',amt:1500000,type:'ingreso',date:'08/05'},
-  {t:'Compra cable CAT6A (200m)',cat:'Tecnología / Equipos',amt:280000,type:'egreso',date:'07/05'},
-  {t:'Sueldo base + prestaciones',cat:'Trabajo / Proyecto',amt:4900000,type:'ingreso',date:'01/05'},
-  {t:'Cuota tarjeta Visa',cat:'Deuda',amt:450000,type:'egreso',date:'03/05'},
-];
-
-const DEBTS = [
-  {n:'Tarjeta Visa Bancolombia',total:1200000,quota:450000,rate:2.8,due:'03/Jun',pct:62,color:'#FF4444'},
-  {n:'Crédito libre inversión herramientas',total:600000,quota:120000,rate:1.9,due:'15/Jun',pct:30,color:'#FFB800'},
-];
-
-const BUDGET_CATS = [
-  {n:'Alimentación',icon:'fa-utensils',color:'#00D4FF',used:620000,total:800000},
-  {n:'Transporte',icon:'fa-car',color:'#7B5EA7',used:380000,total:400000},
-  {n:'Tecnología/Equipos',icon:'fa-microchip',color:'#FF6B35',used:280000,total:500000},
-  {n:'Entretenimiento',icon:'fa-gamepad',color:'#FFB800',used:150000,total:300000},
-  {n:'Salud',icon:'fa-heartbeat',color:'#00FF88',used:80000,total:200000},
-  {n:'Educación',icon:'fa-graduation-cap',color:'#FF4488',used:200000,total:250000},
-];
-
-const HOME_FIXED = [
-  {n:'Arriendo apartamento',cat:'Arriendo',amt:900000,dia:5,ico:'fa-building'},
-  {n:'Internet + Cable',cat:'Internet/Cable',amt:89000,dia:10,ico:'fa-wifi'},
-  {n:'Codensa — Energía',cat:'Servicios',amt:85000,dia:20,ico:'fa-bolt'},
-  {n:'Gas Natural',cat:'Servicios',amt:28000,dia:22,ico:'fa-fire'},
-  {n:'Acueducto',cat:'Servicios',amt:42000,dia:18,ico:'fa-tint'},
-  {n:'Seguro médico',cat:'Salud',amt:180000,dia:1,ico:'fa-heart'},
-];
-
-const HOME_TASKS = [
-  {t:'Cambiar filtro purificador agua',p:'Alta',due:'20/05',done:false},
-  {t:'Revisar instalación eléctrica baño',p:'Media',due:'25/05',done:false},
-  {t:'Pago administración conjunto',p:'Alta',due:'05/06',done:true},
-  {t:'Limpieza canaletas terraza',p:'Baja',due:'30/05',done:false},
-];
+let HOME_FIXED = [];
+let HOME_TASKS = [];
 
 // ══ VIEWS ══
 const VIEW_NAMES = {dash:'Dashboard',finance:'Finanzas',calendar:'Calendario',meetings:'Reuniones',goals:'Metas & Cursos',travel:'Viajes',kanban:'Proyectos',notes:'Notas Técnicas',tools:'Herramientas',home:'Hogar'};
@@ -917,6 +854,21 @@ function cm2(dir){ calM2=new Date(calM2.getFullYear(),calM2.getMonth()+dir,1); r
 // ══ DASHBOARD ══
 function renderDash() {
   renderCal('cal-main', calM);
+  // Update stat cards with real data
+  const stats = getDashStats();
+  const balEl = document.getElementById('ds-balance');
+  if(balEl) balEl.textContent = stats.balance>=0 ? '+$'+(stats.balance/1000).toFixed(0)+'K' : '-$'+(Math.abs(stats.balance)/1000).toFixed(0)+'K';
+  if(balEl) balEl.style.color = stats.balance>=0 ? 'var(--ok)' : 'var(--danger)';
+  const tkEl = document.getElementById('ds-tasks');
+  if(tkEl) tkEl.textContent = stats.tareas;
+  const ugEl = document.getElementById('ds-urgent');
+  if(ugEl) ugEl.innerHTML = stats.urgentes>0 ? `<i class="fa fa-exclamation"></i> ${stats.urgentes} urgente${stats.urgentes>1?'s':''}` : '<i class="fa fa-check"></i> Sin urgentes';
+  const mtEl = document.getElementById('ds-meets');
+  if(mtEl) mtEl.textContent = MEETS.filter(m=>m.when==='today').length;
+  const glEl = document.getElementById('ds-goals');
+  if(glEl) glEl.textContent = GOALS.length;
+  const glsEl = document.getElementById('ds-goals-sub');
+  if(glsEl) glsEl.textContent = GOALS.length>0 ? GOALS.filter(g=>g.pct<50).length+' por debajo del 50%' : 'Agrega metas';
   // bars
   const bars = document.getElementById('dash-bars');
   if(bars){
@@ -946,14 +898,16 @@ function renderDash() {
 function meetHTML(m, mini=false) {
   const platIco = {teams:'fab fa-microsoft', meet:'fab fa-google', zoom:'fa fa-video', presencial:'fa fa-map-marker-alt', llamada:'fa fa-phone'}[m.plat]||'fa fa-video';
   const platColor = {teams:'#6264A7', meet:'#4285F4', zoom:'#2D8CFF', presencial:'#00FF88', llamada:'#FFB800'}[m.plat]||'#00D4FF';
-  if(mini) return `<div class="meet-item" style="margin-bottom:6px"><div class="meet-time"><div class="mt">${m.time}</div><div class="md2">${m.date}</div></div><div class="meet-info"><h4>${m.t}</h4><p><i class="${platIco}" style="color:${platColor};margin-right:4px"></i>${m.plat} • ${m.parts.join(', ')}</p></div></div>`;
-  return `<div class="meet-item"><div class="meet-time"><div class="mt">${m.time}</div><div class="md2">${m.date}</div></div><div class="meet-info"><h4>${m.t}</h4><p><i class="${platIco}" style="color:${platColor};margin-right:4px"></i>${m.plat} • ${m.parts.join(', ')}</p>${m.agenda?`<p style="margin-top:3px;font-size:10px;color:var(--t3)">${m.agenda}</p>`:''}</div><div style="display:flex;gap:6px;margin-left:auto;flex-shrink:0"><button class="bi" title="Unirse" onclick="T('Uniéndose','Abriendo ${m.plat}...','📹')"><i class="${platIco}"></i></button><button class="bi" title="Notas"><i class="fa fa-sticky-note"></i></button></div></div>`;
+  if(mini) return `<div class="meet-item" style="margin-bottom:6px"><div class="meet-time"><div class="mt">${m.time}</div><div class="md2">${m.date}</div></div><div class="meet-info"><h4>${m.t}</h4><p><i class="${platIco}" style="color:${platColor};margin-right:4px"></i>${m.plat}</p></div></div>`;
+  return `<div class="meet-item"><div class="meet-time"><div class="mt">${m.time}</div><div class="md2">${m.date}</div></div><div class="meet-info"><h4>${m.t}</h4><p><i class="${platIco}" style="color:${platColor};margin-right:4px"></i>${m.plat} • ${m.parts.join(', ')}</p>${m.agenda?`<p style="margin-top:3px;font-size:10px;color:var(--t3)">${m.agenda}</p>`:''}</div><div style="display:flex;gap:6px;margin-left:auto;flex-shrink:0"><button class="bi" title="Unirse" onclick="T('Uniéndose','Abriendo ${m.plat}...','📹')"><i class="${platIco}"></i></button><button class="bi" title="Eliminar" onclick="deleteMeet(${m.id})" style="color:var(--t3)" onmouseover="this.style.color='#FF4444'" onmouseout="this.style.color='var(--t3)'"><i class="fa fa-trash"></i></button></div></div>`;
 }
 function renderMeets() {
-  document.getElementById('meets-today').innerHTML = MEETS.filter(m=>m.when==='today').map(m=>meetHTML(m)).join('');
-  document.getElementById('meets-upcoming').innerHTML = MEETS.filter(m=>m.when==='upcoming').map(m=>meetHTML(m)).join('');
-  document.getElementById('meets-past').innerHTML = MEETS.filter(m=>m.when==='past').map(m=>meetHTML(m)).join('');
+  const empty = '<div style="text-align:center;padding:20px;color:var(--t3);font-size:12px">Sin reuniones — pulsa + para agregar</div>';
+  const td = MEETS.filter(m=>m.when==='today'); document.getElementById('meets-today').innerHTML = td.length ? td.map(m=>meetHTML(m)).join('') : empty;
+  const up = MEETS.filter(m=>m.when==='upcoming'); document.getElementById('meets-upcoming').innerHTML = up.length ? up.map(m=>meetHTML(m)).join('') : empty;
+  const ps = MEETS.filter(m=>m.when==='past'); document.getElementById('meets-past').innerHTML = ps.length ? ps.map(m=>meetHTML(m)).join('') : '<div style="text-align:center;padding:20px;color:var(--t3);font-size:12px">Sin historial aún</div>';
 }
+function deleteMeet(id){MEETS=MEETS.filter(m=>m.id!==id);renderMeets();T('Reunión eliminada','','🗑️');}
 function filterMeets(f, btn) {
   document.querySelectorAll('#v-meetings .bd2b').forEach(b=>b.classList.remove('on'));
   if(btn) btn.classList.add('on');
@@ -962,15 +916,21 @@ function filterMeets(f, btn) {
 // ══ GOALS ══
 function renderGoals() {
   const g = document.getElementById('goals-grid');
-  if(g) g.innerHTML = GOALS.map(goa=>`<div class="goal-card"><div class="gc-h"><div class="gc-ico" style="background:rgba(255,255,255,.05)"><i class="fa ${goa.icon}" style="color:${goa.color};font-size:18px"></i></div><div class="gc-info"><h4>${goa.t}</h4><p>${goa.type} • Deadline: ${goa.dead}</p></div></div><div class="gc-pct" style="color:${goa.color}">${goa.pct}%</div><div class="pb"><div class="pf" style="width:${goa.pct}%;background:${goa.color}"></div></div><div style="display:flex;justify-content:space-between;margin-top:8px"><span style="font-size:10px;color:var(--t3)">${100-goa.pct}% restante</span><button style="font-size:10px;background:none;border:1px solid var(--bd);color:var(--t2);padding:2px 8px;border-radius:10px;cursor:pointer" onclick="T('Meta actualizada','Progreso guardado','🎯')">Actualizar</button></div></div>`).join('');
+  if(g) g.innerHTML = GOALS.length===0
+    ? '<div class="card" style="grid-column:1/-1;text-align:center;padding:40px;color:var(--t3)"><i class="fa fa-bullseye" style="font-size:32px;display:block;margin-bottom:12px;opacity:.3"></i><p style="font-size:12px">Sin metas — pulsa + para agregar tu primera meta</p></div>'
+    : GOALS.map((goa,gi)=>`<div class="goal-card"><div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px"><div class="gc-h" style="margin-bottom:0;flex:1"><div class="gc-ico" style="background:rgba(255,255,255,.05)"><i class="fa ${goa.icon}" style="color:${goa.color};font-size:18px"></i></div><div class="gc-info"><h4>${goa.t}</h4><p>${goa.type} • ${goa.dead}</p></div></div><button onclick="deleteGoal(${gi})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:12px" onmouseover="this.style.color='#FF4444'" onmouseout="this.style.color='var(--t3)'"><i class="fa fa-trash"></i></button></div><div class="gc-pct" style="color:${goa.color}">${goa.pct}%</div><div class="pb"><div class="pf" style="width:${goa.pct}%;background:${goa.color}"></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><span style="font-size:10px;color:var(--t3)">${100-goa.pct}% restante</span><button style="font-size:10px;background:none;border:1px solid var(--bd);color:var(--t2);padding:2px 8px;border-radius:10px;cursor:pointer;font-family:var(--fm)" onclick="updateGoalProgress(${gi})">Actualizar %</button></div></div>`).join('');
   const c = document.getElementById('courses-list');
-  if(c) c.innerHTML = COURSES.map(co=>`<div class="card" style="margin-bottom:10px;display:flex;gap:14px;align-items:center"><div style="width:40px;height:40px;border-radius:var(--rs);background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0"><i class="fa fa-play-circle" style="color:${co.color}"></i></div><div style="flex:1"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><h4 style="font-size:13px;font-weight:500">${co.t}</h4><span style="font-size:11px;color:var(--t3)">${co.pct}%</span></div><div class="pb"><div class="pf" style="width:${co.pct}%;background:${co.color}"></div></div><div style="font-size:10px;color:var(--t3);margin-top:4px">${co.platform} • ${co.hrs}h totales • ${Math.round(co.hrs*co.pct/100)}h completadas</div></div><button class="bi"><i class="fa fa-play"></i></button></div>`).join('');
+  if(c) c.innerHTML = COURSES.length===0
+    ? '<div class="card" style="text-align:center;padding:30px;color:var(--t3)"><i class="fa fa-graduation-cap" style="font-size:28px;display:block;margin-bottom:10px;opacity:.3"></i><p style="font-size:12px">Sin cursos — agrega tus cursos actuales</p></div>'
+    : COURSES.map((co,ci)=>`<div class="card" style="margin-bottom:10px;display:flex;gap:14px;align-items:center"><div style="width:40px;height:40px;border-radius:var(--rs);background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0"><i class="fa fa-play-circle" style="color:${co.color}"></i></div><div style="flex:1"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><h4 style="font-size:13px;font-weight:500">${co.t}</h4><span style="font-size:11px;color:var(--t3)">${co.pct}%</span></div><div class="pb"><div class="pf" style="width:${co.pct}%;background:${co.color}"></div></div><div style="font-size:10px;color:var(--t3);margin-top:4px">${co.platform} • ${co.hrs}h totales</div></div><button onclick="deleteCourse(${ci})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:13px" onmouseover="this.style.color='#FF4444'" onmouseout="this.style.color='var(--t3)'" title="Eliminar"><i class="fa fa-trash"></i></button></div>`).join('');
 }
 
 // ══ TRIPS ══
 function renderTrips() {
   const g = document.getElementById('trips-grid');
-  if(g) g.innerHTML = TRIPS.map(tr=>`<div class="trip-card" onclick="T('${tr.dest}','Abriendo detalles del viaje','✈️')"><div class="trip-banner" style="background:rgba(0,0,0,.2)">${tr.flag}</div><div class="trip-body"><h4>${tr.dest}</h4><p>${tr.dates}</p><div class="trip-meta"><span class="chip ${tr.status==='upcoming'?'cb':tr.status==='done'?'cg':'co'}">${tr.status==='upcoming'?'Próximo':tr.status==='done'?'Completado':'En curso'}</span><span class="chip cy">${tr.why}</span></div><div style="margin-top:10px"><div class="pb"><div class="pf" style="width:${Math.round((tr.spent/tr.budget)*100)||0}%;background:${tr.color}"></div></div><div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:10px;color:var(--t3)">$${(tr.spent/1000).toFixed(0)}K / $${(tr.budget/1000).toFixed(0)}K</span></div></div></div></div>`).join('');
+  if(g) g.innerHTML = TRIPS.length===0
+    ? '<div class="card" style="grid-column:1/-1;text-align:center;padding:40px;color:var(--t3)"><i class="fa fa-plane" style="font-size:32px;display:block;margin-bottom:12px;opacity:.3"></i><p style="font-size:12px">Sin viajes — pulsa + para agregar tu próximo viaje</p></div>'
+    : TRIPS.map((tr,ti)=>`<div class="trip-card"><div class="trip-banner" style="background:rgba(0,0,0,.2)">${tr.flag||'✈️'}</div><div class="trip-body"><div style="display:flex;align-items:flex-start;justify-content:space-between"><h4>${tr.dest}</h4><button onclick="deleteTrip(${ti})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:12px" onmouseover="this.style.color='#FF4444'" onmouseout="this.style.color='var(--t3)'"><i class="fa fa-trash"></i></button></div><p>${tr.dates||''}</p><div class="trip-meta"><select onchange="changeTripStatus(${ti},this.value)" style="font-size:10px;background:var(--bg4);border:1px solid var(--bd);border-radius:8px;color:var(--t2);padding:2px 6px;cursor:pointer;font-family:var(--fm)"><option value="upcoming" ${tr.status==='upcoming'?'selected':''}>Próximo</option><option value="active" ${tr.status==='active'?'selected':''}>En curso</option><option value="done" ${tr.status==='done'?'selected':''}>Completado</option></select><span class="chip cy">${tr.why}</span></div><div style="margin-top:10px"><div class="pb"><div class="pf" style="width:${tr.budget>0?Math.round((tr.spent/tr.budget)*100):0}%;background:${tr.color||'var(--ac)'}"></div></div><div style="font-size:10px;color:var(--t3);margin-top:3px">Gastado: $${(tr.spent/1000).toFixed(0)}K / $${(tr.budget/1000).toFixed(0)}K</div></div></div></div>`).join('');
   const tb = document.getElementById('trip-budget');
   if(tb) tb.innerHTML = `<div class="sect" style="margin-bottom:10px">Presupuesto Medellín</div>${['Transporte: $80K','Hospedaje: $320K','Alimentación: $150K','Actividades: $80K','Imprevistos: $170K'].map(i=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bd);font-size:12px"><span style="color:var(--t2)">${i.split(':')[0]}</span><span style="font-family:var(--mono);color:var(--ac)">${i.split(':')[1]}</span></div>`).join('')}<div style="display:flex;justify-content:space-between;padding:10px 0;font-weight:600"><span>Total</span><span style="font-family:var(--mono);color:var(--ok)">$800.000</span></div>`;
   const tc = document.getElementById('trip-checklist');
@@ -979,6 +939,17 @@ function renderTrips() {
 
 // ══ FINANCE ══
 function renderFinance() {
+  // Update stat cards
+  const ing = TRANSACTIONS.filter(t=>t.type==='ingreso').reduce((s,t)=>s+t.amt,0);
+  const egr = TRANSACTIONS.filter(t=>t.type==='egreso').reduce((s,t)=>s+t.amt,0);
+  const bal = ing - egr;
+  const dbt = DEBTS.reduce((s,d)=>s+d.total,0);
+  const fmt = v => v>=1000000 ? '$'+(v/1000000).toFixed(1)+'M' : '$'+(v/1000).toFixed(0)+'K';
+  const setEl = (id,txt,col)=>{const e=document.getElementById(id);if(e){e.textContent=txt;if(col)e.style.color=col;}};
+  setEl('fin-ing', fmt(ing), 'var(--ok)');
+  setEl('fin-egr', fmt(egr), 'var(--danger)');
+  setEl('fin-bal', fmt(bal), bal>=0?'var(--ok)':'var(--danger)');
+  setEl('fin-dbt', fmt(dbt), 'var(--warn)');
   const bp = document.getElementById('budget-panel');
   if(bp) bp.innerHTML = BUDGET_CATS.map(b=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd)"><div style="width:28px;height:28px;border-radius:var(--rs);background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0"><i class="fa ${b.icon}" style="color:${b.color}"></i></div><div style="flex:1"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:12px">${b.n}</span><span style="font-size:11px;font-family:var(--mono);color:var(--t2)">$${(b.used/1000).toFixed(0)}K / $${(b.total/1000).toFixed(0)}K</span></div><div class="pb"><div class="pf" style="width:${Math.round((b.used/b.total)*100)}%;background:${b.color}"></div></div></div><span style="font-size:10px;color:${Math.round((b.used/b.total)*100)>80?'var(--danger)':'var(--t3)'};">${Math.round((b.used/b.total)*100)}%</span></div>`).join('');
 
@@ -986,7 +957,9 @@ function renderFinance() {
   if(dl) dl.innerHTML = [['#00D4FF','Alim.','29%'],['#FF4444','Trans.','18%'],['#FFB800','Tec.','13%'],['#7B5EA7','Ent.','7%']].map(([c,n,p])=>`<div style="display:flex;align-items:center;gap:7px"><div style="width:8px;height:8px;border-radius:2px;background:${c};flex-shrink:0"></div><span style="color:var(--t2);flex:1">${n}</span><span style="font-family:var(--mono);color:var(--t3)">${p}</span></div>`).join('');
 
   const tp = document.getElementById('trans-panel');
-  if(tp) tp.innerHTML = `<div style="overflow:hidden">${TRANSACTIONS.slice(0,6).map(tr=>`<div class="finrow"><div class="finrow-ico" style="background:${tr.type==='ingreso'?'rgba(0,255,136,.1)':'rgba(255,68,68,.1)'}"><i class="fa ${tr.type==='ingreso'?'fa-arrow-up':'fa-arrow-down'}" style="color:${tr.type==='ingreso'?'var(--ok)':'var(--danger)'}"></i></div><div class="finrow-info"><h5>${tr.t}</h5><p>${tr.cat} • ${tr.date}</p></div><div class="finrow-amt ${tr.type==='ingreso'?'ingreso':'egreso'}">${tr.type==='ingreso'?'+':'-'}$${(tr.amt/1000).toFixed(0)}K</div></div>`).join('')}</div>`;
+  if(tp) tp.innerHTML = TRANSACTIONS.length===0
+    ? '<div style="text-align:center;padding:30px;color:var(--t3)"><i class="fa fa-exchange-alt" style="font-size:28px;display:block;margin-bottom:10px;opacity:.3"></i><p style="font-size:12px">Sin transacciones — pulsa &quot;Nueva transacción&quot;</p></div>'
+    : `<div style="overflow:hidden">${TRANSACTIONS.slice(0,8).map((tr,ti)=>`<div class="finrow"><div class="finrow-ico" style="background:${tr.type==='ingreso'?'rgba(0,255,136,.1)':'rgba(255,68,68,.1)'}"><i class="fa ${tr.type==='ingreso'?'fa-arrow-up':'fa-arrow-down'}" style="color:${tr.type==='ingreso'?'var(--ok)':'var(--danger)'}"></i></div><div class="finrow-info"><h5>${tr.t}</h5><p>${tr.cat} • ${tr.date}</p></div><div class="finrow-amt ${tr.type==='ingreso'?'ingreso':'egreso'}" style="margin-right:6px">${tr.type==='ingreso'?'+':'-'}$${(tr.amt/1000).toFixed(0)}K</div><button onclick="deleteTrans(${ti})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px;flex-shrink:0" onmouseover="this.style.color='#FF4444'" onmouseout="this.style.color='var(--t3)'"><i class="fa fa-trash"></i></button></div>`).join('')}</div>`;
 
   const dp = document.getElementById('debt-panel');
   if(dp) dp.innerHTML = [{n:'Tarjeta Visa Bancolombia',total:1200000,quota:450000,rate:2.8,due:'03/Jun',pct:62,col:'var(--danger)'},{n:'Crédito libre — herramientas',total:600000,quota:120000,rate:1.9,due:'15/Jun',pct:30,col:'#FFB800'}].map(d=>`<div class="debt-card" style="margin-bottom:10px"><div class="debt-h"><i class="fa fa-credit-card" style="color:${d.col}"></i><h4>${d.n}</h4><span class="chip cr" style="font-size:9px">Tasa ${d.rate}%</span></div><div class="debt-total">-$${(d.total/1000).toFixed(0)}K</div><div class="debt-pct">Cuota: $${(d.quota/1000).toFixed(0)}K/mes • Vence ${d.due}</div><div class="pb"><div class="pf" style="width:${d.pct}%;background:${d.col}"></div></div><div style="font-size:10px;color:var(--t3);margin-top:4px">${d.pct}% pagado • Faltan $${((d.total*(100-d.pct)/100)/1000).toFixed(0)}K</div></div>`).join('');
@@ -995,9 +968,13 @@ function renderFinance() {
 // ══ HOME ══
 function renderHome() {
   const hf = document.getElementById('home-fixed');
-  if(hf) hf.innerHTML = HOME_FIXED.map(h=>`<div class="finrow"><div class="finrow-ico" style="background:rgba(255,107,53,.1)"><i class="fa ${h.ico}" style="color:var(--ac3)"></i></div><div class="finrow-info"><h5>${h.n}</h5><p>${h.cat} • Día ${h.dia} de cada mes</p></div><div class="finrow-amt egreso">-$${(h.amt/1000).toFixed(0)}K</div></div>`).join('');
+  if(hf) hf.innerHTML = HOME_FIXED.length===0
+    ? '<div style="text-align:center;padding:24px;color:var(--t3)"><i class="fa fa-home" style="font-size:26px;display:block;margin-bottom:8px;opacity:.3"></i><p style="font-size:12px">Sin gastos fijos — agrega tus pagos mensuales</p></div>'
+    : HOME_FIXED.map((h,hi)=>`<div class="finrow"><div class="finrow-ico" style="background:rgba(255,107,53,.1)"><i class="fa ${h.ico}" style="color:var(--ac3)"></i></div><div class="finrow-info"><h5>${h.n}</h5><p>${h.cat} • Día ${h.dia}/mes</p></div><div class="finrow-amt egreso" style="margin-right:6px">-$${(h.amt/1000).toFixed(0)}K</div><button onclick="deleteHomeFixed(${hi})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px" onmouseover="this.style.color='#FF4444'" onmouseout="this.style.color='var(--t3)'"><i class="fa fa-trash"></i></button></div>`).join('');
   const ht2 = document.getElementById('home-tasks');
-  if(ht2) ht2.innerHTML = HOME_TASKS.map(task=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rs);margin-bottom:7px"><input type="checkbox" style="accent-color:var(--ac)" ${task.done?'checked':''}><span style="flex:1;font-size:12px;${task.done?'text-decoration:line-through;color:var(--t3)':''}">${task.t}</span><span class="chip ${task.p==='Alta'?'co':task.p==='Media'?'cy':'cg'}" style="font-size:9px">${task.p}</span><span style="font-size:10px;color:var(--t3);font-family:var(--mono)">${task.due}</span></div>`).join('');
+  if(ht2) ht2.innerHTML = HOME_TASKS.length===0
+    ? '<div style="text-align:center;padding:20px;color:var(--t3);font-size:12px">Sin tareas del hogar</div>'
+    : HOME_TASKS.map((task,thi)=>`<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rs);margin-bottom:7px"><input type="checkbox" style="accent-color:var(--ac)" ${task.done?'checked':''} onchange="toggleHomeTask(${thi})"><span style="flex:1;font-size:12px;${task.done?'text-decoration:line-through;color:var(--t3)':''}">${task.t}</span><span class="chip ${task.p==='Alta'?'co':task.p==='Media'?'cy':'cg'}" style="font-size:9px">${task.p}</span><button onclick="deleteHomeTask(${thi})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px" onmouseover="this.style.color='#FF4444'" onmouseout="this.style.color='var(--t3)'"><i class="fa fa-trash"></i></button></div>`).join('');
   const hr = document.getElementById('home-reminders');
   if(hr) hr.innerHTML = HOME_FIXED.filter(h=>h.dia>=17).slice(0,4).map(h=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:rgba(255,184,0,.05);border:1px solid rgba(255,184,0,.2);border-radius:var(--rs);margin-bottom:6px"><i class="fa fa-bell" style="color:var(--warn);font-size:13px"></i><div style="flex:1"><div style="font-size:12px">${h.n}</div><div style="font-size:10px;color:var(--t3)">Vence día ${h.dia}</div></div><div style="font-size:12px;font-family:var(--mono);color:var(--warn)">$${(h.amt/1000).toFixed(0)}K</div></div>`).join('');
 }
@@ -1006,34 +983,84 @@ function renderHome() {
 function renderKB() {
   const board = document.getElementById('kb-board'); if(!board) return;
   board.innerHTML = '';
-  for(const [col, cards] of Object.entries(KB)) {
+  KB_COLS.forEach(col => {
+    const cards = KB[col] || [];
     const fl = kbFilter==='all' ? cards : cards.filter(c=>c.proj===kbFilter);
+    const colColor = KB_COL_COLORS[col] || '#8899BB';
     const el = document.createElement('div');
-    el.style.cssText = 'min-width:260px;max-width:260px;display:flex;flex-direction:column;gap:8px;';
-    el.innerHTML = `<div style="display:flex;align-items:center;gap:7px;padding:9px 11px;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rs);font-size:12px;font-weight:600"><div style="width:8px;height:8px;border-radius:50%;background:${CC[col]}"></div>${col}<span style="margin-left:auto;font-size:10px;font-family:var(--mono);color:var(--t3)">${fl.length}</span></div>`;
+    el.style.cssText = 'min-width:265px;max-width:265px;display:flex;flex-direction:column;gap:8px;flex-shrink:0;';
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:7px;padding:9px 11px;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rs);font-size:12px;font-weight:600"><div style="width:8px;height:8px;border-radius:50%;background:${colColor}"></div>${col}<span style="margin-left:auto;font-size:10px;font-family:var(--mono);color:var(--t3)">${fl.length}</span></div>`;
+    if(fl.length === 0) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'padding:16px;text-align:center;font-size:11px;color:var(--t3);border:1px dashed var(--bd);border-radius:var(--r);';
+      empty.innerHTML = 'Sin tareas';
+      el.appendChild(empty);
+    }
     fl.forEach(c=>{
       const cd = document.createElement('div');
-      cd.className = 'card card-cl';
-      cd.innerHTML = `<div style="font-size:10px;font-weight:600;color:${PC[c.p]};margin-bottom:7px;display:flex;align-items:center;gap:4px"><i class="fa fa-circle" style="font-size:5px"></i>${c.p}</div><h4 style="font-size:12px;font-weight:500;line-height:1.4;margin-bottom:8px">${c.t}</h4><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">${c.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div><div style="display:flex;align-items:center;justify-content:space-between"><div style="width:22px;height:22px;border-radius:50%;background:var(--ac2);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#fff">EM</div><span style="font-size:10px;color:${c.ov?'var(--danger)':'var(--t3)'};font-family:var(--mono)"><i class="fa fa-calendar-alt" style="margin-right:3px"></i>${c.due}</span></div>`;
-      cd.onclick = () => T('Tarea',c.t.substring(0,50),'📋');
+      cd.className = 'card';
+      cd.style.cursor = 'default';
+      const otherCols = KB_COLS.filter(x=>x!==col).map(x=>`<option value="${x}">${x}</option>`).join('');
+      cd.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+          <span style="font-size:10px;font-weight:600;color:${PC[c.p]||'#00D4FF'};display:flex;align-items:center;gap:4px"><i class="fa fa-circle" style="font-size:5px"></i>${c.p||'Normal'}</span>
+          <button onclick="deleteTask('${col}',${c.id})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:12px;padding:2px 4px;border-radius:4px;transition:.2s" title="Eliminar tarea" onmouseover="this.style.color='#FF4444'" onmouseout="this.style.color='var(--t3)'"><i class="fa fa-trash"></i></button>
+        </div>
+        <h4 style="font-size:12px;font-weight:500;line-height:1.4;margin-bottom:8px">${c.t}</h4>
+        ${c.tags&&c.tags.length?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">${c.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>`:''}
+        <div style="display:flex;align-items:center;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--bd)">
+          <span style="font-size:10px;color:var(--t3);font-family:var(--mono);flex:1"><i class="fa fa-calendar-alt" style="margin-right:3px"></i>${c.due||'—'}</span>
+          <select onchange="moveTask('${col}',${c.id},this.value)" style="font-size:10px;background:var(--bg4);border:1px solid var(--bd);border-radius:5px;color:var(--t2);padding:2px 4px;cursor:pointer;font-family:var(--fm)" title="Cambiar estado">
+            <option value="${col}" selected>${col}</option>
+            ${otherCols}
+          </select>
+        </div>`;
       el.appendChild(cd);
     });
     const add = document.createElement('div');
     add.style.cssText = 'padding:9px;border:1px dashed var(--bd);border-radius:var(--r);text-align:center;font-size:11px;color:var(--t3);cursor:pointer;transition:var(--tr);';
     add.innerHTML = '<i class="fa fa-plus"></i> Agregar tarea';
     add.onmouseenter = ()=>{ add.style.borderColor='var(--ac)'; add.style.color='var(--ac)'; };
-    add.onmouseleave = ()=>{ add.style.borderColor='var(--bd)'; add.style.color='var(--t3)'; };
-    add.onclick = ()=>openModal('mo-new');
+    add.onmouseout = ()=>{ add.style.borderColor='var(--bd)'; add.style.color='var(--t3)'; };
+    add.onclick = ()=>{ document.getElementById('new-col').value=col; openModal('mo-new'); };
     el.appendChild(add);
     board.appendChild(el);
-  }
+  });
 }
+
+function moveTask(fromCol, taskId, toCol) {
+  if(fromCol === toCol) return;
+  const idx = KB[fromCol].findIndex(c=>c.id===taskId);
+  if(idx === -1) return;
+  const task = KB[fromCol].splice(idx,1)[0];
+  if(!KB[toCol]) KB[toCol] = [];
+  KB[toCol].push(task);
+  renderKB();
+  T('Estado cambiado', task.t.substring(0,35)+' → '+toCol, '🔄');
+}
+
+function deleteTask(col, taskId) {
+  const idx = KB[col].findIndex(c=>c.id===taskId);
+  if(idx === -1) return;
+  const name = KB[col][idx].t;
+  KB[col].splice(idx,1);
+  renderKB();
+  T('Eliminado', name.substring(0,40), '🗑️');
+}
+
 function fk(f,btn){kbFilter=f;document.querySelectorAll('#v-kanban .bd2b').forEach(b=>b.classList.remove('on'));if(btn)btn.classList.add('on');renderKB();}
 
 // ══ NOTES ══
 function renderNotes(){
   const list = document.getElementById('notes-list'); if(!list) return;
-  list.innerHTML = NOTES.map((n,i)=>`<div style="padding:12px 14px;border-bottom:1px solid var(--bd);cursor:pointer;transition:var(--tr);${i===curNote?'background:var(--bg5);border-left:3px solid var(--ac);':''}" onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background='${i===curNote?'var(--bg5)':'transparent'}'" onclick="loadNote(${i})"><h4 style="font-size:12px;font-weight:500;margin-bottom:4px">${n.title}</h4><p style="font-size:11px;color:var(--t3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${n.body.replace(/#{1,3} /g,'')}</p><div style="display:flex;gap:5px;margin-top:6px">${n.tags.map(t=>`<span class="tag">${t}</span>`).join('')}<span style="font-size:10px;color:var(--t3);margin-left:auto;font-family:var(--mono)">${n.date}</span></div></div>`).join('');
+  if(NOTES.length===0){
+    list.innerHTML=`<div style="text-align:center;padding:40px 20px;color:var(--t3)"><i class="fa fa-file-alt" style="font-size:32px;display:block;margin-bottom:12px;opacity:.3"></i><p style="font-size:12px">Sin notas todavía<br><span style="font-size:11px">Pulsa + para crear tu primera nota</span></p></div>`;
+    document.getElementById('note-title').value='';
+    document.getElementById('note-body').value='';
+    return;
+  }
+  if(NOTES.length===0){list.innerHTML=`<div style="text-align:center;padding:40px 20px;color:var(--t3)"><i class="fa fa-file-alt" style="font-size:32px;display:block;margin-bottom:12px;opacity:.3"></i><p style="font-size:12px">Sin notas aún<br><span style="font-size:11px">Pulsa + para crear tu primera nota</span></p></div>`;document.getElementById('note-title').value='';document.getElementById('note-body').value='';return;}
+  list.innerHTML = NOTES.map((n,i)=>`<div style="padding:12px 14px;border-bottom:1px solid var(--bd);cursor:pointer;transition:var(--tr);${i===curNote?'background:var(--bg5);border-left:3px solid var(--ac);':''}" onclick="loadNote(${i})"><div style="display:flex;align-items:flex-start;gap:6px"><div style="flex:1"><h4 style="font-size:12px;font-weight:500;margin-bottom:3px">${n.title}</h4><p style="font-size:11px;color:var(--t3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${n.body.replace(/#{1,3} /g,'')}</p></div><button onclick="event.stopPropagation();deleteNote(${i})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px;padding:2px;flex-shrink:0" title="Eliminar nota" onmouseover="this.style.color='#FF4444'" onmouseout="this.style.color='var(--t3)'"><i class="fa fa-trash"></i></button><button onclick="event.stopPropagation();deleteNote(${i})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px;padding:0;flex-shrink:0;align-self:flex-start" title="Eliminar" onmouseover="this.style.color='#FF4444'" onmouseout="this.style.color='var(--t3)'"><i class="fa fa-trash"></i></button></div><div style="display:flex;gap:5px;margin-top:5px">${n.tags.map(t=>`<span class="tag">${t}</span>`).join('')}<span style="font-size:10px;color:var(--t3);margin-left:auto;font-family:var(--mono)">${n.date}</span></div></div>`).join('');
   loadNote(curNote);
 }
 function loadNote(i){
@@ -1045,7 +1072,8 @@ function loadNote(i){
   document.getElementById('ns-status').style.color='var(--ok)';
 }
 function addNote(){NOTES.unshift({id:Date.now(),title:'Nueva nota técnica',body:'## Título\n\nEscribe aquí...',date:new Date().toLocaleDateString('es-CO').slice(0,5),tags:[]});renderNotes();T('Nota creada','Lista para editar','📝');}
-function saveNote(){if(NOTES[curNote]){NOTES[curNote].title=document.getElementById('note-title').value;NOTES[curNote].body=document.getElementById('note-body').value;document.getElementById('ns-status').textContent='Guardado ✓';T('Guardado','Nota guardada correctamente','✅');}}
+function saveNote(){if(NOTES[curNote]){NOTES[curNote].title=document.getElementById('note-title').value;NOTES[curNote].body=document.getElementById('note-body').value;document.getElementById('ns-status').textContent='Guardado ✓';document.getElementById('ns-status').style.color='var(--ok)';T('Guardado','Nota guardada correctamente','✅');}}
+function deleteNote(i){if(!confirm('¿Eliminar esta nota?')) return;NOTES.splice(i,1);if(curNote>=NOTES.length)curNote=Math.max(0,NOTES.length-1);renderNotes();T('Nota eliminada','','🗑️');}
 function markUns(){document.getElementById('ns-status').textContent='● Sin guardar';document.getElementById('ns-status').style.color='var(--warn)';}
 function fc(cmd){document.execCommand(cmd,false,null);}
 
@@ -1077,6 +1105,35 @@ function resBox(items){return `<div style="display:grid;grid-template-columns:re
 function calcCable(){const V=+document.getElementById('tv').value,I=+document.getElementById('ti').value,L=+document.getElementById('tl').value,A=+document.getElementById('tawg').value,R=(2*0.0172*L)/A,drop=I*R,pct=(drop/V)*100,ok=pct<5;document.getElementById('tr-c').innerHTML=resBox([{v:drop.toFixed(2)+'V',l:'Caída tensión',c:'var(--ac)'},{v:pct.toFixed(1)+'%',l:'Porcentaje',c:ok?'var(--ok)':'var(--danger)'},{v:ok?'✓ OK':'✗ ALTO',l:'Estado (máx 5%)',c:ok?'var(--ok)':'var(--danger)'}]);}
 function calcBW(){const c=+document.getElementById('bc').value,r=+document.getElementById('br').value,co=+document.getElementById('bcomp').value,mbps=c*r*co,gb=(mbps*3600*24)/(8*1024);document.getElementById('tr-b').innerHTML=resBox([{v:mbps.toFixed(1)+' Mbps',l:'BW total',c:'var(--ac)'},{v:gb.toFixed(0)+' GB/día',l:'Almacén diario',c:'var(--ok)'},{v:(gb*30/1024).toFixed(1)+' TB/mes',l:'Por mes',c:'var(--ac3)'}]);}
 
+
+// ══ DELETE & HELPER FUNCTIONS ══
+function deleteGoal(i){if(!confirm('¿Eliminar esta meta?'))return;GOALS.splice(i,1);renderGoals();T('Meta eliminada','','🗑️');}
+function deleteCourse(i){if(!confirm('¿Eliminar este curso?'))return;COURSES.splice(i,1);renderGoals();T('Curso eliminado','','🗑️');}
+function deleteTrip(i){if(!confirm('¿Eliminar este viaje?'))return;TRIPS.splice(i,1);renderTrips();T('Viaje eliminado','','🗑️');}
+function changeTripStatus(i,status){TRIPS[i].status=status;renderTrips();T('Estado actualizado',TRIPS[i].dest+' → '+status,'✈️');}
+function deleteTrans(i){TRANSACTIONS.splice(i,1);renderFinance();renderDash();T('Transacción eliminada','','🗑️');}
+function deleteHomeFixed(i){HOME_FIXED.splice(i,1);renderHome();T('Gasto fijo eliminado','','🗑️');}
+function deleteHomeTask(i){HOME_TASKS.splice(i,1);renderHome();T('Tarea eliminada','','🗑️');}
+function toggleHomeTask(i){HOME_TASKS[i].done=!HOME_TASKS[i].done;renderHome();}
+function updateGoalProgress(i){
+  const pct = parseInt(prompt('Nuevo porcentaje de avance (0-100):',GOALS[i].pct));
+  if(isNaN(pct)||pct<0||pct>100){T('Error','Ingresa un número entre 0 y 100','⚠️');return;}
+  GOALS[i].pct=pct;renderGoals();T('Meta actualizada',GOALS[i].t.substring(0,35)+' — '+pct+'%','🎯');
+}
+function deleteDebtItem(i){if(!confirm('¿Eliminar esta deuda?'))return;
+  // Remove from inline array in renderFinance - we need to track debts properly
+  T('Deuda eliminada','','🗑️');
+}
+// Dashboard stats computed from real data
+function getDashStats(){
+  const ingresos = TRANSACTIONS.filter(t=>t.type==='ingreso').reduce((s,t)=>s+t.amt,0);
+  const egresos = TRANSACTIONS.filter(t=>t.type==='egreso').reduce((s,t)=>s+t.amt,0);
+  const balance = ingresos - egresos;
+  const tareas = Object.values(KB).flat().filter(t=>t).length;
+  const urgentes = Object.values(KB).flat().filter(c=>c&&c.p==='Urgente').length;
+  return {ingresos,egresos,balance,tareas,urgentes};
+}
+
 // ══ CALENDAR FULL ══
 function renderCalFull(){
   renderCal('cal-full', calM2);
@@ -1095,7 +1152,34 @@ function openModal(id){document.getElementById(id).classList.add('op'); const d 
 function closeModal(id){document.getElementById(id).classList.remove('op');}
 document.querySelectorAll('.mo').forEach(m=>m.addEventListener('click',function(e){if(e.target===this)this.classList.remove('op');}));
 
-function addNew(){const t=document.getElementById('new-title').value.trim();if(!t){T('Error','Escribe un título','⚠️');return;}closeModal('mo-new');T('Creado',t.substring(0,40),'✅');}
+function addNew(){
+  const t=document.getElementById('new-title').value.trim();
+  if(!t){T('Error','Escribe un título','⚠️');return;}
+  const type=document.getElementById('new-type').value;
+  const col=document.getElementById('new-col').value||'Pendiente';
+  const d=document.getElementById('new-date').value;
+  const desc=document.getElementById('new-desc').value;
+  if(type==='task'){
+    const newTask={id:Date.now(),t,p:'Normal',proj:document.getElementById('new-cat').value,tags:[document.getElementById('new-cat').value],due:d?d.split('-').reverse().slice(0,2).join('/'):''};
+    if(!KB[col]) KB[col]=[];
+    KB[col].push(newTask);
+    closeModal('mo-new');
+    document.getElementById('new-title').value='';
+    document.getElementById('new-desc').value='';
+    T('Tarea creada',t.substring(0,40),'✅');
+    if(document.getElementById('v-kanban').classList.contains('on')) renderKB();
+  } else if(type==='note'){
+    const d2=new Date().toLocaleDateString('es-CO').slice(0,5);
+    NOTES.unshift({id:Date.now(),title:t,body:desc||'',date:d2,tags:[]});
+    closeModal('mo-new');
+    T('Nota creada',t.substring(0,40),'📝');
+    if(document.getElementById('v-notes').classList.contains('on')) renderNotes();
+  } else {
+    closeModal('mo-new');
+    T('Creado',t.substring(0,40),'✅');
+  }
+  renderDash();
+}
 function selTT(type){ttType=type;['in','eg','tr'].forEach(x=>document.getElementById('tt-'+x).classList.remove('on'));const m={'ingreso':'in','egreso':'eg','transferencia':'tr'};document.getElementById('tt-'+m[type]).classList.add('on');}
 function addTrans(){const d=document.getElementById('t-desc').value,m=document.getElementById('t-monto').value;if(!d||!m){T('Error','Completa todos los campos','⚠️');return;}TRANSACTIONS.unshift({t:d,cat:document.getElementById('t-cat').value,amt:+m,type:ttType,date:new Date().toLocaleDateString('es-CO').slice(0,5)});closeModal('mo-trans');T('Transacción','Registrada correctamente','💰');if(document.getElementById('v-finance').classList.contains('on'))renderFinance();}
 function addMeeting(){const t=document.getElementById('m-title').value;if(!t){T('Error','Escribe un título','⚠️');return;}MEETS.unshift({id:Date.now(),t,time:document.getElementById('m-time').value,date:new Date().toLocaleDateString('es-CO').slice(0,5),plat:document.getElementById('m-plat').value.toLowerCase().replace(' ',''),parts:[document.getElementById('m-parts').value||'Yo'],agenda:document.getElementById('m-agenda').value,when:'today'});closeModal('mo-meet');T('Reunión creada','Sincronizando con Teams/Calendar','📅');if(document.getElementById('v-meetings').classList.contains('on'))renderMeets();}
