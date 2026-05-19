@@ -5068,7 +5068,9 @@ function apReqNotif(){
 }
 
 // Check reminders every minute
-var _sentKeys={};
+// Claves de notificaciones ya enviadas — persisten en localStorage para sobrevivir recargas
+var _sentKeys=(function(){try{return JSON.parse(localStorage.getItem('_ap_sent')||'{}');}catch(e){return{};}})();
+function _markSent(k){_sentKeys[k]=true;try{localStorage.setItem('_ap_sent',JSON.stringify(_sentKeys));}catch(e){}}
 setInterval(function(){
   var d=apLoad(); var tod=apToday(); var now=new Date();
   (d.events||[]).forEach(function(ev){
@@ -5081,7 +5083,7 @@ setInterval(function(){
     // ── Recordatorio 1 hora antes ──
     var k1='r1h_'+ev.id;
     if(diff>=55&&diff<=65&&!_sentKeys[k1]){
-      _sentKeys[k1]=true;
+      _markSent(k1);
       tgSendAP('⏰ *En 1 hora: '+apLabel(ev.type)+'*\n\n📌 *'+ev.title+'*\n🕐 '+ev.time+(ev.project?'\n📂 '+ev.project:'')+'\n\n_EM Suite PRO_');
       if(Notification.permission==='granted')new Notification('EM Suite PRO — En 1 hora',{body:ev.title+' a las '+ev.time,tag:k1});
     }
@@ -5089,12 +5091,12 @@ setInterval(function(){
     // ── Alerta justo al momento (±5 min) ──
     var k2='ahora_'+ev.id;
     if(diff>=-5&&diff<=5&&!_sentKeys[k2]){
-      _sentKeys[k2]=true;
+      _markSent(k2);
       tgSendAP('🔔 *¡AHORA! '+apLabel(ev.type).toUpperCase()+'*\n\n📌 *'+ev.title+'*\n🕐 '+ev.time+(ev.project?'\n📂 '+ev.project:'')+'\n\n_EM Suite PRO_');
       if(Notification.permission==='granted')new Notification('📅 ¡AHORA! '+ev.title,{body:'Es la hora — '+ev.time,tag:k2});
     }
   });
-},60000);
+},30000); // cada 30 segundos
 
 // ── FIREBASE SYNC ──────────────────────────────────────────────────────
 var _FB_PROJECT='em-suite-pro';
@@ -5115,10 +5117,10 @@ function fbWriteEvent(ev){
   });
 }
 
-function fbSyncAll(){
+function fbSyncAll(silent){
   var d=apLoad();
   var evs=(d.events||[]).filter(function(e){return !e.done;});
-  if(evs.length===0){apToast('Sin eventos para sincronizar','warn');return;}
+  if(evs.length===0){if(!silent)apToast('Sin eventos para sincronizar','warn');return;}
   if(_fbSyncing)return;
   _fbSyncing=true;
   var promises=evs.map(function(ev){return fbWriteEvent(ev);});
@@ -5126,10 +5128,10 @@ function fbSyncAll(){
     _fbSyncing=false;
     var el=document.getElementById('ap-tg-last');
     if(el)el.textContent='Firebase sync '+new Date().toLocaleTimeString('es-CO');
-    apToast('✓ '+evs.length+' eventos sincronizados a Firebase','ok');
+    if(!silent)apToast('✓ '+evs.length+' eventos sincronizados a Firebase','ok');
   }).catch(function(e){
     _fbSyncing=false;
-    apToast('Error Firebase: '+e.message,'err');
+    if(!silent)apToast('Error Firebase: '+e.message,'err');
   });
 }
 
@@ -5173,22 +5175,85 @@ function importFromNeuroNotes(){
     apStore(d);
     apRender();
     if(added>0){
-      fbSyncAll();
-      apToast('Importadas '+added+' reuniones de NeuroNotes','ok');
+      fbSyncAll(true);
+      apToast('✓ '+added+' reuniones importadas y sincronizadas','ok');
     } else {
       apToast('Todas las reuniones ya estaban importadas','warn');
     }
   }catch(e){apToast('Error: '+e.message,'err');console.error(e);}
 }
 
-// Auto-sync to Firebase on load (debounced)
-setTimeout(function(){
-  var d=apLoad();
-  if((d.events||[]).length>0) fbSyncAll();
-},2000);
+// ── AUTO-IMPORT + AUTO-SYNC al cargar ──────────────────────
+function autoImportAndSync(){
+  // Importar silenciosamente desde NeuroNotes
+  try{
+    var raw=localStorage.getItem('neuronotes_v2_data');
+    if(raw){
+      var nn=JSON.parse(raw);
+      var meets=nn.MEETS||[];
+      var d=apLoad();
+      var existing=new Set((d.events||[]).map(function(e){return String(e.id);}));
+      var added=0;
+      var now=new Date();
+      meets.forEach(function(m){
+        var eid='nn_'+m.id;
+        if(existing.has(eid))return;
+        var dateParts=(m.date||'').split('/');
+        var dateStr='';
+        if(dateParts.length===2){
+          var day=parseInt(dateParts[0]);
+          var month=parseInt(dateParts[1])-1;
+          var yr=now.getFullYear();
+          // Si el mes ya pasó este año, es el próximo año
+          if(month<now.getMonth()||(month===now.getMonth()&&day<now.getDate()))yr++;
+          dateStr=yr+'-'+String(month+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+        }
+        if(!dateStr)return;
+        d.events.push({
+          id:eid,
+          title:m.t||m.title||'Reunión',
+          type:'meet',prio:'alta',
+          date:dateStr,time:m.time||'',
+          project:m.plat||'',notes:m.agenda||'',
+          done:false
+        });
+        added++;
+      });
+      if(added>0){
+        apStore(d);
+        console.log('Auto-importadas '+added+' reuniones de NeuroNotes');
+      }
+    }
+  }catch(e){console.warn('Auto-import error:',e);}
 
+  // Sincronizar todo a Firebase
+  setTimeout(function(){
+    var d=apLoad();
+    var pending=(d.events||[]).filter(function(e){return !e.done;});
+    if(pending.length>0){
+      pending.forEach(function(ev){fbWriteEvent(ev);});
+      var el=document.getElementById('ap-tg-last');if(el)el.textContent='Auto-sync '+new Date().toLocaleTimeString('es-CO');
+      console.log('Auto-sync: '+pending.length+' eventos a Firebase');
+    }
+  },1000);
 
-apRender();
+  apRender();
+}
+
+// Escuchar cambios en localStorage (cuando NeuroNotes agrega una reunión)
+window.addEventListener('storage', function(e){
+  if(e.key==='neuronotes_v2_data'){
+    console.log('NeuroNotes actualizado, re-importando...');
+    autoImportAndSync();
+  }
+});
+
+autoImportAndSync();
+
+// Re-importar cada 30 segundos para no perder nada
+setInterval(function(){
+  autoImportAndSync();
+}, 30000);
 </script>
 </div>
 
