@@ -3420,12 +3420,8 @@ function addMeeting(){
   document.getElementById('m-parts').value='';
   closeModal('mo-meet');
   T('Reunión creada','Agregada correctamente','📅');
-  // 🔔 Notificación + alarma automática
+  // Solo programar alarma de proximidad — sin notificar al crear
   const newM = MEETS[0];
-  tgMeeting(newM);
-  playAlarmSound('task');
-  pushNotif('📅 Reunión agendada: '+t,
-    (newM.time||'')+'  '+newM.date+'  — '+document.getElementById('m-plat').value,'📅');
   scheduleAlarm(newM);
   nnSave();
   if(document.getElementById('v-meetings').classList.contains('on'))renderMeets();
@@ -4976,9 +4972,9 @@ function apRender(){
         '<div class="ev-ttl">'+ev.title+'</div>'+
         '<div class="ev-sub">'+apDateLbl(ev.date,tod)+(ev.time?' &bull; '+ev.time:'')+(ev.project?' &bull; '+ev.project:'')+'</div>'+
         '<div class="ev-acts" style="margin-top:6px;">'+
-          '<button class="sm-btn" onclick="apDone(''+ev.id+'')">✓ Listo</button>'+
-          '<button class="sm-btn" onclick="apEdit(''+ev.id+'')">✎</button>'+
-          '<button class="sm-btn del" onclick="apDelete(''+ev.id+'')">🗑</button>'+
+          '<button class="sm-btn" onclick="apDone(\"'+ev.id+'\")">✓ Listo</button>'+
+          '<button class="sm-btn" onclick="apEdit(\"'+ev.id+'\")">✎</button>'+
+          '<button class="sm-btn del" onclick="apDelete(\"'+ev.id+'\")">🗑</button>'+
         '</div>'+
       '</div></div>';
   }).join('');}
@@ -5072,20 +5068,32 @@ function apReqNotif(){
 }
 
 // Check reminders every minute
+var _sentKeys={};
 setInterval(function(){
   var d=apLoad(); var tod=apToday(); var now=new Date();
   (d.events||[]).forEach(function(ev){
-    if(ev.done||!ev.time)return;
+    if(ev.done||!ev.time||!ev.date)return;
+    // Solo eventos de hoy o futuros
+    if(ev.date<tod)return;
     var evT=new Date(ev.date+'T'+ev.time+':00');
     var diff=(evT-now)/60000;
-    var key='r_'+ev.id;
-    if(diff>=55&&diff<=65&&!ev[key]){
-      ev[key]=true;
-      tgSendAP('⏰ *RECORDATORIO 1h*\n\n'+apLabel(ev.type)+': *'+ev.title+'*\n🕐 '+ev.time+(ev.project?'\n📂 '+ev.project:'')+'\n\n_EM Suite PRO_');
-      if(Notification.permission==='granted')new Notification('EM Suite PRO',{body:ev.title+' en 1 hora'});
+
+    // ── Recordatorio 1 hora antes ──
+    var k1='r1h_'+ev.id;
+    if(diff>=55&&diff<=65&&!_sentKeys[k1]){
+      _sentKeys[k1]=true;
+      tgSendAP('⏰ *En 1 hora: '+apLabel(ev.type)+'*\n\n📌 *'+ev.title+'*\n🕐 '+ev.time+(ev.project?'\n📂 '+ev.project:'')+'\n\n_EM Suite PRO_');
+      if(Notification.permission==='granted')new Notification('EM Suite PRO — En 1 hora',{body:ev.title+' a las '+ev.time,tag:k1});
+    }
+
+    // ── Alerta justo al momento (±5 min) ──
+    var k2='ahora_'+ev.id;
+    if(diff>=-5&&diff<=5&&!_sentKeys[k2]){
+      _sentKeys[k2]=true;
+      tgSendAP('🔔 *¡AHORA! '+apLabel(ev.type).toUpperCase()+'*\n\n📌 *'+ev.title+'*\n🕐 '+ev.time+(ev.project?'\n📂 '+ev.project:'')+'\n\n_EM Suite PRO_');
+      if(Notification.permission==='granted')new Notification('📅 ¡AHORA! '+ev.title,{body:'Es la hora — '+ev.time,tag:k2});
     }
   });
-  apStore(d);
 },60000);
 
 // ── FIREBASE SYNC ──────────────────────────────────────────────────────
