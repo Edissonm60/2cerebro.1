@@ -4884,18 +4884,26 @@ function toast(msg, type){
 <div class="toast" id="ap-toast"></div>
 
 <script>
-var AP_KEY='em_alerts_v2';
+// ═══════════════════════════════════════════════════════
+// EM Suite PRO — Alertas & Recordatorios
+// Firebase como fuente central — mismo dato en cualquier dispositivo
+// ═══════════════════════════════════════════════════════
 var _AT='8911619631:AAE6QNA4FzdQcKjjpG5BR5Go-skl1nnvQH0';
 var _AC='8995621093';
+var _FB_PROJECT='em-suite-pro';
+var _FB_API_KEY='AIzaSyCr4pZxUEU8BftysPDOZuVClamqXMIGooQ';
 var _apEdit=null;
 var _apTT=null;
+var _fbSyncing=false;
 
-function apLoad(){try{return JSON.parse(localStorage.getItem(AP_KEY))||{events:[]};}catch(e){return{events:[]};}}
-function apStore(d){try{localStorage.setItem(AP_KEY,JSON.stringify(d));}catch(e){}}
+// ── Estado local en memoria (no localStorage — Firebase manda) ─────────
+var _events=[]; // array de eventos cargados desde Firebase
+
 function apToday(){return new Date().toISOString().split('T')[0];}
 
 function apToast(msg,type){
   var el=document.getElementById('ap-toast');
+  if(!el)return;
   el.textContent=msg; el.className='toast show '+(type||'');
   if(_apTT)clearTimeout(_apTT);
   _apTT=setTimeout(function(){el.className='toast';},3000);
@@ -4909,52 +4917,104 @@ function tgSendAP(msg){
     if(r.ok){
       var el=document.getElementById('ap-tg-last');
       if(el)el.textContent='Enviado '+new Date().toLocaleTimeString('es-CO');
-      apToast('Telegram enviado','ok');
-    } else { apToast('Error: '+(r.description||'?'),'err'); }
-  }).catch(function(e){apToast('Error de red','err');});
+    } else { apToast('Error Telegram: '+(r.description||'?'),'err'); }
+  }).catch(function(){apToast('Sin conexión a Telegram','err');});
 }
 
-function apTestTg(){
-  var d=apLoad();
-  var tod=apToday();
-  var total=(d.events||[]).length;
-  var hoy=(d.events||[]).filter(function(e){return e.date===tod&&!e.done;}).length;
-  var ven=(d.events||[]).filter(function(e){return e.date<tod&&!e.done;}).length;
-  var msg='✅ *EM Suite PRO — Conexión exitosa*\n\n';
-  msg+='📱 Telegram: *conectado*\n';
-  msg+='📋 Eventos guardados: *'+total+'*\n';
-  msg+='📅 Para hoy: *'+hoy+'*\n';
-  if(ven>0)msg+='🚨 Vencidos: *'+ven+'*\n';
-  msg+='\n🔁 *Sincronización Firebase activa*\n';
-  msg+='Tus alertas llegarán aunque el teléfono esté apagado.\n\n';
-  msg+='_Ing. Edisson Macias — EM Suite PRO_';
-  tgSendAP(msg);
-  fbSyncAll();
+// ══════════════════════════════════════════════════════════════
+// FIREBASE — CRUD COMPLETO
+// ══════════════════════════════════════════════════════════════
+
+// Leer TODOS los eventos desde Firestore
+function fbLoadAll(callback){
+  var url='https://firestore.googleapis.com/v1/projects/'+_FB_PROJECT+
+          '/databases/(default)/documents/events?key='+_FB_API_KEY+'&pageSize=200';
+  fetch(url).then(function(r){return r.json();}).then(function(data){
+    var docs=data.documents||[];
+    _events=docs.map(function(d){
+      var f=d.fields||{};
+      function g(k){
+        if(!f[k])return'';
+        if(f[k].stringValue!==undefined)return f[k].stringValue;
+        if(f[k].booleanValue!==undefined)return f[k].booleanValue;
+        return f[k].integerValue||'';
+      }
+      return{
+        id:g('id'),title:g('title'),type:g('type'),prio:g('prio'),
+        date:g('date'),time:g('time'),project:g('project'),notes:g('notes'),
+        done:f.done?!!f.done.booleanValue:false
+      };
+    }).filter(function(e){return e.id&&e.title;});
+    if(callback)callback(_events);
+  }).catch(function(e){
+    apToast('Error al leer Firebase','err');
+    console.error('fbLoadAll error:',e);
+    if(callback)callback([]);
+  });
 }
 
-function apIcon(t){return {meet:'📅',task:'✅',proj:'📂',deadline:'⚠',call:'📞'}[t]||'🔔';}
-function apLabel(t){return {meet:'Reunion',task:'Tarea',proj:'Proyecto',deadline:'Limite',call:'Llamada'}[t]||'Evento';}
+// Escribir / actualizar un evento en Firestore
+function fbWrite(ev){
+  var url='https://firestore.googleapis.com/v1/projects/'+_FB_PROJECT+
+          '/databases/(default)/documents/events/'+ev.id+'?key='+_FB_API_KEY;
+  var fields={};
+  ['id','title','type','prio','date','time','project','notes'].forEach(function(k){
+    fields[k]={stringValue:String(ev[k]||'')};
+  });
+  fields['done']={booleanValue:!!ev.done};
+  return fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({fields:fields})});
+}
+
+// Eliminar un evento de Firestore definitivamente
+function fbDelete(id){
+  var url='https://firestore.googleapis.com/v1/projects/'+_FB_PROJECT+
+          '/databases/(default)/documents/events/'+id+'?key='+_FB_API_KEY;
+  return fetch(url,{method:'DELETE'});
+}
+
+// Recargar desde Firebase y refrescar la UI
+function fbRefresh(silent){
+  fbLoadAll(function(evs){
+    var now=new Date().toLocaleTimeString('es-CO');
+    var fb=document.getElementById('ap-fb-last');
+    if(fb)fb.textContent=now;
+    apRender();
+    if(!silent)apToast('✓ Sincronizado con Firebase','ok');
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// UI — RENDER
+// ══════════════════════════════════════════════════════════════
+function apIcon(t){return{meet:'📅',task:'✅',proj:'📂',deadline:'⚠️',call:'📞'}[t]||'🔔';}
+function apLabel(t){return{meet:'Reunión',task:'Tarea',proj:'Proyecto',deadline:'Límite',call:'Llamada'}[t]||'Evento';}
 function apCls(ev,tod){
-  if(ev.done)return '';
-  if(ev.date<tod)return 'over';
-  if(ev.date===tod)return 'today';
-  return {meet:'meet',task:'task',proj:'proj',deadline:'over',call:'meet'}[ev.type]||'';
+  if(ev.done)return'';
+  if(ev.date<tod)return'over';
+  if(ev.date===tod)return'today';
+  return{meet:'meet',task:'task',proj:'proj',deadline:'over',call:'meet'}[ev.type]||'';
 }
 function apDateLbl(date,tod){
-  if(date===tod)return '🟡 HOY';
-  if(date<tod)return '🔴 Vencio '+date;
+  if(date===tod)return'🟡 HOY';
+  if(date<tod)return'🔴 Venció '+date;
   var tom=new Date(); tom.setDate(tom.getDate()+1);
-  if(date===tom.toISOString().split('T')[0])return '📅 Manana';
-  return '📅 '+date;
+  if(date===tom.toISOString().split('T')[0])return'📅 Mañana';
+  return'📅 '+date;
 }
 
 function apRender(){
-  var d=apLoad(); var tod=apToday();
-  var evs=(d.events||[]).sort(function(a,b){return a.date>b.date?1:-1;});
-  var hoy=evs.filter(function(e){return e.date===tod&&!e.done;});
-  var ven=evs.filter(function(e){return e.date<tod&&!e.done;});
-  var reu=evs.filter(function(e){return e.type==='meet'&&!e.done;});
-  var tar=evs.filter(function(e){return (e.type==='task'||e.type==='deadline')&&!e.done;});
+  var tod=apToday();
+  var activos=_events.filter(function(e){return !e.done;});
+  var evs=activos.slice().sort(function(a,b){
+    if(a.date!==b.date)return a.date>b.date?1:-1;
+    return(a.time||'99:99')>(b.time||'99:99')?1:-1;
+  });
+  var hoy=evs.filter(function(e){return e.date===tod;});
+  var ven=evs.filter(function(e){return e.date<tod;});
+  var reu=evs.filter(function(e){return e.type==='meet';});
+  var tar=evs.filter(function(e){return e.type==='task'||e.type==='deadline';});
+
   document.getElementById('ap-hoy').textContent=hoy.length;
   document.getElementById('ap-ven').textContent=ven.length;
   document.getElementById('ap-reu').textContent=reu.length;
@@ -4962,31 +5022,52 @@ function apRender(){
 
   // Sidebar
   var sb=document.getElementById('ap-sb');
-  if(evs.length===0){sb.innerHTML='<div style="font-size:11px;color:#445566;padding:20px 10px;text-align:center;">Sin recordatorios</div>';}
-  else{sb.innerHTML=evs.filter(function(e){return !e.done;}).map(function(ev){
-    var cls=apCls(ev,tod);
-    return '<div class="sb-ev '+cls+'" onclick=""><div class="sb-ttl">'+apIcon(ev.type)+' '+ev.title+'</div><div class="sb-date">'+apDateLbl(ev.date,tod)+(ev.time?' '+ev.time:'')+'</div></div>';
-  }).join('');}
+  if(evs.length===0){
+    sb.innerHTML='<div style="font-size:11px;color:#445566;padding:20px 10px;text-align:center;">Sin recordatorios</div>';
+  } else {
+    sb.innerHTML=evs.map(function(ev){
+      var cls=apCls(ev,tod);
+      return'<div class="sb-ev '+cls+'"><div class="sb-ttl">'+apIcon(ev.type)+' '+ev.title+'</div>'+
+        '<div class="sb-date">'+apDateLbl(ev.date,tod)+(ev.time?' '+ev.time:'')+'</div></div>';
+    }).join('');
+  }
 
-  // Main list
-  var active=evs.filter(function(e){return !e.done;});
+  // Lista principal
   var lst=document.getElementById('ap-list');
-  if(active.length===0){lst.innerHTML='<div class="empty"><big>📅</big>Sin eventos<br>Pulsa "+ Nuevo" para empezar</div>';}
-  else{lst.innerHTML=active.map(function(ev){
-    var cls=apCls(ev,tod);
-    return '<div class="ev-item '+cls+'">'+
-      '<div class="ev-ico">'+apIcon(ev.type)+'</div>'+
-      '<div class="ev-body">'+
-        '<div class="ev-ttl">'+ev.title+'</div>'+
-        '<div class="ev-sub">'+apDateLbl(ev.date,tod)+(ev.time?' &bull; '+ev.time:'')+(ev.project?' &bull; '+ev.project:'')+'</div>'+
-        '<div class="ev-acts" style="margin-top:6px;">'+
-          '<button class="sm-btn" onclick="apDone(\"'+ev.id+'\")">✓ Listo</button>'+
-          '<button class="sm-btn" onclick="apEdit(\"'+ev.id+'\")">✎</button>'+
-          '<button class="sm-btn del" onclick="apDelete(\"'+ev.id+'\")">🗑</button>'+
-        '</div>'+
-      '</div></div>';
-  }).join('');}
+  if(evs.length===0){
+    lst.innerHTML='<div class="empty"><big>📅</big>Sin eventos<br>Pulsa "+ Nuevo" para empezar</div>';
+  } else {
+    lst.innerHTML=evs.map(function(ev,i){
+      var cls=apCls(ev,tod);
+      return'<div class="ev-item '+cls+'">'+
+        '<div class="ev-ico">'+apIcon(ev.type)+'</div>'+
+        '<div class="ev-body">'+
+          '<div class="ev-ttl">'+ev.title+'</div>'+
+          '<div class="ev-sub">'+apDateLbl(ev.date,tod)+(ev.time?' &bull; '+ev.time:'')+(ev.project?' &bull; '+ev.project:'')+'</div>'+
+          '<div class="ev-acts" style="margin-top:6px;">'+
+            '<button class="sm-btn" data-action="done" data-idx="'+i+'">✓ Listo</button>'+
+            '<button class="sm-btn" data-action="edit" data-idx="'+i+'">✎ Editar</button>'+
+            '<button class="sm-btn del" data-action="del" data-idx="'+i+'">🗑 Borrar</button>'+
+          '</div>'+
+        '</div></div>';
+    }).join('');
+    // Event delegation — evita onclick inline con IDs
+    lst.onclick=function(e){
+      var btn=e.target.closest('[data-action]');
+      if(!btn)return;
+      var act=btn.getAttribute('data-action');
+      var ev2=evs[parseInt(btn.getAttribute('data-idx'))];
+      if(!ev2)return;
+      if(act==='done')apDone(ev2.id);
+      else if(act==='edit')apEdit(ev2.id);
+      else if(act==='del')apDelete(ev2.id);
+    };
+  }
 }
+
+// ══════════════════════════════════════════════════════════════
+// CRUD DE EVENTOS
+// ══════════════════════════════════════════════════════════════
 
 function apOpenForm(){
   _apEdit=null;
@@ -5006,9 +5087,8 @@ function apCloseForm(){document.getElementById('ap-form').style.display='none';}
 function apSave(){
   var title=document.getElementById('ap-title').value.trim();
   var date=document.getElementById('ap-date').value;
-  if(!title){apToast('Escribe un titulo','err');return;}
+  if(!title){apToast('Escribe un título','err');return;}
   if(!date){apToast('Selecciona una fecha','err');return;}
-  var d=apLoad();
   var ev={
     id:_apEdit||('ev_'+Date.now()),
     title:title, type:document.getElementById('ap-type').value,
@@ -5018,38 +5098,43 @@ function apSave(){
     notes:document.getElementById('ap-notes').value.trim(),
     done:false
   };
-  if(_apEdit){
-    var idx=d.events.findIndex(function(e){return e.id===_apEdit;});
-    if(idx>=0)d.events[idx]=ev; else d.events.push(ev);
-    apToast('Actualizado','ok');
-  } else {
-    d.events.push(ev);
-    var msg='📅 *'+apLabel(ev.type)+' agendado*\n\n📌 *'+ev.title+'*\n';
-    if(ev.time)msg+='🕐 Hora: '+ev.time+'\n';
-    msg+='📆 Fecha: '+ev.date+'\n';
-    if(ev.project)msg+='📂 '+ev.project+'\n';
-    msg+='\n_EM Suite PRO_';
-    tgSendAP(msg);
-  }
-  apStore(d); fbSyncAll(); apCloseForm(); apRender();
+
+  // Actualizar en memoria
+  var idx=_events.findIndex(function(e){return e.id===ev.id;});
+  if(idx>=0)_events[idx]=ev; else _events.push(ev);
+
+  apRender();
+  apCloseForm();
+
+  // Guardar en Firebase
+  fbWrite(ev).then(function(){
+    apToast(_apEdit?'✓ Actualizado en Firebase':'✓ Guardado en Firebase','ok');
+    // Notificar por Telegram solo si es nuevo
+    if(!_apEdit){
+      var msg='\ud83d\udcc5 *'+apLabel(ev.type)+' agendado*\\n\\n\ud83d\udccc *'+ev.title+'*\\n';
+      if(ev.time)msg+='\ud83d\udd50 '+ev.time+'\\n';
+      msg+='\ud83d\udcc6 '+ev.date+'\\n';
+      if(ev.project)msg+='\ud83d\udcc2 '+ev.project+'\\n';
+      msg+='\\n_EM Suite PRO_';
+      tgSendAP(msg);
+    }
+  }).catch(function(){apToast('Error al guardar en Firebase','err');});
 }
 
 function apDone(id){
-  var d=apLoad();
-  var ev=d.events.find(function(e){return e.id===id;});
-  if(ev){
-    ev.done=true;
-    apStore(d);
-    // Marcar done=true en Firebase también
-    fbWriteEvent(ev).catch(function(){});
-    apToast('Completado ✓','ok');
-    apRender();
-  }
+  var ev=_events.find(function(e){return e.id===id;});
+  if(!ev)return;
+  ev.done=true;
+  apRender();
+  fbWrite(ev).then(function(){
+    apToast('✓ Completado y actualizado','ok');
+  }).catch(function(){apToast('Error al actualizar','err');});
 }
+
 function apEdit(id){
-  var d=apLoad();
-  var ev=d.events.find(function(e){return e.id===id;});
-  if(!ev)return; _apEdit=id;
+  var ev=_events.find(function(e){return e.id===id;});
+  if(!ev)return;
+  _apEdit=id;
   document.getElementById('ap-form-ttl').textContent='Editar';
   document.getElementById('ap-title').value=ev.title;
   document.getElementById('ap-type').value=ev.type;
@@ -5060,336 +5145,228 @@ function apEdit(id){
   document.getElementById('ap-notes').value=ev.notes||'';
   document.getElementById('ap-form').style.display='block';
 }
+
 function apDelete(id){
-  if(!confirm('Eliminar este recordatorio?'))return;
-  var d=apLoad();
-  d.events=d.events.filter(function(e){return e.id!==id;});
-  apStore(d);
-  apToast('Eliminado','warn');
+  if(!confirm('¿Eliminar este recordatorio permanentemente?'))return;
+  // Quitar de memoria
+  _events=_events.filter(function(e){return e.id!==id;});
   apRender();
-  // Borrar de Firebase para que no regrese en el próximo sync
-  fbDeleteEvent(id);
+  apToast('Eliminando...','warn');
+  // Borrar de Firebase definitivamente
+  fbDelete(id).then(function(){
+    apToast('✓ Eliminado de Firebase','warn');
+  }).catch(function(){apToast('Error al eliminar de Firebase','err');});
 }
 
-function fbDeleteEvent(id){
-  _markDeleted(id); // recordar que este ID fue borrado, no reimportar
-  var url='https://firestore.googleapis.com/v1/projects/'+_FB_PROJECT+'/databases/(default)/documents/events/'+id+'?key='+_FB_API_KEY;
-  fetch(url,{method:'DELETE'}).then(function(){
-    console.log('[Firebase] Evento borrado: '+id);
-  }).catch(function(e){
-    console.warn('[Firebase] Error al borrar: '+e.message);
-  });
-}
 function apSendPending(){
-  var d=apLoad(); var tod=apToday();
-  var all=(d.events||[]).filter(function(e){return !e.done&&e.date<=tod;});
+  var tod=apToday();
+  var all=_events.filter(function(e){return !e.done&&e.date<=tod;});
   if(all.length===0){apToast('Sin pendientes hoy','ok');return;}
-  var msg='📝 *Pendientes de hoy*\n\n';
-  all.forEach(function(e){msg+=apIcon(e.type)+' '+e.title+(e.time?' 🕐'+e.time:'')+' \n';});
+  var msg='\ud83d\udcdd *Pendientes de hoy*\n\n';
+  all.forEach(function(e){msg+=apIcon(e.type)+' '+e.title+(e.time?' \ud83d\udd50'+e.time:'')+'\n';});
   msg+='\n_EM Suite PRO_';
+  tgSendAP(msg);
+}
+function apTestTg(){
+  var tod=apToday();
+  var total=_events.length;
+  var hoy=_events.filter(function(e){return e.date===tod&&!e.done;}).length;
+  var ven=_events.filter(function(e){return e.date<tod&&!e.done;}).length;
+  var msg='\u2705 *EM Suite PRO \u2014 Conexi\u00f3n exitosa*\n\n';
+  msg+='\ud83d\udcf1 Telegram: *conectado*\n';
+  msg+='\ud83d\udd25 Firebase: *'+total+' eventos*\n';
+  msg+='\ud83d\udcc5 Para hoy: *'+hoy+'*\n';
+  if(ven>0)msg+='\ud83d\udea8 Vencidos: *'+ven+'*\n';
+  msg+='\n_Ing. Edisson Macias \u2014 EM Suite PRO_';
   tgSendAP(msg);
 }
 function apReqNotif(){
   if(!('Notification'in window)){apToast('Navegador no soporta notificaciones','warn');return;}
   Notification.requestPermission().then(function(p){
-    apToast(p==='granted'?'Notificaciones activadas':'Notificaciones bloqueadas en el navegador',p==='granted'?'ok':'warn');
+    apToast(p==='granted'?'Notificaciones activadas ✓':'Notificaciones bloqueadas',p==='granted'?'ok':'warn');
   });
 }
 
-// ── RECORDATORIOS EN TIEMPO REAL (navegador, cada 30s) ──────────────────────
-var _sentKeys=(function(){try{return JSON.parse(localStorage.getItem('_ap_sent')||'{}');}catch(e){return{};}})();
-function _markSent(k){_sentKeys[k]=true;try{localStorage.setItem('_ap_sent',JSON.stringify(_sentKeys));}catch(e){}}
-setInterval(function(){
-  var d=apLoad(); var tod=apToday(); var now=new Date();
-  (d.events||[]).forEach(function(ev){
-    if(ev.done||!ev.time||!ev.date)return;
-    if(ev.date<tod)return;
-    var evT=new Date(ev.date+'T'+ev.time+':00');
-    var diff=(evT-now)/60000;
-
-    // ── 30 min antes (nueva alerta) ──
-    var k30='r30m_'+ev.id;
-    if(diff>=25&&diff<=35&&!_sentKeys[k30]){
-      _markSent(k30);
-      tgSendAP('\u23f0 *En 30 min: '+apLabel(ev.type)+'*\n\n\ud83d\udccc *'+ev.title+'*\n\ud83d\udd50 '+ev.time+(ev.project?'\n\ud83d\udcc2 '+ev.project:'')+'\n\n_EM Suite PRO_');
-      if(Notification&&Notification.permission==='granted')new Notification('EM Suite — En 30 min',{body:ev.title+' a las '+ev.time,tag:k30});
-    }
-
-    // ── 1 hora antes ──
-    var k1='r1h_'+ev.id;
-    if(diff>=55&&diff<=65&&!_sentKeys[k1]){
-      _markSent(k1);
-      tgSendAP('\u23f0 *En 1 hora: '+apLabel(ev.type)+'*\n\n\ud83d\udccc *'+ev.title+'*\n\ud83d\udd50 '+ev.time+(ev.project?'\n\ud83d\udcc2 '+ev.project:'')+'\n\n_EM Suite PRO_');
-      if(Notification&&Notification.permission==='granted')new Notification('EM Suite PRO — En 1 hora',{body:ev.title+' a las '+ev.time,tag:k1});
-    }
-
-    // ── Justo al momento (±5 min) ──
-    var k2='ahora_'+ev.id;
-    if(diff>=-5&&diff<=5&&!_sentKeys[k2]){
-      _markSent(k2);
-      tgSendAP('\ud83d\udd14 *\u00a1AHORA! '+apLabel(ev.type).toUpperCase()+'*\n\n\ud83d\udccc *'+ev.title+'*\n\ud83d\udd50 '+ev.time+(ev.project?'\n\ud83d\udcc2 '+ev.project:'')+'\n\n_EM Suite PRO_');
-      if(Notification&&Notification.permission==='granted')new Notification('\ud83d\udcc5 \u00a1AHORA! '+ev.title,{body:'Es la hora \u2014 '+ev.time,tag:k2});
-    }
-  });
-},30000); // cada 30 segundos
-
-// ── FIREBASE SYNC ──────────────────────────────────────────────────────
-var _FB_PROJECT='em-suite-pro';
-var _FB_API_KEY='AIzaSyCr4pZxUEU8BftysPDOZuVClamqXMIGooQ';
-var _fbSyncing=false;
-
-function fbWriteEvent(ev){
-  var url='https://firestore.googleapis.com/v1/projects/'+_FB_PROJECT+'/databases/(default)/documents/events/'+ev.id+'?key='+_FB_API_KEY;
-  var fields={};
-  ['id','title','type','prio','date','time','project','notes'].forEach(function(k){
-    fields[k]={stringValue:String(ev[k]||'')};
-  });
-  fields['done']={booleanValue:!!ev.done};
-  return fetch(url,{
-    method:'PATCH',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({fields:fields})
-  });
-}
-
-function fbSyncAll(silent){
-  var d=apLoad();
-  var evs=(d.events||[]).filter(function(e){return !e.done;});
-  if(evs.length===0){if(!silent)apToast('Sin eventos para sincronizar','warn');return;}
-  if(_fbSyncing)return;
-  _fbSyncing=true;
-  var promises=evs.map(function(ev){return fbWriteEvent(ev);});
-  Promise.all(promises).then(function(){
-    _fbSyncing=false;
-    var now=new Date().toLocaleTimeString('es-CO');
-    var el=document.getElementById('ap-tg-last');
-    if(el)el.textContent='Firebase sync '+now;
-    var fb=document.getElementById('ap-fb-last');
-    if(fb)fb.textContent=now;
-    if(!silent)apToast('\u2713 '+evs.length+' eventos sincronizados a Firebase','ok');
-  }).catch(function(e){
-    _fbSyncing=false;
-    if(!silent)apToast('Error Firebase: '+e.message,'err');
-  });
-}
-
-// ── IMPORT FROM NEURONOTES (todas las entidades) ────────────────────────
+// ══════════════════════════════════════════════════════════════
+// IMPORTAR DESDE NEURONOTES → FIREBASE
+// ══════════════════════════════════════════════════════════════
 function importFromNeuroNotes(){
   try{
     var raw=localStorage.getItem('neuronotes_v2_data');
     if(!raw){apToast('NeuroNotes sin datos aún','warn');return;}
     var nn=JSON.parse(raw);
-    var d=apLoad();
-    var existing=new Set((d.events||[]).map(function(e){return String(e.id);}));
+    var existingIds=new Set(_events.map(function(e){return e.id;}));
     var added=0;
     var now=new Date();
+    var writes=[];
 
     function parseDate(str){
       if(!str)return'';
-      // formato DD/MM
       var p=str.split('/');
       if(p.length===2){
         var day=parseInt(p[0]),mon=parseInt(p[1])-1,yr=now.getFullYear();
         if(mon<now.getMonth()||(mon===now.getMonth()&&day<now.getDate()))yr++;
         return yr+'-'+String(mon+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
       }
-      // formato YYYY-MM-DD
       if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
       return'';
     }
 
-    // Reuniones (MEETS)
+    function tryAdd(eid,ev){
+      if(existingIds.has(eid))return;
+      existingIds.add(eid);
+      _events.push(ev);
+      writes.push(fbWrite(ev));
+      added++;
+    }
+
     (nn.MEETS||[]).forEach(function(m){
-      var eid='nn_meet_'+m.id;
-      if(existing.has(eid))return;
-      var dateStr=parseDate(m.date);
-      if(!dateStr)return;
-      d.events.push({id:eid,title:m.t||m.title||'Reunión',type:'meet',prio:'alta',
-        date:dateStr,time:m.time||'',project:m.plat||'',notes:m.agenda||'',done:false});
-      existing.add(eid); added++;
+      var ds=parseDate(m.date); if(!ds)return;
+      tryAdd('nn_meet_'+m.id,{id:'nn_meet_'+m.id,title:m.t||m.title||'Reunión',
+        type:'meet',prio:'alta',date:ds,time:m.time||'',project:m.plat||'',notes:m.agenda||'',done:false});
     });
-
-    // Tareas (TASKS / tasks)
     (nn.TASKS||nn.tasks||[]).forEach(function(t){
-      var eid='nn_task_'+t.id;
-      if(existing.has(eid))return;
-      var dateStr=parseDate(t.date||t.due||t.dueDate);
-      if(!dateStr)return;
-      d.events.push({id:eid,title:t.t||t.title||t.text||'Tarea',type:'task',
-        prio:t.priority||t.prio||'media',date:dateStr,time:t.time||'',
+      var ds=parseDate(t.date||t.due||t.dueDate); if(!ds)return;
+      tryAdd('nn_task_'+t.id,{id:'nn_task_'+t.id,title:t.t||t.title||t.text||'Tarea',
+        type:'task',prio:t.priority||t.prio||'media',date:ds,time:t.time||'',
         project:t.project||t.proj||'',notes:t.notes||'',done:false});
-      existing.add(eid); added++;
     });
-
-    // Proyectos (PROJECTS)
     (nn.PROJECTS||nn.projects||[]).forEach(function(p){
-      var eid='nn_proj_'+p.id;
-      if(existing.has(eid))return;
-      var dateStr=parseDate(p.deadline||p.date||p.due);
-      if(!dateStr)return;
-      d.events.push({id:eid,title:p.t||p.title||p.name||'Proyecto',type:'proj',
-        prio:'alta',date:dateStr,time:p.time||'',project:p.area||'',notes:p.notes||'',done:false});
-      existing.add(eid); added++;
+      var ds=parseDate(p.deadline||p.date||p.due); if(!ds)return;
+      tryAdd('nn_proj_'+p.id,{id:'nn_proj_'+p.id,title:p.t||p.title||p.name||'Proyecto',
+        type:'proj',prio:'alta',date:ds,time:p.time||'',project:p.area||'',notes:p.notes||'',done:false});
     });
 
-    // Notas con fecha (NOTES con campo date)
-    (nn.NOTES||nn.notes||[]).forEach(function(n){
-      if(!n.date&&!n.due)return;
-      var eid='nn_note_'+n.id;
-      if(existing.has(eid))return;
-      var dateStr=parseDate(n.date||n.due);
-      if(!dateStr)return;
-      d.events.push({id:eid,title:n.t||n.title||n.text||'Nota',type:'task',
-        prio:n.prio||'media',date:dateStr,time:n.time||'',project:'',notes:n.content||'',done:false});
-      existing.add(eid); added++;
-    });
-
-    apStore(d);
     apRender();
-    var nn_el=document.getElementById('ap-nn-last');
-    if(nn_el)nn_el.textContent=new Date().toLocaleTimeString('es-CO');
     if(added>0){
-      fbSyncAll(true);
-      apToast('\u2713 '+added+' elementos importados','ok');
+      Promise.all(writes).then(function(){
+        apToast('✓ '+added+' elementos importados a Firebase','ok');
+        var nn_el=document.getElementById('ap-nn-last');
+        if(nn_el)nn_el.textContent=new Date().toLocaleTimeString('es-CO');
+      }).catch(function(){apToast('Error al escribir en Firebase','err');});
     } else {
       apToast('Todo ya estaba importado','warn');
     }
   }catch(e){apToast('Error: '+e.message,'err');console.error(e);}
 }
 
-// ── LISTA NEGRA DE EVENTOS BORRADOS (no reimportar) ─────────────────
-var _deletedIds=(function(){
-  try{return JSON.parse(localStorage.getItem('_ap_deleted')||'{}');}catch(e){return{};}
-})();
-function _markDeleted(id){
-  _deletedIds[id]=true;
-  try{localStorage.setItem('_ap_deleted',JSON.stringify(_deletedIds));}catch(e){}
-}
-function _isDeleted(id){return !!_deletedIds[id];}
-
-// ── AUTO-IMPORT + AUTO-SYNC al cargar ──────────────────────
-function autoImportAndSync(silent){
+// Importar silenciosamente (auto)
+function autoImportNN(){
   try{
     var raw=localStorage.getItem('neuronotes_v2_data');
-    if(raw){
-      var nn=JSON.parse(raw);
-      var d=apLoad();
-      var existing=new Set((d.events||[]).map(function(e){return String(e.id);}));
-      var added=0;
-      var now=new Date();
+    if(!raw)return;
+    var nn=JSON.parse(raw);
+    var existingIds=new Set(_events.map(function(e){return e.id;}));
+    var added=0;
+    var now=new Date();
 
-      function parseDate2(str){
-        if(!str)return'';
-        var p=str.split('/');
-        if(p.length===2){
-          var day=parseInt(p[0]),mon=parseInt(p[1])-1,yr=now.getFullYear();
-          if(mon<now.getMonth()||(mon===now.getMonth()&&day<now.getDate()))yr++;
-          return yr+'-'+String(mon+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-        }
-        if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
-        return'';
+    function parseDate2(str){
+      if(!str)return'';
+      var p=str.split('/');
+      if(p.length===2){
+        var day=parseInt(p[0]),mon=parseInt(p[1])-1,yr=now.getFullYear();
+        if(mon<now.getMonth()||(mon===now.getMonth()&&day<now.getDate()))yr++;
+        return yr+'-'+String(mon+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
       }
-
-      (nn.MEETS||[]).forEach(function(m){
-        var eid='nn_meet_'+m.id;
-        if(existing.has(eid))return;
-        if(_isDeleted(eid))return; // no reimportar si el usuario lo borró
-        var ds=parseDate2(m.date); if(!ds)return;
-        d.events.push({id:eid,title:m.t||m.title||'Reunión',type:'meet',prio:'alta',
-          date:ds,time:m.time||'',project:m.plat||'',notes:m.agenda||'',done:false});
-        existing.add(eid); added++;
-      });
-
-      (nn.TASKS||nn.tasks||[]).forEach(function(t){
-        var eid='nn_task_'+t.id;
-        if(existing.has(eid))return;
-        if(_isDeleted(eid))return;
-        var ds=parseDate2(t.date||t.due||t.dueDate); if(!ds)return;
-        d.events.push({id:eid,title:t.t||t.title||t.text||'Tarea',type:'task',
-          prio:t.priority||t.prio||'media',date:ds,time:t.time||'',
-          project:t.project||t.proj||'',notes:t.notes||'',done:false});
-        existing.add(eid); added++;
-      });
-
-      (nn.PROJECTS||nn.projects||[]).forEach(function(p){
-        var eid='nn_proj_'+p.id;
-        if(existing.has(eid))return;
-        if(_isDeleted(eid))return;
-        var ds=parseDate2(p.deadline||p.date||p.due); if(!ds)return;
-        d.events.push({id:eid,title:p.t||p.title||p.name||'Proyecto',type:'proj',
-          prio:'alta',date:ds,time:p.time||'',project:p.area||'',notes:p.notes||'',done:false});
-        existing.add(eid); added++;
-      });
-
-      if(added>0){
-        apStore(d);
-        var nn_el=document.getElementById('ap-nn-last');
-        if(nn_el)nn_el.textContent=new Date().toLocaleTimeString('es-CO');
-        if(!silent)apToast('\u2713 '+added+' nuevos de NeuroNotes','ok');
-        console.log('Auto-importados '+added+' elementos de NeuroNotes');
-      }
+      if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
+      return'';
     }
-  }catch(e){console.warn('Auto-import error:',e);}
 
-  // Sincronizar todo a Firebase (solo eventos activos — los borrados ya se eliminaron con fbDeleteEvent)
-  setTimeout(function(){
-    var d=apLoad();
-    var pending=(d.events||[]).filter(function(e){return !e.done;});
-    if(pending.length>0){
-      Promise.all(pending.map(function(ev){return fbWriteEvent(ev);})).then(function(){
-        var now=new Date().toLocaleTimeString('es-CO');
-        var fb=document.getElementById('ap-fb-last');
-        if(fb)fb.textContent=now;
-        console.log('Auto-sync: '+pending.length+' eventos a Firebase');
-      }).catch(function(e){console.warn('Auto-sync error:',e);});
+    (nn.MEETS||[]).forEach(function(m){
+      var eid='nn_meet_'+m.id; if(existingIds.has(eid))return;
+      var ds=parseDate2(m.date); if(!ds)return;
+      var ev={id:eid,title:m.t||m.title||'Reunión',type:'meet',prio:'alta',
+        date:ds,time:m.time||'',project:m.plat||'',notes:m.agenda||'',done:false};
+      _events.push(ev); existingIds.add(eid); fbWrite(ev); added++;
+    });
+    (nn.TASKS||nn.tasks||[]).forEach(function(t){
+      var eid='nn_task_'+t.id; if(existingIds.has(eid))return;
+      var ds=parseDate2(t.date||t.due||t.dueDate); if(!ds)return;
+      var ev={id:eid,title:t.t||t.title||t.text||'Tarea',type:'task',
+        prio:t.priority||t.prio||'media',date:ds,time:t.time||'',
+        project:t.project||t.proj||'',notes:t.notes||'',done:false};
+      _events.push(ev); existingIds.add(eid); fbWrite(ev); added++;
+    });
+
+    if(added>0){
+      apRender();
+      var nn_el=document.getElementById('ap-nn-last');
+      if(nn_el)nn_el.textContent=new Date().toLocaleTimeString('es-CO');
+      console.log('[EM Suite] Auto-importados '+added+' de NeuroNotes → Firebase');
     }
-  },1200);
-
-  apRender();
+  }catch(e){console.warn('autoImportNN error:',e);}
 }
 
-// ── Escuchar cambios en localStorage (cross-tab y cross-iframe) ──────
-window.addEventListener('storage', function(e){
-  if(e.key==='neuronotes_v2_data'){
-    console.log('[EM Suite] NeuroNotes cambió (storage event), sincronizando...');
-    autoImportAndSync(false);
-    _syncCounter=_syncInterval; // resetear countdown
-  }
-});
+// ══════════════════════════════════════════════════════════════
+// RECORDATORIOS EN TIEMPO REAL (navegador, cada 30s)
+// ══════════════════════════════════════════════════════════════
+var _sentKeys=(function(){try{return JSON.parse(localStorage.getItem('_ap_sent')||'{}');}catch(e){return{};}})();
+function _markSent(k){_sentKeys[k]=true;try{localStorage.setItem('_ap_sent',JSON.stringify(_sentKeys));}catch(e){}}
 
-// ── POLLING de NeuroNotes cada 15s para detectar cambios en el mismo documento ──
-// (el evento storage NO dispara en el mismo frame que hizo el cambio)
-var _nnSnapshot='';
 setInterval(function(){
-  try{
-    var raw=localStorage.getItem('neuronotes_v2_data')||'';
-    if(raw && raw!==_nnSnapshot){
-      _nnSnapshot=raw;
-      console.log('[EM Suite] NeuroNotes cambió (polling), sincronizando...');
-      autoImportAndSync(false);
-      _syncCounter=_syncInterval;
-    }
-  }catch(e){}
-},15000); // cada 15 segundos — detecta cambios en tiempo real
+  var tod=apToday(); var now=new Date();
+  _events.forEach(function(ev){
+    if(ev.done||!ev.time||!ev.date||ev.date<tod)return;
+    var evT=new Date(ev.date+'T'+ev.time+':00');
+    var diff=(evT-now)/60000;
 
-// ── AUTO-SYNC CADA 5 MINUTOS con countdown en UI ─────────────────────
+    var k30='r30m_'+ev.id;
+    if(diff>=25&&diff<=35&&!_sentKeys[k30]){
+      _markSent(k30);
+      tgSendAP('⏰ *En 30 min: '+apLabel(ev.type)+'*\n\n📌 *'+ev.title+'*\n🕐 '+ev.time+(ev.project?'\n📂 '+ev.project:'')+' \n\n_EM Suite PRO_');
+      if(Notification&&Notification.permission==='granted')new Notification('EM Suite — En 30 min',{body:ev.title+' a las '+ev.time,tag:k30});
+    }
+    var k1='r1h_'+ev.id;
+    if(diff>=55&&diff<=65&&!_sentKeys[k1]){
+      _markSent(k1);
+      tgSendAP('⏰ *En 1 hora: '+apLabel(ev.type)+'*\n\n📌 *'+ev.title+'*\n🕐 '+ev.time+(ev.project?'\n📂 '+ev.project:'')+' \n\n_EM Suite PRO_');
+      if(Notification&&Notification.permission==='granted')new Notification('EM Suite PRO — En 1 hora',{body:ev.title+' a las '+ev.time,tag:k1});
+    }
+    var k2='ahora_'+ev.id;
+    if(diff>=-2&&diff<=5&&!_sentKeys[k2]){
+      _markSent(k2);
+      tgSendAP('🔔 *¡AHORA! '+apLabel(ev.type).toUpperCase()+'*\n\n📌 *'+ev.title+'*\n🕐 '+ev.time+(ev.project?'\n📂 '+ev.project:'')+' \n\n_EM Suite PRO_');
+      if(Notification&&Notification.permission==='granted')new Notification('📅 ¡AHORA! '+ev.title,{body:'Es la hora — '+ev.time,tag:k2});
+    }
+  });
+},30000);
+
+// ══════════════════════════════════════════════════════════════
+// AUTO-SYNC CADA 5 MINUTOS — RECARGA DESDE FIREBASE
+// Así cualquier dispositivo ve los cambios del otro
+// ══════════════════════════════════════════════════════════════
 var _syncInterval=5*60;
 var _syncCounter=_syncInterval;
 
-autoImportAndSync(true); // primera vez al cargar
-_nnSnapshot=(function(){try{return localStorage.getItem('neuronotes_v2_data')||'';}catch(e){return'';}})();
+// Carga inicial desde Firebase al abrir la página
+fbRefresh(true);
 
+// Detectar cambios de NeuroNotes cada 15s
+var _nnSnap='';
+setInterval(function(){
+  try{
+    var raw=localStorage.getItem('neuronotes_v2_data')||'';
+    if(raw && raw!==_nnSnap){ _nnSnap=raw; autoImportNN(); }
+  }catch(e){}
+},15000);
+
+// También escuchar evento storage (cross-tab)
+window.addEventListener('storage',function(e){
+  if(e.key==='neuronotes_v2_data')autoImportNN();
+});
+
+// Countdown y recarga periódica desde Firebase
 setInterval(function(){
   _syncCounter--;
   var min=Math.floor(_syncCounter/60);
   var sec=_syncCounter%60;
   var el=document.getElementById('ap-sync-countdown');
   if(el)el.textContent=min+':'+(sec<10?'0':'')+sec;
-
   if(_syncCounter<=0){
     _syncCounter=_syncInterval;
-    autoImportAndSync(true);
-    console.log('[EM Suite] Auto-sync 5min: '+new Date().toLocaleTimeString('es-CO'));
+    fbRefresh(true); // recarga desde Firebase — ve cambios de otros dispositivos
+    autoImportNN();
+    console.log('[EM Suite] Recarga Firebase: '+new Date().toLocaleTimeString('es-CO'));
   }
 },1000);
 </script>
