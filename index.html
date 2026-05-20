@@ -40,6 +40,7 @@ html,body{height:100%;overflow:hidden;background:#080C14;color:#E8F0FE;font-fami
 .fr.off{z-index:0;display:none;}
 #p4{position:absolute;inset:0;overflow-y:auto;background:#080C14;display:none;z-index:1;}
 #p4.on{display:block;}
+@keyframes badge-pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.2);}}
 </style>
 </head>
 <body>
@@ -61,7 +62,7 @@ html,body{height:100%;overflow:hidden;background:#080C14;color:#E8F0FE;font-fami
     <button class="tbtn" id="t4" onclick="sw(4)" style="position:relative;">
       <span class="dot" style="background:#f59e0b;color:#f59e0b;"></span>
       🔔&nbsp; Alertas &amp; Recordatorios
-      <span id="notif-badge" style="display:none;position:absolute;top:4px;right:4px;background:#ef4444;color:#fff;font-size:9px;font-weight:800;border-radius:50%;width:16px;height:16px;line-height:16px;text-align:center;">0</span>
+      <span id="notif-badge" style="display:none;position:absolute;top:4px;right:4px;background:#ef4444;color:#fff;font-size:9px;font-weight:800;border-radius:50%;width:18px;height:18px;line-height:18px;text-align:center;box-shadow:0 0 6px rgba(239,68,68,.7);animation:badge-pulse 1.5s infinite;">0</span>
     </button>
     <div class="sp"></div>
     <div class="ver">Ing. Edisson Macias</div>
@@ -3426,41 +3427,58 @@ function addMeeting(){
   if(document.getElementById('v-meetings').classList.contains('on'))renderMeets();
   renderDash();
 
-  // ── Sincronizar inmediatamente con Firebase y panel de Alertas ──
+  // ── FIX: Sincronización real via postMessage + Telegram directo ──
+  // Los iframes son contextos JS aislados: postMessage es el puente correcto.
+  // tgSend() sí existe en este scope (NeuroNotes). tgSendAP pertenece a Alertas.
   try {
-    // Construir fecha ISO desde formato dd/MM
-    var ds2='';
-    var fp=newM.date?newM.date.split('/'):[];
-    if(fp.length===2){
-      var d2=new Date();
-      var dy=parseInt(fp[0]),mo=parseInt(fp[1])-1,yr2=d2.getFullYear();
-      if(mo<d2.getMonth()||(mo===d2.getMonth()&&dy<d2.getDate()))yr2++;
-      ds2=yr2+'-'+String(mo+1).padStart(2,'0')+'-'+String(dy).padStart(2,'0');
-    }
-    if(ds2){
-      var existingIds2=new Set(typeof _events!=='undefined'?_events.map(function(e){return e.id;}):[]);
-      var eid2='nn_meet_'+newM.id;
-      if(!existingIds2.has(eid2)){
-        var ev2={id:eid2,title:newM.t||newM.title||'Reunión',type:'meet',prio:'alta',
-          date:ds2,time:newM.time||'',project:newM.plat||'',notes:newM.agenda||'',done:false};
-        if(typeof _events!=='undefined') _events.push(ev2);
-        if(typeof fbWrite==='function') fbWrite(ev2);
-        if(typeof apRender==='function') apRender();
-        // Telegram: notificar reunión nueva
-        if(typeof tgSendAP==='function'){
-          var tgMsg='📅 *Nueva reunión agendada*\n\n📌 *'+(newM.t||'Reunión')+'*\n';
-          if(newM.time)tgMsg+='🕐 Hora: '+newM.time+'\n';
-          tgMsg+='📆 Fecha: '+newM.date+'\n';
-          if(newM.plat)tgMsg+='💻 Plataforma: '+newM.plat+'\n';
-          if(newM.agenda)tgMsg+='📝 '+newM.agenda.slice(0,80)+'\n';
-          tgMsg+='\n_EM Suite PRO_';
-          tgSendAP(tgMsg);
+    // ── Parsear fecha con soporte dd/MM, dd/MM/YY, dd/MM/YYYY, yyyy-MM-dd ──
+    var ds2='', rawDate=newM.date||'';
+    if(/^\d{4}-\d{2}-\d{2}$/.test(rawDate)){
+      ds2=rawDate; // ya está en ISO
+    } else {
+      var fp=rawDate.split('/');
+      var now2=new Date();
+      if(fp.length>=2){
+        var dy=parseInt(fp[0]),mo=parseInt(fp[1])-1;
+        var yr2=(fp.length===3)?parseInt(fp[2]):now2.getFullYear();
+        if(fp.length===3&&yr2<100)yr2+=2000; // año corto: 25 → 2025
+        // Si solo dd/MM: si la fecha ya pasó en este año, avanzar año
+        if(fp.length===2){
+          var testDate=new Date(yr2,mo,dy);
+          testDate.setHours(12,0,0,0);
+          if(testDate<now2)yr2++;
         }
-        var nn_el=document.getElementById('ap-nn-last');
-        if(nn_el)nn_el.textContent=new Date().toLocaleTimeString('es-CO');
+        if(!isNaN(dy)&&!isNaN(mo)&&!isNaN(yr2)){
+          ds2=yr2+'-'+String(mo+1).padStart(2,'0')+'-'+String(dy).padStart(2,'0');
+        }
       }
     }
-  } catch(e2){ console.warn('sync reunión→alertas:',e2); }
+
+    if(ds2){
+      var eid2='nn_meet_'+newM.id;
+      var ev2={
+        id:eid2, title:newM.t||'Reunión', type:'meet', prio:'alta',
+        date:ds2, time:newM.time||'', project:newM.plat||'',
+        notes:newM.agenda||'', done:false
+      };
+
+      // ── 1. Telegram DIRECTO desde este scope (tgSend existe aquí) ──
+      var tgMsg='📅 *Nueva reunión agendada*\n\n📌 *'+ev2.title+'*\n';
+      if(ev2.time)tgMsg+='🕐 Hora: '+ev2.time+'\n';
+      tgMsg+='📆 Fecha: '+rawDate+' ('+ds2+')\n';
+      if(ev2.project)tgMsg+='💻 Plataforma: '+ev2.project+'\n';
+      if(ev2.notes)tgMsg+='📝 '+ev2.notes.slice(0,80)+'\n';
+      tgMsg+='\n_EM Suite PRO_';
+      tgSend(tgMsg); // ← usa tgSend (existe en NeuroNotes), NO tgSendAP
+
+      // ── 2. postMessage al shell padre → este enruta al módulo Alertas ──
+      // Los iframes no comparten scope. postMessage es el único puente real.
+      window.parent.postMessage({
+        type:'EM_SUITE_MEETING',
+        event:ev2
+      },'*');
+    }
+  } catch(e2){ console.warn('[NeuroNotes] sync-meeting error:',e2); }
 }
 
 function addGoal(){
@@ -5391,16 +5409,23 @@ function importFromNeuroNotes(){
 
     function parseDate(str){
       if(!str)return'';
+      str=String(str).trim();
       if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
       var p=str.split('/');
+      var refNow=new Date();
       if(p.length===3){
         var d3=parseInt(p[0]),m3=parseInt(p[1])-1,y3=parseInt(p[2]);
-        if(!isNaN(y3)&&y3>2000)
-          return y3+'-'+String(m3+1).padStart(2,'0')+'-'+String(d3).padStart(2,'0');
+        if(isNaN(d3)||isNaN(m3)||isNaN(y3))return'';
+        if(y3<100)y3+=2000;
+        return y3+'-'+String(m3+1).padStart(2,'0')+'-'+String(d3).padStart(2,'0');
       }
       if(p.length===2){
-        var day=parseInt(p[0]),mon=parseInt(p[1])-1,yr=now.getFullYear();
-        if(mon<now.getMonth()||(mon===now.getMonth()&&day<now.getDate()))yr++;
+        var day=parseInt(p[0]),mon=parseInt(p[1])-1;
+        if(isNaN(day)||isNaN(mon))return'';
+        var yr=refNow.getFullYear();
+        var test=new Date(yr,mon,day,12,0,0);
+        var todayM=new Date(refNow.getFullYear(),refNow.getMonth(),refNow.getDate());
+        if(test<todayM)yr++;
         return yr+'-'+String(mon+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
       }
       return'';
@@ -5456,19 +5481,27 @@ function autoImportNN(){
 
     function parseDate2(str){
       if(!str)return'';
-      // ISO yyyy-MM-dd
+      str=String(str).trim();
+      // ISO yyyy-MM-dd — ya perfecto
       if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
       var p=str.split('/');
-      // dd/MM/YYYY
+      var refNow=new Date();
+      // dd/MM/YYYY o dd/MM/YY
       if(p.length===3){
-        var day3=parseInt(p[0]),mon3=parseInt(p[1])-1,yr3=parseInt(p[2]);
-        if(!isNaN(yr3)&&yr3>2000)
-          return yr3+'-'+String(mon3+1).padStart(2,'0')+'-'+String(day3).padStart(2,'0');
+        var d3=parseInt(p[0]),m3=parseInt(p[1])-1,y3=parseInt(p[2]);
+        if(isNaN(d3)||isNaN(m3)||isNaN(y3))return'';
+        if(y3<100)y3+=2000; // 25 → 2025, 26 → 2026
+        return y3+'-'+String(m3+1).padStart(2,'0')+'-'+String(d3).padStart(2,'0');
       }
-      // dd/MM → inferir año
+      // dd/MM → inferir año con lógica de fecha futura
       if(p.length===2){
-        var day=parseInt(p[0]),mon=parseInt(p[1])-1,yr=now.getFullYear();
-        if(mon<now.getMonth()||(mon===now.getMonth()&&day<now.getDate()))yr++;
+        var day=parseInt(p[0]),mon=parseInt(p[1])-1;
+        if(isNaN(day)||isNaN(mon))return'';
+        var yr=refNow.getFullYear();
+        // Construir fecha tentativa y ver si ya pasó (comparar día completo)
+        var test=new Date(yr,mon,day,12,0,0);
+        var todayMidnight=new Date(refNow.getFullYear(),refNow.getMonth(),refNow.getDate());
+        if(test<todayMidnight)yr++; // fecha ya pasó → año siguiente
         return yr+'-'+String(mon+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
       }
       return'';
@@ -5594,6 +5627,48 @@ setInterval(function(){
     console.log('[EM Suite] Recarga Firebase: '+new Date().toLocaleTimeString('es-CO'));
   }
 },1000);
+
+// ══════════════════════════════════════════════════════════════
+// FIX 3 — Receptor de reuniones desde NeuroNotes via postMessage
+// El shell (página principal) captura postMessage y llama esta función.
+// Así los iframes se comunican sin compartir scope JS.
+// ══════════════════════════════════════════════════════════════
+window._apReceiveMeeting = function(ev){
+  if(!ev||!ev.id||!ev.title){ console.warn('[Alertas] Evento inválido recibido'); return; }
+  var exists=_events.find(function(e){ return e.id===ev.id; });
+  if(exists){ console.log('[Alertas] Ya existe:', ev.id); return; }
+
+  // 1. Agregar en memoria
+  _events.push(ev);
+
+  // 2. Guardar en Firebase
+  fbWrite(ev).then(function(){
+    console.log('[Alertas] Reunión guardada en Firebase:', ev.title);
+  }).catch(function(e){ console.warn('[Alertas] fbWrite error:', e); });
+
+  // 3. Refrescar UI de Alertas
+  apRender();
+  apToast('📅 Reunión sincronizada: '+ev.title.substring(0,38),'ok');
+
+  // 4. Telegram desde Alertas (tgSendAP existe aquí)
+  var msg='📅 *Reunión → Alertas 24/7*\n\n📌 *'+ev.title+'*\n';
+  if(ev.time)msg+='🕐 '+ev.time+'\n';
+  msg+='📆 '+ev.date+'\n';
+  if(ev.project)msg+='💻 '+ev.project+'\n';
+  msg+='\n_EM Suite PRO_';
+  tgSendAP(msg);
+
+  // 5. Actualizar timestamp de última sync NN
+  var nnEl=document.getElementById('ap-nn-last');
+  if(nnEl)nnEl.textContent=new Date().toLocaleTimeString('es-CO');
+
+  // 6. Actualizar badge del tabbar en el shell padre
+  window.parent.postMessage({ type:'EM_SUITE_BADGE_UPDATE' },'*');
+};
+
+// Exponer fbWrite para poder ser llamada desde el shell si necesario
+window._apFbWrite = fbWrite;
+window._apRender  = apRender;
 </script>
 </div>
 
@@ -5615,6 +5690,8 @@ function sw(n){
   document.getElementById("t2").className="tbtn"+(n===2?" on":"");
   document.getElementById("t3").className="tbtn"+(n===3?" on":"");
   document.getElementById("t4").className="tbtn"+(n===4?" on":"");
+  // Limpiar badge cuando se entra a Alertas
+  if(n===4){ setBadge(0); }
 }
 document.addEventListener("keydown",function(e){
   if(e.altKey&&e.key==="1")sw(1);
@@ -5622,6 +5699,56 @@ document.addEventListener("keydown",function(e){
   if(e.altKey&&e.key==="3")sw(3);
   if(e.altKey&&e.key==="4")sw(4);
 });
+
+// ══════════════════════════════════════════════════════════════
+// PUENTE CROSS-IFRAME — captura postMessage de cualquier iframe hijo
+// NeuroNotes → postMessage(EM_SUITE_MEETING) → aquí → Alertas._apReceiveMeeting
+// ══════════════════════════════════════════════════════════════
+var _badgeCount=0;
+function setBadge(n){
+  _badgeCount=n;
+  var badge=document.getElementById("notif-badge");
+  if(!badge)return;
+  if(n<=0){ badge.style.display="none"; badge.textContent="0"; }
+  else { badge.style.display="block"; badge.textContent=n>99?"99+":String(n); }
+}
+
+window.addEventListener("message",function(e){
+  if(!e.data||typeof e.data.type==="undefined")return;
+
+  // ── Reunión nueva desde NeuroNotes → enrutar a Alertas ──
+  if(e.data.type==="EM_SUITE_MEETING"){
+    var ev=e.data.event;
+    if(!ev||!ev.id||!ev.title)return;
+    // El módulo Alertas (#p4) es un div en el mismo documento (no un iframe).
+    // Podemos llamar window._apReceiveMeeting directamente porque se definió
+    // en un <script> dentro de #p4 que corre en el mismo contexto de la página.
+    if(typeof window._apReceiveMeeting==="function"){
+      window._apReceiveMeeting(ev);
+      // Mostrar badge en la pestaña de Alertas si no está activa
+      if(cur!==4){ setBadge(_badgeCount+1); }
+      console.log("[Shell] Reunión enrutada a Alertas:",ev.title,"fecha:",ev.date);
+    } else {
+      // Alertas aún no terminó de cargar — reintentar en 800ms
+      setTimeout(function(){
+        if(typeof window._apReceiveMeeting==="function"){
+          window._apReceiveMeeting(ev);
+          if(cur!==4)setBadge(_badgeCount+1);
+        } else {
+          console.warn("[Shell] _apReceiveMeeting no disponible aún para:",ev.title);
+        }
+      },800);
+    }
+  }
+
+  // ── Alertas pide actualizar badge ──
+  if(e.data.type==="EM_SUITE_BADGE_UPDATE"){
+    if(cur!==4)setBadge(_badgeCount+1);
+  }
+});
+
+// Limpiar badge al arrancar
+setBadge(0);
 </script>
 </body>
 </html>
