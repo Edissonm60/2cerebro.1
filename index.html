@@ -4882,6 +4882,7 @@ function toast(msg, type){
         <span>Firebase: <span id="ap-fb-last">esperando...</span> &bull; NN: <span id="ap-nn-last">esperando...</span></span>
       </div>
       <div id="ap-sync-countdown" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#a855f7;background:rgba(168,85,247,.12);padding:3px 8px;border-radius:5px;">0:10</div>
+      <div id="ap-fb-status" title="Estado Firebase" style="font-size:16px;cursor:help;">🟢</div>
     </div>
 
     <div class="form-box" id="ap-form">
@@ -4989,31 +4990,92 @@ function tgSendAP(msg){
 // FIREBASE — CRUD COMPLETO
 // ══════════════════════════════════════════════════════════════
 
-// Leer TODOS los eventos desde Firestore
+// Cache key para Firebase
+var _FB_CACHE_KEY='_ap_fb_cache';
+var _fbRetryTimer=null;
+var _fbRetryCount=0;
+
+// Guardar eventos en caché local
+function fbCacheSave(evs){
+  try{localStorage.setItem(_FB_CACHE_KEY,JSON.stringify(evs));}catch(e){}
+}
+// Cargar eventos desde caché local
+function fbCacheLoad(){
+  try{var r=localStorage.getItem(_FB_CACHE_KEY);return r?JSON.parse(r):[];}catch(e){return[];}
+}
+
+// Parsear documento Firestore
+function fbParseDoc(d){
+  var f=d.fields||{};
+  function g(k){
+    if(!f[k])return'';
+    if(f[k].stringValue!==undefined)return f[k].stringValue;
+    if(f[k].booleanValue!==undefined)return f[k].booleanValue;
+    return f[k].integerValue||'';
+  }
+  return{
+    id:g('id'),title:g('title'),type:g('type'),prio:g('prio'),
+    date:g('date'),time:g('time'),project:g('project'),notes:g('notes'),
+    link:g('link'),recur:g('recur'),recurEnd:g('recurEnd'),
+    done:f.done?!!f.done.booleanValue:false
+  };
+}
+
+// Leer TODOS los eventos desde Firestore — con caché y retry automático
 function fbLoadAll(callback){
   var url='https://firestore.googleapis.com/v1/projects/'+_FB_PROJECT+
-          '/databases/(default)/documents/events?key='+_FB_API_KEY+'&pageSize=200';
-  fetch(url).then(function(r){return r.json();}).then(function(data){
-    var docs=data.documents||[];
-    _events=docs.map(function(d){
-      var f=d.fields||{};
-      function g(k){
-        if(!f[k])return'';
-        if(f[k].stringValue!==undefined)return f[k].stringValue;
-        if(f[k].booleanValue!==undefined)return f[k].booleanValue;
-        return f[k].integerValue||'';
+          '/databases/(default)/documents/events?key='+_FB_API_KEY+'&pageSize=500';
+  fetch(url,{signal:AbortSignal.timeout?AbortSignal.timeout(8000):undefined})
+    .then(function(r){
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      return r.json();
+    })
+    .then(function(data){
+      var docs=data.documents||[];
+      var evs=docs.map(fbParseDoc).filter(function(e){return e.id&&e.title;});
+      _events=evs;
+      fbCacheSave(evs); // guardar en caché exitoso
+      _fbRetryCount=0;  // reset retry counter
+      // Actualizar indicador de sync
+      var fb=document.getElementById('ap-fb-last');
+      if(fb)fb.textContent=new Date().toLocaleTimeString('es-CO');
+      var st=document.getElementById('ap-fb-status'); if(st)st.textContent='🟢';
+      if(callback)callback(_events);
+    })
+    .catch(function(e){
+      console.warn('fbLoadAll error:',e.message);
+      // Usar caché si existe
+      var cached=fbCacheLoad();
+      if(cached.length>0 && _events.length===0){
+        _events=cached;
+        apToast('Sin conexión — usando datos en caché','warn');
+        var fb=document.getElementById('ap-fb-last');
+        if(fb)fb.textContent='caché local';
+        var st=document.getElementById('ap-fb-status'); if(st)st.textContent='🟡';
+        if(callback)callback(_events);
+      } else {
+        if(callback)callback(_events.length>0?_events:[]);
+        if(_events.length===0)apToast('Firebase no disponible — sin datos aún','warn');
+      var st2=document.getElementById('ap-fb-status'); if(st2)st2.textContent='🔴';
       }
-      return{
-        id:g('id'),title:g('title'),type:g('type'),prio:g('prio'),
-        date:g('date'),time:g('time'),project:g('project'),notes:g('notes'),
-        done:f.done?!!f.done.booleanValue:false
-      };
-    }).filter(function(e){return e.id&&e.title;});
-    if(callback)callback(_events);
-  }).catch(function(e){
-    apToast('Error al leer Firebase','err');
-    console.error('fbLoadAll error:',e);
-    if(callback)callback([]);
+      // Retry automático con backoff exponencial (máx 2 min)
+      if(_fbRetryTimer)clearTimeout(_fbRetryTimer);
+      _fbRetryCount=Math.min(_fbRetryCount+1,5);
+      var delay=Math.min(15000*Math.pow(2,_fbRetryCount-1),120000);
+      _fbRetryTimer=setTimeout(function(){fbRefresh(true);},delay);
+    });
+}
+
+// fbSyncAll — fuerza recarga completa desde Firebase (botón Sincronizar)
+function fbSyncAll(silent){
+  apToast('Sincronizando con Firebase...','');
+  var dot=document.getElementById('ap-sync-dot');
+  if(dot)dot.style.background='#f59e0b';
+  fbLoadAll(function(evs){
+    apRender();
+    autoImportNN();
+    if(dot)dot.style.background='#a855f7';
+    if(!silent)apToast('✓ Sincronizado: '+evs.length+' eventos','ok');
   });
 }
 
@@ -5022,12 +5084,25 @@ function fbWrite(ev){
   var url='https://firestore.googleapis.com/v1/projects/'+_FB_PROJECT+
           '/databases/(default)/documents/events/'+ev.id+'?key='+_FB_API_KEY;
   var fields={};
-  ['id','title','type','prio','date','time','project','notes'].forEach(function(k){
+  ['id','title','type','prio','date','time','project','notes','link','recur','recurEnd'].forEach(function(k){
     fields[k]={stringValue:String(ev[k]||'')};
   });
   fields['done']={booleanValue:!!ev.done};
+  // Actualizar caché local inmediatamente
+  var cached=fbCacheLoad();
+  var ci=cached.findIndex(function(e){return e.id===ev.id;});
+  if(ci>=0)cached[ci]=ev;else cached.push(ev);
+  fbCacheSave(cached);
   return fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({fields:fields})});
+    body:JSON.stringify({fields:fields})})
+    .catch(function(e){
+      console.warn('fbWrite offline — guardado solo en caché:',ev.title);
+      // Marcar como pendiente de sync
+      var pending=JSON.parse(localStorage.getItem('_ap_pending')||'[]');
+      if(!pending.find(function(p){return p.id===ev.id;}))pending.push(ev);
+      localStorage.setItem('_ap_pending',JSON.stringify(pending));
+      return Promise.resolve();
+    });
 }
 
 // Eliminar un evento de Firestore definitivamente
@@ -5040,11 +5115,19 @@ function fbDelete(id){
 // Recargar desde Firebase y refrescar la UI
 function fbRefresh(silent){
   fbLoadAll(function(evs){
-    var now=new Date().toLocaleTimeString('es-CO');
-    var fb=document.getElementById('ap-fb-last');
-    if(fb)fb.textContent=now;
     apRender();
-    if(!silent)apToast('✓ Sincronizado con Firebase','ok');
+    if(!silent)apToast('✓ Sincronizado: '+evs.length+' eventos','ok');
+    // Subir eventos pendientes de sync si los hay
+    try{
+      var pending=JSON.parse(localStorage.getItem('_ap_pending')||'[]');
+      if(pending.length>0){
+        Promise.all(pending.map(function(ev){return fbWrite(ev);}))
+          .then(function(){
+            localStorage.removeItem('_ap_pending');
+            apToast('✓ '+pending.length+' eventos sincronizados','ok');
+          }).catch(function(){});
+      }
+    }catch(e){}
   });
 }
 
