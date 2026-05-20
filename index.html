@@ -3420,12 +3420,47 @@ function addMeeting(){
   document.getElementById('m-parts').value='';
   closeModal('mo-meet');
   T('Reunión creada','Agregada correctamente','📅');
-  // Solo programar alarma de proximidad — sin notificar al crear
   const newM = MEETS[0];
   scheduleAlarm(newM);
   nnSave();
   if(document.getElementById('v-meetings').classList.contains('on'))renderMeets();
   renderDash();
+
+  // ── Sincronizar inmediatamente con Firebase y panel de Alertas ──
+  try {
+    // Construir fecha ISO desde formato dd/MM
+    var ds2='';
+    var fp=newM.date?newM.date.split('/'):[];
+    if(fp.length===2){
+      var d2=new Date();
+      var dy=parseInt(fp[0]),mo=parseInt(fp[1])-1,yr2=d2.getFullYear();
+      if(mo<d2.getMonth()||(mo===d2.getMonth()&&dy<d2.getDate()))yr2++;
+      ds2=yr2+'-'+String(mo+1).padStart(2,'0')+'-'+String(dy).padStart(2,'0');
+    }
+    if(ds2){
+      var existingIds2=new Set(typeof _events!=='undefined'?_events.map(function(e){return e.id;}):[]);
+      var eid2='nn_meet_'+newM.id;
+      if(!existingIds2.has(eid2)){
+        var ev2={id:eid2,title:newM.t||newM.title||'Reunión',type:'meet',prio:'alta',
+          date:ds2,time:newM.time||'',project:newM.plat||'',notes:newM.agenda||'',done:false};
+        if(typeof _events!=='undefined') _events.push(ev2);
+        if(typeof fbWrite==='function') fbWrite(ev2);
+        if(typeof apRender==='function') apRender();
+        // Telegram: notificar reunión nueva
+        if(typeof tgSendAP==='function'){
+          var tgMsg='📅 *Nueva reunión agendada*\n\n📌 *'+(newM.t||'Reunión')+'*\n';
+          if(newM.time)tgMsg+='🕐 Hora: '+newM.time+'\n';
+          tgMsg+='📆 Fecha: '+newM.date+'\n';
+          if(newM.plat)tgMsg+='💻 Plataforma: '+newM.plat+'\n';
+          if(newM.agenda)tgMsg+='📝 '+newM.agenda.slice(0,80)+'\n';
+          tgMsg+='\n_EM Suite PRO_';
+          tgSendAP(tgMsg);
+        }
+        var nn_el=document.getElementById('ap-nn-last');
+        if(nn_el)nn_el.textContent=new Date().toLocaleTimeString('es-CO');
+      }
+    }
+  } catch(e2){ console.warn('sync reunión→alertas:',e2); }
 }
 
 function addGoal(){
@@ -5202,13 +5237,18 @@ function importFromNeuroNotes(){
 
     function parseDate(str){
       if(!str)return'';
+      if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
       var p=str.split('/');
+      if(p.length===3){
+        var d3=parseInt(p[0]),m3=parseInt(p[1])-1,y3=parseInt(p[2]);
+        if(!isNaN(y3)&&y3>2000)
+          return y3+'-'+String(m3+1).padStart(2,'0')+'-'+String(d3).padStart(2,'0');
+      }
       if(p.length===2){
         var day=parseInt(p[0]),mon=parseInt(p[1])-1,yr=now.getFullYear();
         if(mon<now.getMonth()||(mon===now.getMonth()&&day<now.getDate()))yr++;
         return yr+'-'+String(mon+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
       }
-      if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
       return'';
     }
 
@@ -5262,13 +5302,21 @@ function autoImportNN(){
 
     function parseDate2(str){
       if(!str)return'';
+      // ISO yyyy-MM-dd
+      if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
       var p=str.split('/');
+      // dd/MM/YYYY
+      if(p.length===3){
+        var day3=parseInt(p[0]),mon3=parseInt(p[1])-1,yr3=parseInt(p[2]);
+        if(!isNaN(yr3)&&yr3>2000)
+          return yr3+'-'+String(mon3+1).padStart(2,'0')+'-'+String(day3).padStart(2,'0');
+      }
+      // dd/MM → inferir año
       if(p.length===2){
         var day=parseInt(p[0]),mon=parseInt(p[1])-1,yr=now.getFullYear();
         if(mon<now.getMonth()||(mon===now.getMonth()&&day<now.getDate()))yr++;
         return yr+'-'+String(mon+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
       }
-      if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
       return'';
     }
 
