@@ -2889,15 +2889,7 @@ function nnSave() {
       NOTES, KB, MEETS, GOALS, COURSES, TRIPS,
       TRANSACTIONS, DEBTS, BUDGET_CATS, HOME_FIXED, HOME_TASKS
     };
-    const serialized = JSON.stringify(data);
-    localStorage.setItem(NN_KEY, serialized);
-    // ── BRIDGE FIX: enviar datos al shell padre para que Alertas pueda leerlos ──
-    // Los iframes tienen localStorage aislado del padre. La única forma de
-    // compartir datos es via postMessage. El shell los guarda en su propio
-    // localStorage con la misma key, así autoImportNN() los encuentra.
-    try {
-      window.parent.postMessage({ type: 'EM_SUITE_NN_DATA', payload: serialized }, '*');
-    } catch(_e) {}
+    localStorage.setItem(NN_KEY, JSON.stringify(data));
   } catch(e) { console.warn('NeuroNotes: error guardando', e); }
 }
 
@@ -2910,13 +2902,6 @@ function nnLoad() {
 }
 
 const _saved = nnLoad();
-// ── BRIDGE FIX: al cargar, enviar estado actual al shell para que Alertas lo importe ──
-try {
-  var _nnInitRaw = localStorage.getItem(NN_KEY);
-  if (_nnInitRaw) {
-    window.parent.postMessage({ type: 'EM_SUITE_NN_DATA', payload: _nnInitRaw }, '*');
-  }
-} catch(_e2) {}
 
 let NOTES        = _saved ? (_saved.NOTES        || []) : [];
 const KB_COLS    = ['Pendiente','Iniciado','En Progreso','Revisión','Completado','Cancelado'];
@@ -5759,19 +5744,6 @@ window.addEventListener("message",function(e){
   // ── Alertas pide actualizar badge ──
   if(e.data.type==="EM_SUITE_BADGE_UPDATE"){
     if(cur!==4)setBadge(_badgeCount+1);
-  }
-
-  // ── NeuroNotes envía su estado completo → guardarlo en localStorage del shell ──
-  // FIX CRÍTICO: el iframe NeuroNotes tiene su propio localStorage aislado.
-  // autoImportNN() en el panel Alertas lee el localStorage del shell y no lo ve.
-  // Solución: NeuroNotes hace postMessage con el payload, el shell lo guarda aquí
-  // con la misma key 'neuronotes_v2_data', y Alertas lo encuentra normalmente.
-  if(e.data.type==="EM_SUITE_NN_DATA" && e.data.payload){
-    try{
-      localStorage.setItem('neuronotes_v2_data', e.data.payload);
-      // Llamar autoImportNN que ya corre en este mismo contexto de documento
-      try{ autoImportNN(); }catch(_){}
-    }catch(_){}
   }
 });
 
