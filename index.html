@@ -2385,6 +2385,7 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
   <button class=&quot;rb on&quot; onclick=&quot;V('dash')&quot; data-tip=&quot;Dashboard&quot;><i class=&quot;fa fa-th-large&quot;></i></button>
   <button class=&quot;rb&quot; onclick=&quot;V('finance')&quot; data-tip=&quot;Finanzas&quot;><i class=&quot;fa fa-chart-pie&quot;></i></button>
   <button class=&quot;rb&quot; onclick=&quot;V('calendar')&quot; data-tip=&quot;Calendario&quot;><i class=&quot;fa fa-calendar-alt&quot;></i></button>
+  <button class=&quot;rb&quot; onclick=&quot;V('meetings')&quot; data-tip=&quot;Reuniones&quot;><i class=&quot;fa fa-video&quot;></i></button>
   <button class=&quot;rb&quot; onclick=&quot;V('goals')&quot; data-tip=&quot;Metas & Cursos&quot;><i class=&quot;fa fa-bullseye&quot;></i></button>
   <button class=&quot;rb&quot; onclick=&quot;V('travel')&quot; data-tip=&quot;Viajes&quot;><i class=&quot;fa fa-plane&quot;></i></button>
   <button class=&quot;rb&quot; onclick=&quot;V('kanban')&quot; data-tip=&quot;Proyectos&quot;><i class=&quot;fa fa-columns&quot;></i></button>
@@ -2407,6 +2408,7 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
     <div class=&quot;si on&quot; onclick=&quot;V('dash')&quot;><i class=&quot;fa fa-th-large&quot;></i> Dashboard</div>
     <div class=&quot;si&quot; onclick=&quot;V('finance')&quot;><i class=&quot;fa fa-coins&quot;></i> Finanzas</div>
     <div class=&quot;si&quot; onclick=&quot;V('calendar')&quot;><i class=&quot;fa fa-calendar-alt&quot;></i> Calendario</div>
+    <div class=&quot;si&quot; onclick=&quot;V('meetings')&quot;><i class=&quot;fa fa-video&quot;></i> Reuniones</div>
     <div class=&quot;sl&quot;>Personal</div>
     <div class=&quot;si&quot; onclick=&quot;V('goals')&quot;><i class=&quot;fa fa-bullseye&quot;></i> Metas & Cursos</div>
     <div class=&quot;si&quot; onclick=&quot;V('travel')&quot;><i class=&quot;fa fa-plane&quot;></i> Viajes & Trips</div>
@@ -2448,7 +2450,7 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
       <div class=&quot;g4&quot; style=&quot;margin-bottom:22px&quot;>
         <div class=&quot;sc&quot; onclick=&quot;V('finance')&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(0,255,136,.1)&quot;><i class=&quot;fa fa-wallet&quot; style=&quot;color:var(--ok)&quot;></i></div><div class=&quot;scn&quot; style=&quot;color:var(--ok)&quot; id=&quot;ds-balance&quot;>$0</div><div class=&quot;scl&quot;>Balance neto mes</div><div class=&quot;scc up&quot; id=&quot;ds-balance-sub&quot;>Ingresos - Egresos</div></div>
         <div class=&quot;sc&quot; onclick=&quot;V('kanban')&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(0,212,255,.1)&quot;><i class=&quot;fa fa-tasks&quot; style=&quot;color:var(--ac)&quot;></i></div><div class=&quot;scn&quot; id=&quot;ds-tasks&quot;>0</div><div class=&quot;scl&quot;>Tareas activas</div><div class=&quot;scc wa&quot; id=&quot;ds-urgent&quot;></div></div>
-        <div class=&quot;sc&quot; onclick=&quot;document.getElementById('p4-btn')&&document.getElementById('p4-btn').click()&quot; style=&quot;cursor:pointer&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(168,85,247,.15)&quot;><i class=&quot;fa fa-bell&quot; style=&quot;color:#a855f7&quot;></i></div><div class=&quot;scn&quot; id=&quot;ds-meets&quot;>0</div><div class=&quot;scl&quot;>Eventos hoy</div><div class=&quot;scc up&quot; style=&quot;color:#a855f7&quot;>Alertas Firebase</div></div>
+        <div class=&quot;sc&quot; onclick=&quot;V('meetings')&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(98,100,167,.1)&quot;><i class=&quot;fa fa-video&quot; style=&quot;color:#8899FF&quot;></i></div><div class=&quot;scn&quot; id=&quot;ds-meets&quot;>0</div><div class=&quot;scl&quot;>Reuniones hoy</div><div class=&quot;scc up&quot;>Teams + Google</div></div>
         <div class=&quot;sc&quot; onclick=&quot;V('goals')&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(255,184,0,.1)&quot;><i class=&quot;fa fa-bullseye&quot; style=&quot;color:var(--warn)&quot;></i></div><div class=&quot;scn&quot; id=&quot;ds-goals&quot;>0</div><div class=&quot;scl&quot;>Metas activas</div><div class=&quot;scc wa&quot; id=&quot;ds-goals-sub&quot;></div></div>
       </div>
       <div class=&quot;g2&quot; style=&quot;margin-bottom:22px&quot;>
@@ -2474,7 +2476,7 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
           </div>
         </div>
         <div>
-          <div class=&quot;sect&quot;>Próximos eventos <span style=&quot;font-size:10px;color:#a855f7;font-weight:600&quot;>⚡ Firebase</span></div>
+          <div class=&quot;sect&quot;>Próximas reuniones</div>
           <div id=&quot;dash-meets&quot;></div>
           <div class=&quot;sect&quot; style=&quot;margin-top:16px&quot;>Metas destacadas</div>
           <div id=&quot;dash-goals&quot;></div>
@@ -2571,6 +2573,24 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
       </div>
     </div>
 
+    <!-- ══ MEETINGS ══ -->
+    <div class=&quot;view&quot; id=&quot;v-meetings&quot;>
+      <div class=&quot;pg&quot;><h1 class=&quot;pgh1&quot;>Reuniones <em>& Videollamadas</em></h1><p class=&quot;pgp&quot;>Microsoft Teams + Google Meet integrados</p></div>
+      <div style=&quot;display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap&quot;>
+        <button class=&quot;bd2b on&quot; onclick=&quot;filterMeets('all',this)&quot;>Todas</button>
+        <button class=&quot;bd2b&quot; onclick=&quot;filterMeets('teams',this)&quot;>Teams</button>
+        <button class=&quot;bd2b&quot; onclick=&quot;filterMeets('meet',this)&quot;>Google Meet</button>
+        <button class=&quot;bd2b&quot; onclick=&quot;filterMeets('presencial',this)&quot;>Presencial</button>
+        <button class=&quot;bp&quot; style=&quot;margin-left:auto;font-size:11px&quot; onclick=&quot;openModal('mo-meet')&quot;><i class=&quot;fa fa-plus&quot; style=&quot;margin-right:5px&quot;></i>Nueva reunión</button>
+        <button class=&quot;bs&quot; style=&quot;font-size:11px&quot; onclick=&quot;exportAllICS()&quot; title=&quot;Exportar todo a Google Calendar / Outlook&quot;><i class=&quot;fa fa-calendar-export&quot; style=&quot;margin-right:5px&quot;></i>Exportar .ics</button>
+      </div>
+      <div class=&quot;sect&quot;>Hoy — 17 de mayo</div>
+      <div id=&quot;meets-today&quot;></div>
+      <div class=&quot;sect&quot; style=&quot;margin-top:20px&quot;>Próximas reuniones</div>
+      <div id=&quot;meets-upcoming&quot;></div>
+      <div class=&quot;sect&quot; style=&quot;margin-top:20px&quot;>Historial reciente</div>
+      <div id=&quot;meets-past&quot;></div>
+    </div>
 
     <!-- ══ GOALS ══ -->
     <div class=&quot;view&quot; id=&quot;v-goals&quot;>
@@ -2921,7 +2941,7 @@ let HOME_TASKS   = _saved ? (_saved.HOME_TASKS   || []) : [];
 let finTab = 'all'; // 'all' | 'ingresos' | 'egresos' | 'deudas' | 'presupuesto'
 
 // ══ VIEWS ══
-const VIEW_NAMES = {dash:'Dashboard',finance:'Finanzas',calendar:'Calendario',
+const VIEW_NAMES = {dash:'Dashboard',finance:'Finanzas',calendar:'Calendario',meetings:'Reuniones',
   goals:'Metas & Cursos',travel:'Viajes',kanban:'Proyectos',notes:'Notas Técnicas',tools:'Herramientas',home:'Hogar'};
 
 function V(name) {
@@ -2930,7 +2950,7 @@ function V(name) {
   if(el) el.classList.add('on');
   document.querySelectorAll('.rb').forEach((b,i) => {
     b.classList.remove('on');
-    const vs = ['dash','finance','calendar','goals','travel','kanban','notes','tools','home'];
+    const vs = ['dash','finance','calendar','meetings','goals','travel','kanban','notes','tools','home'];
     if(vs[i]===name) b.classList.add('on');
   });
   document.querySelectorAll('.si').forEach(s => s.classList.remove('on'));
@@ -2940,6 +2960,7 @@ function V(name) {
   if(name==='goals')    renderGoals();
   if(name==='travel')   renderTrips();
   if(name==='finance')  renderFinance();
+  if(name==='meetings') renderMeets();
   if(name==='home')     renderHome();
   if(name==='tools')    renderTools();
   if(name==='dash')     renderDash();
@@ -2987,6 +3008,7 @@ function renderDash() {
   if(ugEl) ugEl.innerHTML = stats.urgentes>0
     ? `<i class=&quot;fa fa-exclamation&quot;></i> ${stats.urgentes} urgente${stats.urgentes>1?'s':''}`
     : '<i class=&quot;fa fa-check&quot;></i> Sin urgentes';
+  setEl('ds-meets', MEETS.filter(m=>m.when==='today').length);
   setEl('ds-goals', GOALS.length);
   const glsEl = document.getElementById('ds-goals-sub');
   if(glsEl) glsEl.textContent = GOALS.length>0 ? GOALS.filter(g=>g.pct<50).length+' por debajo del 50%' : 'Agrega metas';
@@ -3016,44 +3038,13 @@ function renderDash() {
     }
   }
 
-  // Próximos eventos — desde Firebase via postMessage del shell
+  // Reuniones del día
   const dm = document.getElementById('dash-meets');
   if(dm) {
-    const tod2 = (typeof apToday==='function') ? apToday() : new Date().toISOString().split('T')[0];
-    // Usar _fbEventsFromShell (recibidos via postMessage desde el shell padre)
-    // _events aquí siempre está vacío — Firebase corre en el shell, no en este iframe
-    const fbEvs = (typeof _fbEventsFromShell!=='undefined' && _fbEventsFromShell.length>0)
-      ? _fbEventsFromShell : [];
-    const todayFb = fbEvs.filter(function(e){return !e.done && e.date===tod2;})
-      .sort(function(a,b){return (a.time||'99:99')>(b.time||'99:99')?1:-1;});
-    const upcomingFb = fbEvs.filter(function(e){return !e.done && e.date>tod2;})
-      .sort(function(a,b){return a.date>b.date?1:(a.date<b.date?-1:0);});
-    const showFb = todayFb.concat(upcomingFb).slice(0,4);
-    if(showFb.length>0){
-      const icons2={meet:'📅',task:'✅',proj:'📂',deadline:'⚠️',call:'📞'};
-      const labels2={meet:'Reunión',task:'Tarea',proj:'Proyecto',deadline:'Límite',call:'Llamada'};
-      dm.innerHTML=showFb.map(function(ev){
-        var icon2=icons2[ev.type]||'🔔';
-        var lbl2=labels2[ev.type]||'Evento';
-        var isHoy=(ev.date===tod2);
-        var badge=isHoy
-          ? '<span style=&quot;background:rgba(168,85,247,.2);color:#a855f7;padding:1px 6px;border-radius:10px;font-size:9px;font-weight:700;&quot;>HOY</span>'
-          : '<span style=&quot;color:var(--t3);font-size:9px;&quot;>'+ev.date+'</span>';
-        return '<div style=&quot;display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--bd);&quot;>'+
-          '<div style=&quot;font-size:18px;flex-shrink:0;&quot;>'+icon2+'</div>'+
-          '<div style=&quot;flex:1;min-width:0;&quot;>'+
-            '<div style=&quot;font-size:12px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;&quot;>'+ev.title+'</div>'+
-            '<div style=&quot;font-size:10px;color:var(--t3);margin-top:2px;&quot;>'+lbl2+(ev.time?' · '+ev.time:''+(ev.project?' · '+ev.project:''))+'</div>'+
-          '</div>'+
-          '<div style=&quot;text-align:right;flex-shrink:0;&quot;>'+badge+'</div>'+
-        '</div>';
-      }).join('');
-    } else {
-      dm.innerHTML='<div style=&quot;text-align:center;padding:20px;color:var(--t3);font-size:12px&quot;>Sin eventos próximos — ¡adelante! 🎯</div>';
-    }
-    // Actualizar contador stat card
-    const dsMeets=document.getElementById('ds-meets');
-    if(dsMeets)dsMeets.textContent=todayFb.length;
+    const today = MEETS.filter(m=>m.when==='today');
+    dm.innerHTML = today.length
+      ? today.slice(0,3).map(m=>meetHTML(m,true)).join('')
+      : '<div style=&quot;text-align:center;padding:20px;color:var(--t3);font-size:12px&quot;>Sin reuniones hoy — ¡adelante! 🎯</div>';
   }
 
   // Metas destacadas
@@ -3895,62 +3886,6 @@ function checkAlarms(){
   MEETS.forEach(function(m){
     if(m.when==='today' || m.when==='upcoming') scheduleAlarm(m);
   });
-}
-
-
-// ══════════════════════════════════════════════════════════════
-// RECEPTOR: recibe _events de Firebase desde el shell padre
-// Shell → postMessage(EM_SUITE_EVENTS) → aquí → renderDash actualizado
-// ══════════════════════════════════════════════════════════════
-var _fbEventsFromShell = [];
-
-window.addEventListener('message', function(e) {
-  if (!e.data || e.data.type !== 'EM_SUITE_EVENTS') return;
-  _fbEventsFromShell = e.data.events || [];
-  // Refrescar el dashboard con los eventos reales de Firebase
-  if (typeof renderDash === 'function') renderDash(); // refresca el dashboard completo
-});
-
-// renderDashWithFB — versión del dash que usa _fbEventsFromShell
-function renderDashWithFB() {
-  var tod = new Date().toISOString().split('T')[0];
-  var evs = _fbEventsFromShell;
-  var todayFb = evs.filter(function(e){ return !e.done && e.date === tod; })
-    .sort(function(a,b){ return (a.time||'99:99') > (b.time||'99:99') ? 1 : -1; });
-  var upFb = evs.filter(function(e){ return !e.done && e.date > tod; })
-    .sort(function(a,b){ return a.date > b.date ? 1 : a.date < b.date ? -1 : 0; });
-  var showFb = todayFb.concat(upFb).slice(0, 4);
-
-  var dm = document.getElementById('dash-meets');
-  if (!dm) return;
-
-  var icons2 = {meet:'📅', task:'✅', proj:'📂', deadline:'⚠️', call:'📞'};
-  var labels2 = {meet:'Reunión', task:'Tarea', proj:'Proyecto', deadline:'Límite', call:'Llamada'};
-
-  if (showFb.length > 0) {
-    dm.innerHTML = showFb.map(function(ev) {
-      var icon2 = icons2[ev.type] || '🔔';
-      var lbl2 = labels2[ev.type] || 'Evento';
-      var isHoy = (ev.date === tod);
-      var badge = isHoy
-        ? '<span style="background:rgba(168,85,247,.2);color:#a855f7;padding:1px 6px;border-radius:10px;font-size:9px;font-weight:700">HOY</span>'
-        : '<span style="color:var(--t3);font-size:9px">' + ev.date + '</span>';
-      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--bd)">' +
-        '<div style="font-size:18px;flex-shrink:0">' + icon2 + '</div>' +
-        '<div style="flex:1;min-width:0">' +
-          '<div style="font-size:12px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + ev.title + '</div>' +
-          '<div style="font-size:10px;color:var(--t3);margin-top:2px">' + lbl2 + (ev.time ? ' · ' + ev.time : '') + (ev.project ? ' · ' + ev.project : '') + '</div>' +
-        '</div>' +
-        '<div style="text-align:right;flex-shrink:0">' + badge + '</div>' +
-      '</div>';
-    }).join('');
-  } else {
-    dm.innerHTML = '<div style="text-align:center;padding:20px;color:var(--t3);font-size:12px">Sin eventos próximos — ¡adelante! 🎯</div>';
-  }
-
-  // Actualizar stat card "Eventos hoy"
-  var dsMeets = document.getElementById('ds-meets');
-  if (dsMeets) dsMeets.textContent = todayFb.length;
 }
 
 </script>
@@ -5123,7 +5058,7 @@ function fbParseDoc(d){
 function fbLoadAll(callback){
   var url='https://firestore.googleapis.com/v1/projects/'+_FB_PROJECT+
           '/databases/(default)/documents/events?key='+_FB_API_KEY+'&pageSize=500';
-  fetch(url)
+  fetch(url,{signal:AbortSignal.timeout?AbortSignal.timeout(8000):undefined})
     .then(function(r){
       if(!r.ok)throw new Error('HTTP '+r.status);
       return r.json();
@@ -5172,8 +5107,6 @@ function fbSyncAll(silent){
   fbLoadAll(function(evs){
     apRender();
     autoImportNN();
-    if(typeof renderDash==='function')renderDash(); // 🔄 sync Dashboard NeuroNotes
-    pushEventsToNN(); // 📡 enviar al iframe NeuroNotes
     if(dot)dot.style.background='#a855f7';
     if(!silent)apToast('✓ Sincronizado: '+evs.length+' eventos','ok');
   });
@@ -5216,8 +5149,6 @@ function fbDelete(id){
 function fbRefresh(silent){
   fbLoadAll(function(evs){
     apRender();
-    if(typeof renderDash==='function')renderDash(); // 🔄 sync Dashboard NeuroNotes
-    pushEventsToNN(); // 📡 enviar al iframe NeuroNotes
     if(!silent)apToast('✓ Sincronizado: '+evs.length+' eventos','ok');
     // Subir eventos pendientes de sync si los hay
     try{
@@ -5390,7 +5321,6 @@ function apSave(){
 
   apRender();
   apCloseForm();
-  pushEventsToNN(); // 📡 enviar eventos actualizados al iframe NeuroNotes
 
   // Guardar en Firebase
   fbWrite(ev).then(function(){
@@ -5414,7 +5344,6 @@ function apDone(id){
   if(!ev)return;
   ev.done=true;
   apRender();
-  pushEventsToNN(); // 📡 actualizar iframe
   fbWrite(ev).then(function(){
     apToast('✓ Completado y actualizado','ok');
   }).catch(function(){apToast('Error al actualizar','err');});
@@ -5444,7 +5373,6 @@ function apDelete(id){
   // Quitar de memoria
   _events=_events.filter(function(e){return e.id!==id;});
   apRender();
-  pushEventsToNN(); // 📡 actualizar iframe
   apToast('Eliminando...','warn');
   // Borrar de Firebase definitivamente
   fbDelete(id).then(function(){
@@ -5711,9 +5639,6 @@ setInterval(function(){
     _syncCounter=_syncInterval;
     fbRefresh(true); // recarga desde Firebase — ve cambios de otros dispositivos
     autoImportNN();
-    // 🔄 Refrescar Dashboard NeuroNotes con eventos actualizados
-    if(typeof renderDash==='function')renderDash();
-    pushEventsToNN(); // 📡 enviar al iframe NeuroNotes
     console.log('[EM Suite] Recarga Firebase: '+new Date().toLocaleTimeString('es-CO'));
   }
 },1000);
@@ -5791,24 +5716,6 @@ document.addEventListener("keydown",function(e){
 });
 
 // ══════════════════════════════════════════════════════════════
-
-// ══════════════════════════════════════════════════════════════
-// PUENTE FIREBASE → NEURONOTES IFRAME
-// Envía _events del shell al iframe f2 para que renderDash los muestre
-// ══════════════════════════════════════════════════════════════
-function pushEventsToNN() {
-  try {
-    var f2 = document.getElementById('f2');
-    if (!f2 || !f2.contentWindow) return;
-    f2.contentWindow.postMessage({
-      type: 'EM_SUITE_EVENTS',
-      events: _events || []
-    }, '*');
-  } catch(e) {
-    console.warn('[Shell] pushEventsToNN error:', e.message);
-  }
-}
-
 // PUENTE CROSS-IFRAME — captura postMessage de cualquier iframe hijo
 // NeuroNotes → postMessage(EM_SUITE_MEETING) → aquí → Alertas._apReceiveMeeting
 // ══════════════════════════════════════════════════════════════
