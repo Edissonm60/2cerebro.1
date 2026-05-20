@@ -4837,10 +4837,10 @@ function toast(msg, type){
     <div id="ap-sync-bar" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.2);border-radius:8px;margin-bottom:14px;font-size:12px;">
       <div id="ap-sync-dot" style="width:8px;height:8px;border-radius:50%;background:#a855f7;flex-shrink:0;animation:apulse 2s infinite;"></div>
       <div style="flex:1;color:#8899BB;">
-        <strong style="color:#a855f7;display:block;">&#128257; Auto-sync activo — cada 5 min</strong>
+        <strong style="color:#a855f7;display:block;">&#128257; Auto-sync activo — cada 10s</strong>
         <span>Firebase: <span id="ap-fb-last">esperando...</span> &bull; NN: <span id="ap-nn-last">esperando...</span></span>
       </div>
-      <div id="ap-sync-countdown" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#a855f7;background:rgba(168,85,247,.12);padding:3px 8px;border-radius:5px;">5:00</div>
+      <div id="ap-sync-countdown" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#a855f7;background:rgba(168,85,247,.12);padding:3px 8px;border-radius:5px;">0:10</div>
     </div>
 
     <div class="form-box" id="ap-form">
@@ -4868,7 +4868,7 @@ function toast(msg, type){
     <div class="gas-box">
       <div style="font-size:13px;font-weight:700;color:#a855f7;margin-bottom:10px;">&#129302; Alertas 24/7 — Firebase + Google Apps Script</div>
       <div style="font-size:12px;color:#8899BB;line-height:1.5;margin-bottom:12px;">
-        Tus eventos se guardan en <strong style="color:#a855f7">Firebase</strong> automáticamente cada 5 minutos.
+        Tus eventos se guardan en <strong style="color:#a855f7">Firebase</strong> automáticamente cada 10 segundos.
         El script de Google los lee y envía alertas a Telegram aunque el teléfono esté apagado.
         NeuroNotes se sincroniza en tiempo real cuando agregas una reunión, nota o proyecto.
       </div>
@@ -5288,11 +5288,34 @@ function autoImportNN(){
       _events.push(ev); existingIds.add(eid); fbWrite(ev); added++;
     });
 
+    // ── Importar tareas del Kanban (Proyectos) ──────────────────
+    var kb=nn.KB||{};
+    Object.keys(kb).forEach(function(col){
+      (kb[col]||[]).forEach(function(t){
+        var eid='nn_kb_'+col+'_'+t.id; if(existingIds.has(eid))return;
+        var ds=parseDate2(t.due||t.date||t.dueDate);
+        if(!ds){
+          // Sin fecha: usar hoy para que Firebase la registre igual
+          var d=new Date();
+          ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+        }
+        var prio='media';
+        var pr=(t.p||t.prio||t.priority||'').toLowerCase();
+        if(pr==='urgente'||pr==='alta'||pr==='high')prio='alta';
+        else if(pr==='baja'||pr==='low')prio='baja';
+        var done=(col==='Completado'||col==='Cancelado');
+        var ev={id:eid,title:t.t||t.title||t.text||'Tarea',type:'task',
+          prio:prio,date:ds,time:t.time||'',
+          project:col,notes:(t.tags||[]).join(', '),done:done};
+        _events.push(ev); existingIds.add(eid); fbWrite(ev); added++;
+      });
+    });
+
     if(added>0){
       apRender();
       var nn_el=document.getElementById('ap-nn-last');
       if(nn_el)nn_el.textContent=new Date().toLocaleTimeString('es-CO');
-      console.log('[EM Suite] Auto-importados '+added+' de NeuroNotes → Firebase');
+      console.log('[EM Suite] Auto-importados '+added+' de NeuroNotes → Firebase (incl. Kanban)');
     }
   }catch(e){console.warn('autoImportNN error:',e);}
 }
@@ -5335,7 +5358,7 @@ setInterval(function(){
 // AUTO-SYNC CADA 5 MINUTOS — RECARGA DESDE FIREBASE
 // Así cualquier dispositivo ve los cambios del otro
 // ══════════════════════════════════════════════════════════════
-var _syncInterval=5*60;
+var _syncInterval=10; // 10 segundos — sync casi en tiempo real
 var _syncCounter=_syncInterval;
 
 // Carga inicial desde Firebase al abrir la página
