@@ -5037,7 +5037,14 @@ function apSave(){
 function apDone(id){
   var d=apLoad();
   var ev=d.events.find(function(e){return e.id===id;});
-  if(ev){ev.done=true;apStore(d);apToast('Completado ✓','ok');apRender();}
+  if(ev){
+    ev.done=true;
+    apStore(d);
+    // Marcar done=true en Firebase también
+    fbWriteEvent(ev).catch(function(){});
+    apToast('Completado ✓','ok');
+    apRender();
+  }
 }
 function apEdit(id){
   var d=apLoad();
@@ -5057,7 +5064,21 @@ function apDelete(id){
   if(!confirm('Eliminar este recordatorio?'))return;
   var d=apLoad();
   d.events=d.events.filter(function(e){return e.id!==id;});
-  apStore(d); fbSyncAll(); apToast('Eliminado','warn'); apRender();
+  apStore(d);
+  apToast('Eliminado','warn');
+  apRender();
+  // Borrar de Firebase para que no regrese en el próximo sync
+  fbDeleteEvent(id);
+}
+
+function fbDeleteEvent(id){
+  _markDeleted(id); // recordar que este ID fue borrado, no reimportar
+  var url='https://firestore.googleapis.com/v1/projects/'+_FB_PROJECT+'/databases/(default)/documents/events/'+id+'?key='+_FB_API_KEY;
+  fetch(url,{method:'DELETE'}).then(function(){
+    console.log('[Firebase] Evento borrado: '+id);
+  }).catch(function(e){
+    console.warn('[Firebase] Error al borrar: '+e.message);
+  });
 }
 function apSendPending(){
   var d=apLoad(); var tod=apToday();
@@ -5236,6 +5257,16 @@ function importFromNeuroNotes(){
   }catch(e){apToast('Error: '+e.message,'err');console.error(e);}
 }
 
+// ── LISTA NEGRA DE EVENTOS BORRADOS (no reimportar) ─────────────────
+var _deletedIds=(function(){
+  try{return JSON.parse(localStorage.getItem('_ap_deleted')||'{}');}catch(e){return{};}
+})();
+function _markDeleted(id){
+  _deletedIds[id]=true;
+  try{localStorage.setItem('_ap_deleted',JSON.stringify(_deletedIds));}catch(e){}
+}
+function _isDeleted(id){return !!_deletedIds[id];}
+
 // ── AUTO-IMPORT + AUTO-SYNC al cargar ──────────────────────
 function autoImportAndSync(silent){
   try{
@@ -5262,6 +5293,7 @@ function autoImportAndSync(silent){
       (nn.MEETS||[]).forEach(function(m){
         var eid='nn_meet_'+m.id;
         if(existing.has(eid))return;
+        if(_isDeleted(eid))return; // no reimportar si el usuario lo borró
         var ds=parseDate2(m.date); if(!ds)return;
         d.events.push({id:eid,title:m.t||m.title||'Reunión',type:'meet',prio:'alta',
           date:ds,time:m.time||'',project:m.plat||'',notes:m.agenda||'',done:false});
@@ -5271,6 +5303,7 @@ function autoImportAndSync(silent){
       (nn.TASKS||nn.tasks||[]).forEach(function(t){
         var eid='nn_task_'+t.id;
         if(existing.has(eid))return;
+        if(_isDeleted(eid))return;
         var ds=parseDate2(t.date||t.due||t.dueDate); if(!ds)return;
         d.events.push({id:eid,title:t.t||t.title||t.text||'Tarea',type:'task',
           prio:t.priority||t.prio||'media',date:ds,time:t.time||'',
@@ -5281,6 +5314,7 @@ function autoImportAndSync(silent){
       (nn.PROJECTS||nn.projects||[]).forEach(function(p){
         var eid='nn_proj_'+p.id;
         if(existing.has(eid))return;
+        if(_isDeleted(eid))return;
         var ds=parseDate2(p.deadline||p.date||p.due); if(!ds)return;
         d.events.push({id:eid,title:p.t||p.title||p.name||'Proyecto',type:'proj',
           prio:'alta',date:ds,time:p.time||'',project:p.area||'',notes:p.notes||'',done:false});
@@ -5297,7 +5331,7 @@ function autoImportAndSync(silent){
     }
   }catch(e){console.warn('Auto-import error:',e);}
 
-  // Sincronizar todo a Firebase
+  // Sincronizar todo a Firebase (solo eventos activos — los borrados ya se eliminaron con fbDeleteEvent)
   setTimeout(function(){
     var d=apLoad();
     var pending=(d.events||[]).filter(function(e){return !e.done;});
@@ -5314,19 +5348,36 @@ function autoImportAndSync(silent){
   apRender();
 }
 
-// ── Escuchar cambios en localStorage (NeuroNotes agrega algo) ─────────
+// ── Escuchar cambios en localStorage (cross-tab y cross-iframe) ──────
 window.addEventListener('storage', function(e){
   if(e.key==='neuronotes_v2_data'){
-    console.log('NeuroNotes actualizado, re-importando...');
+    console.log('[EM Suite] NeuroNotes cambió (storage event), sincronizando...');
     autoImportAndSync(false);
+    _syncCounter=_syncInterval; // resetear countdown
   }
 });
 
+// ── POLLING de NeuroNotes cada 15s para detectar cambios en el mismo documento ──
+// (el evento storage NO dispara en el mismo frame que hizo el cambio)
+var _nnSnapshot='';
+setInterval(function(){
+  try{
+    var raw=localStorage.getItem('neuronotes_v2_data')||'';
+    if(raw && raw!==_nnSnapshot){
+      _nnSnapshot=raw;
+      console.log('[EM Suite] NeuroNotes cambió (polling), sincronizando...');
+      autoImportAndSync(false);
+      _syncCounter=_syncInterval;
+    }
+  }catch(e){}
+},15000); // cada 15 segundos — detecta cambios en tiempo real
+
 // ── AUTO-SYNC CADA 5 MINUTOS con countdown en UI ─────────────────────
-var _syncInterval=5*60; // 5 minutos en segundos
+var _syncInterval=5*60;
 var _syncCounter=_syncInterval;
 
 autoImportAndSync(true); // primera vez al cargar
+_nnSnapshot=(function(){try{return localStorage.getItem('neuronotes_v2_data')||'';}catch(e){return'';}})();
 
 setInterval(function(){
   _syncCounter--;
@@ -5338,7 +5389,7 @@ setInterval(function(){
   if(_syncCounter<=0){
     _syncCounter=_syncInterval;
     autoImportAndSync(true);
-    console.log('[EM Suite] Auto-sync ejecutado a las '+new Date().toLocaleTimeString('es-CO'));
+    console.log('[EM Suite] Auto-sync 5min: '+new Date().toLocaleTimeString('es-CO'));
   }
 },1000);
 </script>
