@@ -4834,6 +4834,14 @@ function toast(msg, type){
       <div class="tg-info"><strong>&#9992;&#65039; Telegram activo</strong><span>Bot: EM Suite PRO &bull; <span id="ap-tg-last">Sin envios aun</span></span></div>
       <button class="abtn ok" onclick="apTestTg()">Probar</button>
     </div>
+    <div id="ap-sync-bar" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.2);border-radius:8px;margin-bottom:14px;font-size:12px;">
+      <div id="ap-sync-dot" style="width:8px;height:8px;border-radius:50%;background:#a855f7;flex-shrink:0;animation:apulse 2s infinite;"></div>
+      <div style="flex:1;color:#8899BB;">
+        <strong style="color:#a855f7;display:block;">&#128257; Auto-sync activo — cada 5 min</strong>
+        <span>Firebase: <span id="ap-fb-last">esperando...</span> &bull; NN: <span id="ap-nn-last">esperando...</span></span>
+      </div>
+      <div id="ap-sync-countdown" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#a855f7;background:rgba(168,85,247,.12);padding:3px 8px;border-radius:5px;">5:00</div>
+    </div>
 
     <div class="form-box" id="ap-form">
       <div style="font-size:13px;font-weight:700;margin-bottom:12px;" id="ap-form-ttl">Nuevo recordatorio</div>
@@ -4860,12 +4868,12 @@ function toast(msg, type){
     <div class="gas-box">
       <div style="font-size:13px;font-weight:700;color:#a855f7;margin-bottom:10px;">&#129302; Alertas 24/7 — Firebase + Google Apps Script</div>
       <div style="font-size:12px;color:#8899BB;line-height:1.5;margin-bottom:12px;">
-        Tus eventos se guardan en <strong style="color:#a855f7">Firebase</strong> automáticamente.
+        Tus eventos se guardan en <strong style="color:#a855f7">Firebase</strong> automáticamente cada 5 minutos.
         El script de Google los lee y envía alertas a Telegram aunque el teléfono esté apagado.
-        Usa <strong style="color:#0ea5e9">Importar NeuroNotes</strong> para traer tus reuniones aquí.
+        NeuroNotes se sincroniza en tiempo real cuando agregas una reunión, nota o proyecto.
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-        <button class="abtn" style="flex:1;min-width:140px;color:#22c55e;border-color:rgba(34,197,94,.35);font-weight:700;" onclick="fbSyncAll()">&#128257; Sincronizar Firebase</button>
+        <button class="abtn" style="flex:1;min-width:140px;color:#22c55e;border-color:rgba(34,197,94,.35);font-weight:700;" onclick="fbSyncAll(false)">&#128257; Sincronizar Firebase</button>
         <button class="abtn" style="flex:1;min-width:140px;color:#0ea5e9;border-color:rgba(14,165,233,.35);" onclick="importFromNeuroNotes()">&#129504; Importar NeuroNotes</button>
       </div>
       <button class="abtn" style="width:100%;color:#a855f7;border-color:rgba(168,85,247,.3);" onclick="window.open('https://script.google.com','_blank')">Abrir Google Apps Script &#8599;</button>
@@ -5067,33 +5075,39 @@ function apReqNotif(){
   });
 }
 
-// Check reminders every minute
-// Claves de notificaciones ya enviadas — persisten en localStorage para sobrevivir recargas
+// ── RECORDATORIOS EN TIEMPO REAL (navegador, cada 30s) ──────────────────────
 var _sentKeys=(function(){try{return JSON.parse(localStorage.getItem('_ap_sent')||'{}');}catch(e){return{};}})();
 function _markSent(k){_sentKeys[k]=true;try{localStorage.setItem('_ap_sent',JSON.stringify(_sentKeys));}catch(e){}}
 setInterval(function(){
   var d=apLoad(); var tod=apToday(); var now=new Date();
   (d.events||[]).forEach(function(ev){
     if(ev.done||!ev.time||!ev.date)return;
-    // Solo eventos de hoy o futuros
     if(ev.date<tod)return;
     var evT=new Date(ev.date+'T'+ev.time+':00');
     var diff=(evT-now)/60000;
 
-    // ── Recordatorio 1 hora antes ──
+    // ── 30 min antes (nueva alerta) ──
+    var k30='r30m_'+ev.id;
+    if(diff>=25&&diff<=35&&!_sentKeys[k30]){
+      _markSent(k30);
+      tgSendAP('\u23f0 *En 30 min: '+apLabel(ev.type)+'*\n\n\ud83d\udccc *'+ev.title+'*\n\ud83d\udd50 '+ev.time+(ev.project?'\n\ud83d\udcc2 '+ev.project:'')+'\n\n_EM Suite PRO_');
+      if(Notification&&Notification.permission==='granted')new Notification('EM Suite — En 30 min',{body:ev.title+' a las '+ev.time,tag:k30});
+    }
+
+    // ── 1 hora antes ──
     var k1='r1h_'+ev.id;
     if(diff>=55&&diff<=65&&!_sentKeys[k1]){
       _markSent(k1);
-      tgSendAP('⏰ *En 1 hora: '+apLabel(ev.type)+'*\n\n📌 *'+ev.title+'*\n🕐 '+ev.time+(ev.project?'\n📂 '+ev.project:'')+'\n\n_EM Suite PRO_');
-      if(Notification.permission==='granted')new Notification('EM Suite PRO — En 1 hora',{body:ev.title+' a las '+ev.time,tag:k1});
+      tgSendAP('\u23f0 *En 1 hora: '+apLabel(ev.type)+'*\n\n\ud83d\udccc *'+ev.title+'*\n\ud83d\udd50 '+ev.time+(ev.project?'\n\ud83d\udcc2 '+ev.project:'')+'\n\n_EM Suite PRO_');
+      if(Notification&&Notification.permission==='granted')new Notification('EM Suite PRO — En 1 hora',{body:ev.title+' a las '+ev.time,tag:k1});
     }
 
-    // ── Alerta justo al momento (±5 min) ──
+    // ── Justo al momento (±5 min) ──
     var k2='ahora_'+ev.id;
     if(diff>=-5&&diff<=5&&!_sentKeys[k2]){
       _markSent(k2);
-      tgSendAP('🔔 *¡AHORA! '+apLabel(ev.type).toUpperCase()+'*\n\n📌 *'+ev.title+'*\n🕐 '+ev.time+(ev.project?'\n📂 '+ev.project:'')+'\n\n_EM Suite PRO_');
-      if(Notification.permission==='granted')new Notification('📅 ¡AHORA! '+ev.title,{body:'Es la hora — '+ev.time,tag:k2});
+      tgSendAP('\ud83d\udd14 *\u00a1AHORA! '+apLabel(ev.type).toUpperCase()+'*\n\n\ud83d\udccc *'+ev.title+'*\n\ud83d\udd50 '+ev.time+(ev.project?'\n\ud83d\udcc2 '+ev.project:'')+'\n\n_EM Suite PRO_');
+      if(Notification&&Notification.permission==='granted')new Notification('\ud83d\udcc5 \u00a1AHORA! '+ev.title,{body:'Es la hora \u2014 '+ev.time,tag:k2});
     }
   });
 },30000); // cada 30 segundos
@@ -5126,102 +5140,159 @@ function fbSyncAll(silent){
   var promises=evs.map(function(ev){return fbWriteEvent(ev);});
   Promise.all(promises).then(function(){
     _fbSyncing=false;
+    var now=new Date().toLocaleTimeString('es-CO');
     var el=document.getElementById('ap-tg-last');
-    if(el)el.textContent='Firebase sync '+new Date().toLocaleTimeString('es-CO');
-    if(!silent)apToast('✓ '+evs.length+' eventos sincronizados a Firebase','ok');
+    if(el)el.textContent='Firebase sync '+now;
+    var fb=document.getElementById('ap-fb-last');
+    if(fb)fb.textContent=now;
+    if(!silent)apToast('\u2713 '+evs.length+' eventos sincronizados a Firebase','ok');
   }).catch(function(e){
     _fbSyncing=false;
     if(!silent)apToast('Error Firebase: '+e.message,'err');
   });
 }
 
-// ── IMPORT FROM NEURONOTES ──────────────────────────────────────────────
+// ── IMPORT FROM NEURONOTES (todas las entidades) ────────────────────────
 function importFromNeuroNotes(){
   try{
     var raw=localStorage.getItem('neuronotes_v2_data');
     if(!raw){apToast('NeuroNotes sin datos aún','warn');return;}
     var nn=JSON.parse(raw);
-    var meets=nn.MEETS||[];
-    if(meets.length===0){apToast('Sin reuniones en NeuroNotes','warn');return;}
     var d=apLoad();
     var existing=new Set((d.events||[]).map(function(e){return String(e.id);}));
     var added=0;
     var now=new Date();
-    meets.forEach(function(m){
-      var eid='nn_'+m.id;
-      if(existing.has(eid))return;
-      var dateParts=(m.date||'').split('/');
-      var dateStr='';
-      if(dateParts.length===2){
-        var day=parseInt(dateParts[0]);
-        var month=parseInt(dateParts[1])-1;
-        var yr=now.getFullYear();
-        if(month<now.getMonth()||(month===now.getMonth()&&day<now.getDate()))yr++;
-        dateStr=yr+'-'+String(month+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+
+    function parseDate(str){
+      if(!str)return'';
+      // formato DD/MM
+      var p=str.split('/');
+      if(p.length===2){
+        var day=parseInt(p[0]),mon=parseInt(p[1])-1,yr=now.getFullYear();
+        if(mon<now.getMonth()||(mon===now.getMonth()&&day<now.getDate()))yr++;
+        return yr+'-'+String(mon+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
       }
-      d.events.push({
-        id:eid,
-        title:m.t||m.title||'Reunión',
-        type:'meet',
-        prio:'alta',
-        date:dateStr,
-        time:m.time||'',
-        project:m.plat||'',
-        notes:m.agenda||'',
-        done:false
-      });
-      added++;
+      // formato YYYY-MM-DD
+      if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
+      return'';
+    }
+
+    // Reuniones (MEETS)
+    (nn.MEETS||[]).forEach(function(m){
+      var eid='nn_meet_'+m.id;
+      if(existing.has(eid))return;
+      var dateStr=parseDate(m.date);
+      if(!dateStr)return;
+      d.events.push({id:eid,title:m.t||m.title||'Reunión',type:'meet',prio:'alta',
+        date:dateStr,time:m.time||'',project:m.plat||'',notes:m.agenda||'',done:false});
+      existing.add(eid); added++;
     });
+
+    // Tareas (TASKS / tasks)
+    (nn.TASKS||nn.tasks||[]).forEach(function(t){
+      var eid='nn_task_'+t.id;
+      if(existing.has(eid))return;
+      var dateStr=parseDate(t.date||t.due||t.dueDate);
+      if(!dateStr)return;
+      d.events.push({id:eid,title:t.t||t.title||t.text||'Tarea',type:'task',
+        prio:t.priority||t.prio||'media',date:dateStr,time:t.time||'',
+        project:t.project||t.proj||'',notes:t.notes||'',done:false});
+      existing.add(eid); added++;
+    });
+
+    // Proyectos (PROJECTS)
+    (nn.PROJECTS||nn.projects||[]).forEach(function(p){
+      var eid='nn_proj_'+p.id;
+      if(existing.has(eid))return;
+      var dateStr=parseDate(p.deadline||p.date||p.due);
+      if(!dateStr)return;
+      d.events.push({id:eid,title:p.t||p.title||p.name||'Proyecto',type:'proj',
+        prio:'alta',date:dateStr,time:p.time||'',project:p.area||'',notes:p.notes||'',done:false});
+      existing.add(eid); added++;
+    });
+
+    // Notas con fecha (NOTES con campo date)
+    (nn.NOTES||nn.notes||[]).forEach(function(n){
+      if(!n.date&&!n.due)return;
+      var eid='nn_note_'+n.id;
+      if(existing.has(eid))return;
+      var dateStr=parseDate(n.date||n.due);
+      if(!dateStr)return;
+      d.events.push({id:eid,title:n.t||n.title||n.text||'Nota',type:'task',
+        prio:n.prio||'media',date:dateStr,time:n.time||'',project:'',notes:n.content||'',done:false});
+      existing.add(eid); added++;
+    });
+
     apStore(d);
     apRender();
+    var nn_el=document.getElementById('ap-nn-last');
+    if(nn_el)nn_el.textContent=new Date().toLocaleTimeString('es-CO');
     if(added>0){
       fbSyncAll(true);
-      apToast('✓ '+added+' reuniones importadas y sincronizadas','ok');
+      apToast('\u2713 '+added+' elementos importados','ok');
     } else {
-      apToast('Todas las reuniones ya estaban importadas','warn');
+      apToast('Todo ya estaba importado','warn');
     }
   }catch(e){apToast('Error: '+e.message,'err');console.error(e);}
 }
 
 // ── AUTO-IMPORT + AUTO-SYNC al cargar ──────────────────────
-function autoImportAndSync(){
-  // Importar silenciosamente desde NeuroNotes
+function autoImportAndSync(silent){
   try{
     var raw=localStorage.getItem('neuronotes_v2_data');
     if(raw){
       var nn=JSON.parse(raw);
-      var meets=nn.MEETS||[];
       var d=apLoad();
       var existing=new Set((d.events||[]).map(function(e){return String(e.id);}));
       var added=0;
       var now=new Date();
-      meets.forEach(function(m){
-        var eid='nn_'+m.id;
-        if(existing.has(eid))return;
-        var dateParts=(m.date||'').split('/');
-        var dateStr='';
-        if(dateParts.length===2){
-          var day=parseInt(dateParts[0]);
-          var month=parseInt(dateParts[1])-1;
-          var yr=now.getFullYear();
-          // Si el mes ya pasó este año, es el próximo año
-          if(month<now.getMonth()||(month===now.getMonth()&&day<now.getDate()))yr++;
-          dateStr=yr+'-'+String(month+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+
+      function parseDate2(str){
+        if(!str)return'';
+        var p=str.split('/');
+        if(p.length===2){
+          var day=parseInt(p[0]),mon=parseInt(p[1])-1,yr=now.getFullYear();
+          if(mon<now.getMonth()||(mon===now.getMonth()&&day<now.getDate()))yr++;
+          return yr+'-'+String(mon+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
         }
-        if(!dateStr)return;
-        d.events.push({
-          id:eid,
-          title:m.t||m.title||'Reunión',
-          type:'meet',prio:'alta',
-          date:dateStr,time:m.time||'',
-          project:m.plat||'',notes:m.agenda||'',
-          done:false
-        });
-        added++;
+        if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;
+        return'';
+      }
+
+      (nn.MEETS||[]).forEach(function(m){
+        var eid='nn_meet_'+m.id;
+        if(existing.has(eid))return;
+        var ds=parseDate2(m.date); if(!ds)return;
+        d.events.push({id:eid,title:m.t||m.title||'Reunión',type:'meet',prio:'alta',
+          date:ds,time:m.time||'',project:m.plat||'',notes:m.agenda||'',done:false});
+        existing.add(eid); added++;
       });
+
+      (nn.TASKS||nn.tasks||[]).forEach(function(t){
+        var eid='nn_task_'+t.id;
+        if(existing.has(eid))return;
+        var ds=parseDate2(t.date||t.due||t.dueDate); if(!ds)return;
+        d.events.push({id:eid,title:t.t||t.title||t.text||'Tarea',type:'task',
+          prio:t.priority||t.prio||'media',date:ds,time:t.time||'',
+          project:t.project||t.proj||'',notes:t.notes||'',done:false});
+        existing.add(eid); added++;
+      });
+
+      (nn.PROJECTS||nn.projects||[]).forEach(function(p){
+        var eid='nn_proj_'+p.id;
+        if(existing.has(eid))return;
+        var ds=parseDate2(p.deadline||p.date||p.due); if(!ds)return;
+        d.events.push({id:eid,title:p.t||p.title||p.name||'Proyecto',type:'proj',
+          prio:'alta',date:ds,time:p.time||'',project:p.area||'',notes:p.notes||'',done:false});
+        existing.add(eid); added++;
+      });
+
       if(added>0){
         apStore(d);
-        console.log('Auto-importadas '+added+' reuniones de NeuroNotes');
+        var nn_el=document.getElementById('ap-nn-last');
+        if(nn_el)nn_el.textContent=new Date().toLocaleTimeString('es-CO');
+        if(!silent)apToast('\u2713 '+added+' nuevos de NeuroNotes','ok');
+        console.log('Auto-importados '+added+' elementos de NeuroNotes');
       }
     }
   }catch(e){console.warn('Auto-import error:',e);}
@@ -5231,29 +5302,45 @@ function autoImportAndSync(){
     var d=apLoad();
     var pending=(d.events||[]).filter(function(e){return !e.done;});
     if(pending.length>0){
-      pending.forEach(function(ev){fbWriteEvent(ev);});
-      var el=document.getElementById('ap-tg-last');if(el)el.textContent='Auto-sync '+new Date().toLocaleTimeString('es-CO');
-      console.log('Auto-sync: '+pending.length+' eventos a Firebase');
+      Promise.all(pending.map(function(ev){return fbWriteEvent(ev);})).then(function(){
+        var now=new Date().toLocaleTimeString('es-CO');
+        var fb=document.getElementById('ap-fb-last');
+        if(fb)fb.textContent=now;
+        console.log('Auto-sync: '+pending.length+' eventos a Firebase');
+      }).catch(function(e){console.warn('Auto-sync error:',e);});
     }
-  },1000);
+  },1200);
 
   apRender();
 }
 
-// Escuchar cambios en localStorage (cuando NeuroNotes agrega una reunión)
+// ── Escuchar cambios en localStorage (NeuroNotes agrega algo) ─────────
 window.addEventListener('storage', function(e){
   if(e.key==='neuronotes_v2_data'){
     console.log('NeuroNotes actualizado, re-importando...');
-    autoImportAndSync();
+    autoImportAndSync(false);
   }
 });
 
-autoImportAndSync();
+// ── AUTO-SYNC CADA 5 MINUTOS con countdown en UI ─────────────────────
+var _syncInterval=5*60; // 5 minutos en segundos
+var _syncCounter=_syncInterval;
 
-// Re-importar cada 30 segundos para no perder nada
+autoImportAndSync(true); // primera vez al cargar
+
 setInterval(function(){
-  autoImportAndSync();
-}, 30000);
+  _syncCounter--;
+  var min=Math.floor(_syncCounter/60);
+  var sec=_syncCounter%60;
+  var el=document.getElementById('ap-sync-countdown');
+  if(el)el.textContent=min+':'+(sec<10?'0':'')+sec;
+
+  if(_syncCounter<=0){
+    _syncCounter=_syncInterval;
+    autoImportAndSync(true);
+    console.log('[EM Suite] Auto-sync ejecutado a las '+new Date().toLocaleTimeString('es-CO'));
+  }
+},1000);
 </script>
 </div>
 
