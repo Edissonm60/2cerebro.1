@@ -2384,8 +2384,7 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
   <div class=&quot;logo&quot;>N</div>
   <button class=&quot;rb on&quot; onclick=&quot;V('dash')&quot; data-tip=&quot;Dashboard&quot;><i class=&quot;fa fa-th-large&quot;></i></button>
   <button class=&quot;rb&quot; onclick=&quot;V('finance')&quot; data-tip=&quot;Finanzas&quot;><i class=&quot;fa fa-chart-pie&quot;></i></button>
-  <button class=&quot;rb&quot; onclick=&quot;V('calendar')&quot; data-tip=&quot;Calendario&quot;><i class=&quot;fa fa-calendar-alt&quot;></i></button>
-  <button class=&quot;rb&quot; onclick=&quot;V('meetings')&quot; data-tip=&quot;Reuniones&quot;><i class=&quot;fa fa-video&quot;></i></button>
+  <button class=&quot;rb&quot; onclick=&quot;window.parent.postMessage({type:'EM_GOTO_TAB',tab:4},'*')&quot; data-tip=&quot;Alertas&quot; style=&quot;color:var(--warn)&quot;><i class=&quot;fa fa-bell&quot;></i></button>
   <button class=&quot;rb&quot; onclick=&quot;V('goals')&quot; data-tip=&quot;Metas & Cursos&quot;><i class=&quot;fa fa-bullseye&quot;></i></button>
   <button class=&quot;rb&quot; onclick=&quot;V('travel')&quot; data-tip=&quot;Viajes&quot;><i class=&quot;fa fa-plane&quot;></i></button>
   <button class=&quot;rb&quot; onclick=&quot;V('kanban')&quot; data-tip=&quot;Proyectos&quot;><i class=&quot;fa fa-columns&quot;></i></button>
@@ -2407,8 +2406,7 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
     <div class=&quot;sl&quot;>Principal</div>
     <div class=&quot;si on&quot; onclick=&quot;V('dash')&quot;><i class=&quot;fa fa-th-large&quot;></i> Dashboard</div>
     <div class=&quot;si&quot; onclick=&quot;V('finance')&quot;><i class=&quot;fa fa-coins&quot;></i> Finanzas</div>
-    <div class=&quot;si&quot; onclick=&quot;V('calendar')&quot;><i class=&quot;fa fa-calendar-alt&quot;></i> Calendario</div>
-    <div class=&quot;si&quot; onclick=&quot;V('meetings')&quot;><i class=&quot;fa fa-video&quot;></i> Reuniones</div>
+    <div class=&quot;si&quot; onclick=&quot;window.parent.postMessage({type:'EM_GOTO_TAB',tab:4},'*')&quot; style=&quot;color:var(--warn)&quot;><i class=&quot;fa fa-bell&quot; style=&quot;color:var(--warn)&quot;></i> Alertas &amp; Recordatorios</div>
     <div class=&quot;sl&quot;>Personal</div>
     <div class=&quot;si&quot; onclick=&quot;V('goals')&quot;><i class=&quot;fa fa-bullseye&quot;></i> Metas & Cursos</div>
     <div class=&quot;si&quot; onclick=&quot;V('travel')&quot;><i class=&quot;fa fa-plane&quot;></i> Viajes & Trips</div>
@@ -5817,6 +5815,11 @@ window.addEventListener("message",function(e){
         }
       },800);
     }
+  }
+
+  // ── NeuroNotes pide ir a un tab ──
+  if(e.data.type==="EM_GOTO_TAB" && e.data.tab){
+    sw(e.data.tab);
   }
 
   // ── Alertas pide actualizar badge ──
