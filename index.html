@@ -2481,17 +2481,13 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
           <div id=&quot;dash-meets&quot;></div>
           <div class=&quot;sect&quot; style=&quot;margin-top:16px&quot;>Metas destacadas</div>
           <div id=&quot;dash-goals&quot;></div>
+          <div class=&quot;sect&quot; style=&quot;margin-top:16px&quot;>🔔 Alertas &amp; Recordatorios</div>
+          <div id=&quot;dash-alerts-list&quot;></div>
         </div>
       </div>
-      <div class=&quot;g2&quot;>
-        <div>
-          <div class=&quot;sect&quot;>Próximo viaje</div>
-          <div id=&quot;dash-trip&quot;></div>
-        </div>
-        <div>
-          <div class=&quot;sect&quot;>Calendario</div>
-          <div class=&quot;cal&quot;><div class=&quot;calh&quot;><h4>Mayo 2026</h4><div class=&quot;caln&quot;><button onclick=&quot;cm(-1)&quot;>‹</button><button onclick=&quot;cm(1)&quot;>›</button></div></div><div class=&quot;calg&quot; id=&quot;cal-main&quot;></div></div>
-        </div>
+      <div style=&quot;margin-bottom:16px&quot;>
+        <div class=&quot;sect&quot;>Próximo viaje</div>
+        <div id=&quot;dash-trip&quot;></div>
       </div>
 
     </div>
@@ -3895,16 +3891,19 @@ function checkAlarms(){
 window.addEventListener('message',function(e){
   if(!e.data||e.data.type!=='EM_SUITE_AP_EVENTS')return;
   window._apAlertas=e.data.events||[];
-  var da=document.getElementById('dash-alerts');
-  if(da)_renderAlertas(window._apAlertas);
+  _renderAlertas(window._apAlertas);
 });
 function _renderAlertas(evs){
   var cnt=document.getElementById('ds-alerts-count');
   var sub=document.getElementById('ds-alerts-sub');
+  var list=document.getElementById('dash-alerts-list');
   var tod=new Date().toISOString().split('T')[0];
   var act=(evs||[]).filter(function(e){return!e.done;});
   var hoy=act.filter(function(e){return e.date===tod;});
   var ven=act.filter(function(e){return e.date<tod;});
+  var prox=act.filter(function(e){return e.date>tod;});
+
+  // Actualizar tarjeta resumen (número + subtítulo)
   if(cnt)cnt.textContent=act.length;
   if(sub){
     if(!act.length)sub.textContent='Sin alertas activas';
@@ -3912,6 +3911,39 @@ function _renderAlertas(evs){
     else if(hoy.length)sub.innerHTML='<span style=\'color:#FFB800\'>'+hoy.length+' para hoy</span>';
     else sub.textContent=act.length+' próximos';
   }
+
+  // Lista detallada debajo de Metas destacadas
+  if(!list)return;
+  var icons={meet:'📅',task:'✅',proj:'📂',deadline:'⚠️',call:'📞'};
+  var prioColor={alta:'#FF4444',media:'#FFB800',baja:'#00FF88'};
+  var ordered=ven.concat(hoy).concat(prox).slice(0,6);
+
+  if(!ordered.length){
+    list.innerHTML='<div style=\'text-align:center;padding:16px;color:#445566;font-size:12px\'>Sin alertas activas 🎯</div>';
+    return;
+  }
+  list.innerHTML=ordered.map(function(ev){
+    var isVen=ev.date<tod, isHoy=ev.date===tod;
+    var lc=isVen?'#FF4444':isHoy?'#FFB800':'#1E2E44';
+    var bg=isVen?'rgba(255,68,68,.05)':isHoy?'rgba(255,184,0,.05)':'transparent';
+    var ico=icons[ev.type]||'🔔';
+    var pc=prioColor[ev.prio]||'#445566';
+    var dl=isVen?'<span style=\'color:#FF4444;font-size:10px\'>Vencido '+ev.date+'</span>':
+            isHoy?'<span style=\'color:#FFB800;font-size:10px\'>Hoy'+(ev.time?' · '+ev.time:'')+'</span>':
+                  '<span style=\'color:#445566;font-size:10px\'>'+ev.date+(ev.time?' · '+ev.time:'')+'</span>';
+    return '<div style=\'display:flex;align-items:center;gap:10px;padding:9px 12px;'+
+      'background:'+bg+';border:1px solid #1E2E44;border-left:3px solid '+lc+';'+
+      'border-radius:8px;margin-bottom:6px\'>'+
+      '<div style=\'font-size:17px;flex-shrink:0\'>'+ico+'</div>'+
+      '<div style=\'flex:1;min-width:0\'>'+
+        '<div style=\'font-size:12px;font-weight:600;color:#E8F0FE;white-space:nowrap;overflow:hidden;text-overflow:ellipsis\'>'+ev.title+'</div>'+
+        '<div style=\'margin-top:2px\'>'+dl+
+          (ev.prio?'<span style=\'margin-left:6px;font-size:10px;color:'+pc+'\'>● '+(ev.prio.charAt(0).toUpperCase()+ev.prio.slice(1))+'</span>':'')+
+          (ev.project?'<span style=\'margin-left:6px;font-size:10px;color:#445566\'>'+ev.project+'</span>':'')+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
 }
 </script>
 </body>
@@ -5347,6 +5379,8 @@ function apSave(){
 
   apRender();
   apCloseForm();
+  // Notificar al dashboard de NeuroNotes en tiempo real
+  window.parent.postMessage({type:'EM_SUITE_AP_EVENTS',events:_events},'*');
 
   // Guardar en Firebase
   fbWrite(ev).then(function(){
@@ -5370,6 +5404,7 @@ function apDone(id){
   if(!ev)return;
   ev.done=true;
   apRender();
+  window.parent.postMessage({type:'EM_SUITE_AP_EVENTS',events:_events},'*');
   fbWrite(ev).then(function(){
     apToast('✓ Completado y actualizado','ok');
   }).catch(function(){apToast('Error al actualizar','err');});
@@ -5399,6 +5434,7 @@ function apDelete(id){
   // Quitar de memoria
   _events=_events.filter(function(e){return e.id!==id;});
   apRender();
+  window.parent.postMessage({type:'EM_SUITE_AP_EVENTS',events:_events},'*');
   apToast('Eliminando...','warn');
   // Borrar de Firebase definitivamente
   fbDelete(id).then(function(){
