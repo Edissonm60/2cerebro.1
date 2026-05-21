@@ -2447,11 +2447,12 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
     <!-- ══ DASHBOARD ══ -->
     <div class=&quot;view on&quot; id=&quot;v-dash&quot;>
       <div class=&quot;pg&quot;><h1 class=&quot;pgh1&quot;>Hola, <em>Edisson</em> ⚡</h1><p class=&quot;pgp&quot; id=&quot;dt-now&quot;>...</p></div>
-      <div class=&quot;g4&quot; style=&quot;margin-bottom:22px&quot;>
+      <div class=&quot;g4&quot; style=&quot;margin-bottom:22px;grid-template-columns:repeat(5,1fr)&quot;>
         <div class=&quot;sc&quot; onclick=&quot;V('finance')&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(0,255,136,.1)&quot;><i class=&quot;fa fa-wallet&quot; style=&quot;color:var(--ok)&quot;></i></div><div class=&quot;scn&quot; style=&quot;color:var(--ok)&quot; id=&quot;ds-balance&quot;>$0</div><div class=&quot;scl&quot;>Balance neto mes</div><div class=&quot;scc up&quot; id=&quot;ds-balance-sub&quot;>Ingresos - Egresos</div></div>
         <div class=&quot;sc&quot; onclick=&quot;V('kanban')&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(0,212,255,.1)&quot;><i class=&quot;fa fa-tasks&quot; style=&quot;color:var(--ac)&quot;></i></div><div class=&quot;scn&quot; id=&quot;ds-tasks&quot;>0</div><div class=&quot;scl&quot;>Tareas activas</div><div class=&quot;scc wa&quot; id=&quot;ds-urgent&quot;></div></div>
         <div class=&quot;sc&quot; onclick=&quot;V('meetings')&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(98,100,167,.1)&quot;><i class=&quot;fa fa-video&quot; style=&quot;color:#8899FF&quot;></i></div><div class=&quot;scn&quot; id=&quot;ds-meets&quot;>0</div><div class=&quot;scl&quot;>Reuniones hoy</div><div class=&quot;scc up&quot;>Teams + Google</div></div>
         <div class=&quot;sc&quot; onclick=&quot;V('goals')&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(255,184,0,.1)&quot;><i class=&quot;fa fa-bullseye&quot; style=&quot;color:var(--warn)&quot;></i></div><div class=&quot;scn&quot; id=&quot;ds-goals&quot;>0</div><div class=&quot;scl&quot;>Metas activas</div><div class=&quot;scc wa&quot; id=&quot;ds-goals-sub&quot;></div></div>
+        <div class=&quot;sc&quot; id=&quot;ds-alerts-card&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(255,184,0,.1)&quot;><i class=&quot;fa fa-bell&quot; style=&quot;color:var(--warn)&quot;></i></div><div class=&quot;scn&quot; style=&quot;color:var(--warn)&quot; id=&quot;ds-alerts-count&quot;>0</div><div class=&quot;scl&quot;>Alertas activas</div><div class=&quot;scc wa&quot; id=&quot;ds-alerts-sub&quot;>Sin alertas</div></div>
       </div>
       <div class=&quot;g2&quot; style=&quot;margin-bottom:22px&quot;>
         <div>
@@ -2492,10 +2493,7 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
           <div class=&quot;cal&quot;><div class=&quot;calh&quot;><h4>Mayo 2026</h4><div class=&quot;caln&quot;><button onclick=&quot;cm(-1)&quot;>‹</button><button onclick=&quot;cm(1)&quot;>›</button></div></div><div class=&quot;calg&quot; id=&quot;cal-main&quot;></div></div>
         </div>
       </div>
-      <div style=&quot;margin-top:16px&quot;>
-        <div class=&quot;sect&quot;>🔔 Alertas &amp; Recordatorios</div>
-        <div id=&quot;dash-alerts&quot; style=&quot;min-height:40px&quot;></div>
-      </div>
+
     </div>
 
     <!-- ══ FINANCE ══ -->
@@ -3901,26 +3899,19 @@ window.addEventListener('message',function(e){
   if(da)_renderAlertas(window._apAlertas);
 });
 function _renderAlertas(evs){
-  var da=document.getElementById('dash-alerts');if(!da)return;
+  var cnt=document.getElementById('ds-alerts-count');
+  var sub=document.getElementById('ds-alerts-sub');
   var tod=new Date().toISOString().split('T')[0];
   var act=(evs||[]).filter(function(e){return!e.done;});
-  act.sort(function(a,b){return a.date>b.date?1:a.date<b.date?-1:0;});
-  var top=act.slice(0,6);
-  if(!top.length){da.innerHTML='<div style=\'text-align:center;padding:20px;color:var(--t3);font-size:12px\'>Sin alertas activas &#128276;</div>';return;}
-  var ic={meet:'&#128197;',task:'&#9989;',proj:'&#128194;',deadline:'&#9888;',call:'&#128222;'};
-  da.innerHTML=top.map(function(ev){
-    var over=ev.date<tod,tod2=ev.date===tod;
-    var col=over?'#FF4444':tod2?'#FFB800':'#00D4FF';
-    var lbl=over?'Vencido':tod2?'Hoy':ev.date;
-    return '<div style=\'display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg3);border:1px solid var(--bd);border-left:3px solid '+col+';border-radius:var(--rs);margin-bottom:6px\'>'+
-      '<span>'+(ic[ev.type]||'&#128276;')+'</span>'+
-      '<div style=\'flex:1;min-width:0\'>'+
-        '<div style=\'font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\'>'+ev.title+'</div>'+
-        '<div style=\'font-size:10px;color:var(--t3)\'>'+lbl+(ev.time?' &#183; '+ev.time:'')+'</div>'+
-      '</div>'+
-      (over||tod2?'<span style=\'font-size:9px;padding:2px 6px;border-radius:4px;background:rgba('+(over?'255,68,68':'255,184,0')+',.15);color:'+col+'\'>'+lbl+'</span>':'')+
-    '</div>';
-  }).join('');
+  var hoy=act.filter(function(e){return e.date===tod;});
+  var ven=act.filter(function(e){return e.date<tod;});
+  if(cnt)cnt.textContent=act.length;
+  if(sub){
+    if(!act.length)sub.textContent='Sin alertas activas';
+    else if(ven.length)sub.innerHTML='<span style=\'color:#FF4444\'>'+ven.length+' vencido'+(ven.length>1?'s':'')+'</span>'+(hoy.length?' &bull; '+hoy.length+' hoy':'');
+    else if(hoy.length)sub.innerHTML='<span style=\'color:#FFB800\'>'+hoy.length+' para hoy</span>';
+    else sub.textContent=act.length+' próximos';
+  }
 }
 </script>
 </body>
