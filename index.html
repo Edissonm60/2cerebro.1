@@ -3902,8 +3902,6 @@ function _renderAlertas(evs){
   var hoy=act.filter(function(e){return e.date===tod;});
   var ven=act.filter(function(e){return e.date<tod;});
   var prox=act.filter(function(e){return e.date>tod;});
-
-  // Actualizar tarjeta resumen (número + subtítulo)
   if(cnt)cnt.textContent=act.length;
   if(sub){
     if(!act.length)sub.textContent='Sin alertas activas';
@@ -3911,19 +3909,16 @@ function _renderAlertas(evs){
     else if(hoy.length)sub.innerHTML='<span style=\'color:#FFB800\'>'+hoy.length+' para hoy</span>';
     else sub.textContent=act.length+' próximos';
   }
-
-  // Lista detallada debajo de Metas destacadas
   if(!list)return;
   var icons={meet:'📅',task:'✅',proj:'📂',deadline:'⚠️',call:'📞'};
   var prioColor={alta:'#FF4444',media:'#FFB800',baja:'#00FF88'};
   var ordered=ven.concat(hoy).concat(prox).slice(0,6);
-
   if(!ordered.length){
     list.innerHTML='<div style=\'text-align:center;padding:16px;color:#445566;font-size:12px\'>Sin alertas activas 🎯</div>';
     return;
   }
   list.innerHTML=ordered.map(function(ev){
-    var isVen=ev.date<tod, isHoy=ev.date===tod;
+    var isVen=ev.date<tod,isHoy=ev.date===tod;
     var lc=isVen?'#FF4444':isHoy?'#FFB800':'#1E2E44';
     var bg=isVen?'rgba(255,68,68,.05)':isHoy?'rgba(255,184,0,.05)':'transparent';
     var ico=icons[ev.type]||'🔔';
@@ -5387,13 +5382,19 @@ function apSave(){
     apToast(_apEdit?'✓ Actualizado en Firebase':'✓ Guardado en Firebase','ok');
     // Notificar por Telegram solo si es nuevo
     if(!_apEdit){
-      var msg='&#128197; *'+apLabel(ev.type)+' agendado*\n\n&#128204; *'+ev.title+'*\n';
-      if(ev.time)msg+='&#128336; '+ev.time+'\n';
-      msg+='&#128198; '+ev.date+'\n';
-      if(ev.project)msg+='&#128194; '+ev.project+'\n';
-      if(ev.link)msg+='&#128279; '+ev.link+'\n';
-      if(ev.recur)msg+='&#8635; Repite: '+apRecurLabel(ev.recur)+'\n';
-      msg+='\n_EM Suite PRO_';
+      var tIco={meet:'📅',task:'✅',proj:'📂',deadline:'⚠️',call:'📞'}[ev.type]||'🔔';
+      var tPrio={alta:'🔴 Alta',media:'🟡 Media',baja:'🟢 Baja'}[ev.prio]||'';
+      var msg=tIco+' *'+apLabel(ev.type)+' agendado*\n';
+      msg+='━━━━━━━━━━━━━━━\n';
+      msg+='📌 *'+ev.title+'*\n';
+      if(ev.date)msg+='📆 Fecha: '+ev.date+'\n';
+      if(ev.time)msg+='🕐 Hora: '+ev.time+'\n';
+      if(ev.project)msg+='📂 Proyecto: '+ev.project+'\n';
+      if(tPrio)msg+='⚡ Prioridad: '+tPrio+'\n';
+      if(ev.link)msg+='🔗 '+ev.link+'\n';
+      if(ev.recur)msg+='🔁 Repite: '+apRecurLabel(ev.recur)+'\n';
+      if(ev.notes)msg+='📝 '+ev.notes+'\n';
+      msg+='━━━━━━━━━━━━━━━\n_EM Suite PRO_';
       tgSendAP(msg);
     }
   }).catch(function(){apToast('Error al guardar en Firebase','err');});
