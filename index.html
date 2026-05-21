@@ -2492,6 +2492,10 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
           <div class=&quot;cal&quot;><div class=&quot;calh&quot;><h4>Mayo 2026</h4><div class=&quot;caln&quot;><button onclick=&quot;cm(-1)&quot;>‹</button><button onclick=&quot;cm(1)&quot;>›</button></div></div><div class=&quot;calg&quot; id=&quot;cal-main&quot;></div></div>
         </div>
       </div>
+      <div style=&quot;margin-top:16px&quot;>
+        <div class=&quot;sect&quot;>🔔 Alertas &amp; Recordatorios</div>
+        <div id=&quot;dash-alerts&quot;></div>
+      </div>
     </div>
 
     <!-- ══ FINANCE ══ -->
@@ -3063,6 +3067,39 @@ function renderDash() {
       dt.innerHTML = `<div class=&quot;trip-card&quot;><div class=&quot;trip-banner&quot; style=&quot;background:rgba(0,212,255,.08);font-size:40px&quot;>${tr.flag||'✈️'}</div><div class=&quot;trip-body&quot;><h4>${tr.dest}</h4><p>${tr.dates||''} • ${tr.why||''}</p><div class=&quot;trip-meta&quot;><span class=&quot;chip cb&quot;>Presupuesto: $${(tr.budget/1000).toFixed(0)}K</span><span class=&quot;chip cg&quot;>Gastado: $${(tr.spent/1000).toFixed(0)}K</span></div></div></div>`;
     } else {
       dt.innerHTML = '<div class=&quot;card&quot; style=&quot;text-align:center;padding:30px;color:var(--t3)&quot;><i class=&quot;fa fa-plane&quot; style=&quot;font-size:28px;display:block;margin-bottom:10px;opacity:.3&quot;></i><p style=&quot;font-size:12px&quot;>Sin viajes — agrega tu próximo destino ✈️</p></div>';
+    }
+  }
+
+  // Alertas & Recordatorios — desde _events (módulo Alertas, misma página)
+  var da = document.getElementById('dash-alerts');
+  if(da) {
+    var _tod = (typeof apToday === 'function') ? apToday() : new Date().toISOString().split('T')[0];
+    var _evList = (typeof _events !== 'undefined') ? _events : [];
+    var _activos = _evList.filter(function(e){ return !e.done; });
+    _activos.sort(function(a,b){
+      if(a.date!==b.date) return a.date>b.date?1:-1;
+      return (a.time||'99:99')>(b.time||'99:99')?1:-1;
+    });
+    var _proximos = _activos.slice(0,5);
+    if(_proximos.length===0){
+      da.innerHTML='<div style=&quot;text-align:center;padding:20px;color:var(--t3);font-size:12px&quot;>Sin alertas — ve a Alertas &amp; Recordatorios y agrega eventos 🔔</div>';
+    } else {
+      var _iconMap={meet:'📅',task:'✅',proj:'📂',deadline:'⚠️',call:'📞'};
+      da.innerHTML=_proximos.map(function(ev){
+        var ico=_iconMap[ev.type]||'🔔';
+        var isOver=ev.date<_tod;
+        var isToday=ev.date===_tod;
+        var dotColor=isOver?'#FF4444':isToday?'#FFB800':'#00D4FF';
+        var dateStr=isOver?'Vencido':isToday?'Hoy':ev.date;
+        return '<div style=&quot;display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg3);border:1px solid var(--bd);border-left:3px solid '+dotColor+';border-radius:var(--rs);margin-bottom:6px&quot;>'+
+          '<span style=&quot;font-size:15px&quot;>'+ico+'</span>'+
+          '<div style=&quot;flex:1;min-width:0&quot;>'+
+            '<div style=&quot;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis&quot;>'+ev.title+'</div>'+
+            '<div style=&quot;font-size:10px;color:var(--t3);margin-top:2px&quot;>'+dateStr+(ev.time?' • '+ev.time:'')+(ev.project?' • '+ev.project:'')+'</div>'+
+          '</div>'+
+          (isOver?'<span style=&quot;font-size:9px;background:rgba(255,68,68,.15);color:#FF4444;border-radius:4px;padding:2px 6px;flex-shrink:0&quot;>Vencido</span>':
+           isToday?'<span style=&quot;font-size:9px;background:rgba(255,184,0,.15);color:#FFB800;border-radius:4px;padding:2px 6px;flex-shrink:0&quot;>Hoy</span>':'')+'</div>';
+      }).join('');
     }
   }
 }
@@ -5106,6 +5143,7 @@ function fbSyncAll(silent){
   if(dot)dot.style.background='#f59e0b';
   fbLoadAll(function(evs){
     apRender();
+    if(typeof renderDash==='function') renderDash();
     autoImportNN();
     if(dot)dot.style.background='#a855f7';
     if(!silent)apToast('✓ Sincronizado: '+evs.length+' eventos','ok');
@@ -5149,6 +5187,7 @@ function fbDelete(id){
 function fbRefresh(silent){
   fbLoadAll(function(evs){
     apRender();
+    if(typeof renderDash==='function') renderDash();
     if(!silent)apToast('✓ Sincronizado: '+evs.length+' eventos','ok');
     // Subir eventos pendientes de sync si los hay
     try{
@@ -5320,6 +5359,7 @@ function apSave(){
   }
 
   apRender();
+  if(typeof renderDash==='function') renderDash();
   apCloseForm();
 
   // Guardar en Firebase
@@ -5344,6 +5384,7 @@ function apDone(id){
   if(!ev)return;
   ev.done=true;
   apRender();
+  if(typeof renderDash==='function') renderDash();
   fbWrite(ev).then(function(){
     apToast('✓ Completado y actualizado','ok');
   }).catch(function(){apToast('Error al actualizar','err');});
@@ -5373,6 +5414,7 @@ function apDelete(id){
   // Quitar de memoria
   _events=_events.filter(function(e){return e.id!==id;});
   apRender();
+  if(typeof renderDash==='function') renderDash();
   apToast('Eliminando...','warn');
   // Borrar de Firebase definitivamente
   fbDelete(id).then(function(){
