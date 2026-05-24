@@ -4411,7 +4411,15 @@ function setMode(m){
   document.getElementById('canvas-wrap').classList.toggle('active', m==='draw');
   document.getElementById('text-wrap').classList.toggle('active', m==='text');
   document.getElementById('checklist-wrap').classList.toggle('active', m==='check');
-  if(m==='draw'){ resizeCanvas(); redrawCanvas(); }
+  if(m==='draw'){
+    // Si el canvas aún tiene tamaño 0 (por haber estado oculto), forzar resize
+    var wrap = document.getElementById('canvas-wrap');
+    if(!dc || dc.width === 0 || dc.height === 0 || wrap.offsetWidth === 0){
+      setTimeout(function(){ resizeCanvas(); redrawCanvas(); if(showGrid)drawGrid(); if(showRuled)drawRuled(); }, 30);
+    } else {
+      resizeCanvas(); redrawCanvas();
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -4878,10 +4886,8 @@ function addSection(){
 function exportChecklist(){
   var items=getCL(); if(items.length===0){ toast('Lista vacía','info'); return; }
   var lines=['# Checklist: '+(getCurPage()||{title:'Nota'}).title,''];
-  items.forEach(function(i){ lines.push(i.isSection?'
-## '+i.text:(i.done?'[x]':'[ ]')+' '+i.text); });
-  var blob=new Blob([lines.join('
-')],{type:'text/plain'});
+  items.forEach(function(i){ lines.push(i.isSection?'## '+i.text:(i.done?'[x]':'[ ]')+' '+i.text); });
+  var blob=new Blob([lines.join('\n')],{type:'text/plain'});
   var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='checklist.txt'; a.click();
   URL.revokeObjectURL(a.href); toast('Checklist exportado','ok');
 }
