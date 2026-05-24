@@ -4155,18 +4155,18 @@ select.tb{font-family:var(--font);}
 <!-- TOOLBAR -->
 <div id=&quot;toolbar&quot;>
   <div class=&quot;tg&quot;>
-    <button class=&quot;tb on&quot; id=&quot;btn-draw-mode&quot; onclick=&quot;setMode(&apos;draw&apos;)&quot;>✏️ Dibujo</button>
-    <button class=&quot;tb&quot; id=&quot;btn-text-mode&quot; onclick=&quot;setMode(&apos;text&apos;)&quot;>📝 Texto</button>
-    <button class=&quot;tb&quot; id=&quot;btn-check-mode&quot; onclick=&quot;setMode(&apos;check&apos;)&quot;>☑️ Checklist</button>
+    <button class=&quot;tb on&quot; id=&quot;btn-draw-mode&quot; onclick=&quot;setMode('draw')&quot;>✏️ Dibujo</button>
+    <button class=&quot;tb&quot; id=&quot;btn-text-mode&quot; onclick=&quot;setMode('text')&quot;>📝 Texto</button>
+    <button class=&quot;tb&quot; id=&quot;btn-check-mode&quot; onclick=&quot;setMode('check')&quot;>☑️ Checklist</button>
   </div>
   <div class=&quot;sep&quot;></div>
 
   <!-- Draw tools -->
   <div class=&quot;tg&quot; id=&quot;draw-tools&quot;>
-    <button class=&quot;tb on&quot; id=&quot;btn-pen&quot; onclick=&quot;setTool(&apos;pen&apos;)&quot; title=&quot;Lápiz fino con presión&quot;>✏️ Lápiz</button>
-    <button class=&quot;tb&quot; id=&quot;btn-marker&quot; onclick=&quot;setTool(&apos;marker&apos;)&quot; title=&quot;Resaltador elegante&quot;>🖊️ Resaltar</button>
-    <button class=&quot;tb&quot; id=&quot;btn-eraser&quot; onclick=&quot;setTool(&apos;eraser&apos;)&quot; title=&quot;Borrador&quot;>⬜ Borrar</button>
-    <button class=&quot;tb cya&quot; id=&quot;btn-space&quot; onclick=&quot;setTool(&apos;space&apos;)&quot; title=&quot;Separar palabras: toca entre letras&quot;>| Separar</button>
+    <button class=&quot;tb on&quot; id=&quot;btn-pen&quot; onclick=&quot;setTool('pen')&quot; title=&quot;Lápiz fino con presión&quot;>✏️ Lápiz</button>
+    <button class=&quot;tb&quot; id=&quot;btn-marker&quot; onclick=&quot;setTool('marker')&quot; title=&quot;Resaltador elegante&quot;>🖊️ Resaltar</button>
+    <button class=&quot;tb&quot; id=&quot;btn-eraser&quot; onclick=&quot;setTool('eraser')&quot; title=&quot;Borrador&quot;>⬜ Borrar</button>
+    <button class=&quot;tb cya&quot; id=&quot;btn-space&quot; onclick=&quot;setTool('space')&quot; title=&quot;Separar palabras: toca entre letras&quot;>| Separar</button>
     <div class=&quot;sep&quot;></div>
     <div id=&quot;pen-size-wrap&quot;>
       <label>Grosor:</label>
@@ -4199,11 +4199,11 @@ select.tb{font-family:var(--font);}
   <!-- Text tools -->
   <div class=&quot;tg&quot; id=&quot;text-tools&quot; style=&quot;display:none;&quot;>
     <select class=&quot;tb&quot; id=&quot;font-sel&quot; onchange=&quot;applyFont(this.value)&quot;>
-      <option value=&quot;&apos;IBM Plex Sans&apos;,sans-serif&quot;>IBM Plex Sans</option>
-      <option value=&quot;&apos;Caveat&apos;,cursive&quot;>Caveat (Escritura)</option>
-      <option value=&quot;&apos;Lato&apos;,sans-serif&quot;>Lato</option>
-      <option value=&quot;&apos;Merriweather&apos;,serif&quot;>Merriweather</option>
-      <option value=&quot;&apos;IBM Plex Mono&apos;,monospace&quot;>IBM Plex Mono</option>
+      <option value=&quot;'IBM Plex Sans',sans-serif&quot;>IBM Plex Sans</option>
+      <option value=&quot;'Caveat',cursive&quot;>Caveat (Escritura)</option>
+      <option value=&quot;'Lato',sans-serif&quot;>Lato</option>
+      <option value=&quot;'Merriweather',serif&quot;>Merriweather</option>
+      <option value=&quot;'IBM Plex Mono',monospace&quot;>IBM Plex Mono</option>
     </select>
     <select class=&quot;tb&quot; id=&quot;fsize-sel&quot; onchange=&quot;applySize(this.value)&quot;>
       <option value=&quot;13px&quot;>Pequeño</option>
@@ -4214,12 +4214,12 @@ select.tb{font-family:var(--font);}
       <option value=&quot;36px&quot;>Título 1</option>
     </select>
     <div class=&quot;sep&quot;></div>
-    <button class=&quot;tb&quot; onclick=&quot;execFmt(&apos;bold&apos;)&quot;><b>N</b></button>
-    <button class=&quot;tb&quot; onclick=&quot;execFmt(&apos;italic&apos;)&quot;><i>K</i></button>
-    <button class=&quot;tb&quot; onclick=&quot;execFmt(&apos;underline&apos;)&quot;><u>S</u></button>
+    <button class=&quot;tb&quot; onclick=&quot;execFmt('bold')&quot;><b>N</b></button>
+    <button class=&quot;tb&quot; onclick=&quot;execFmt('italic')&quot;><i>K</i></button>
+    <button class=&quot;tb&quot; onclick=&quot;execFmt('underline')&quot;><u>S</u></button>
     <div class=&quot;sep&quot;></div>
-    <button class=&quot;tb&quot; onclick=&quot;execFmt(&apos;insertUnorderedList&apos;)&quot;>• Lista</button>
-    <button class=&quot;tb&quot; onclick=&quot;execFmt(&apos;insertOrderedList&apos;)&quot;>1. Numerada</button>
+    <button class=&quot;tb&quot; onclick=&quot;execFmt('insertUnorderedList')&quot;>• Lista</button>
+    <button class=&quot;tb&quot; onclick=&quot;execFmt('insertOrderedList')&quot;>1. Numerada</button>
     <div class=&quot;sep&quot;></div>
     <div id=&quot;color-strip-text&quot; style=&quot;display:flex;gap:5px;align-items:center;flex-shrink:0;&quot;>
       <div class=&quot;color-btn on&quot; style=&quot;background:#e0eaf5&quot; data-color=&quot;#e0eaf5&quot; onclick=&quot;applyTextColor(this)&quot;></div>
@@ -4255,9 +4255,9 @@ select.tb{font-family:var(--font);}
       <span id=&quot;page-date&quot;></span>
     </div>
     <div id=&quot;mode-tabs&quot;>
-      <button class=&quot;mode-tab on&quot; id=&quot;mt-draw&quot; onclick=&quot;setMode(&apos;draw&apos;)&quot;>✏️ Dibujo</button>
-      <button class=&quot;mode-tab&quot; id=&quot;mt-text&quot; onclick=&quot;setMode(&apos;text&apos;)&quot;>📝 Texto enriquecido</button>
-      <button class=&quot;mode-tab&quot; id=&quot;mt-check&quot; onclick=&quot;setMode(&apos;check&apos;)&quot;>☑️ Checklist</button>
+      <button class=&quot;mode-tab on&quot; id=&quot;mt-draw&quot; onclick=&quot;setMode('draw')&quot;>✏️ Dibujo</button>
+      <button class=&quot;mode-tab&quot; id=&quot;mt-text&quot; onclick=&quot;setMode('text')&quot;>📝 Texto enriquecido</button>
+      <button class=&quot;mode-tab&quot; id=&quot;mt-check&quot; onclick=&quot;setMode('check')&quot;>☑️ Checklist</button>
     </div>
     <div id=&quot;canvas-wrap&quot; class=&quot;active&quot;>
       <canvas id=&quot;ruled-canvas&quot;></canvas>
@@ -4298,10 +4298,10 @@ select.tb{font-family:var(--font);}
 // ═══════════════════════════════════════════════════════
 var pages = [];
 var curPageId = null;
-var curMode = &apos;draw&apos;;
+var curMode = 'draw';
 var drawing = false;
-var tool = &apos;pen&apos;;
-var penColor = &apos;#e0eaf5&apos;;
+var tool = 'pen';
+var penColor = '#e0eaf5';
 var penSize = 1.5;
 var smoothing = 4; // 0=desactivado, 1-8=nivel suavizado
 var strokes = [];
@@ -4314,32 +4314,34 @@ var DPR = window.devicePixelRatio || 1; // retina
 // ═══════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════
-window.addEventListener(&apos;load&apos;, function(){
+window.addEventListener('load', function(){
   loadData();
   if(pages.length === 0) addPage();
   else switchPage(pages[0].id);
   setupCanvas();
-  setMode(&apos;draw&apos;);
+  setMode('draw');
   updateDate();
   updatePreview();
   setInterval(updateDate, 60000);
+  // Activar pauta por defecto
+  document.getElementById('btn-ruled').classList.add('on');
 });
 
 function updateDate(){
   var d = new Date();
-  document.getElementById(&apos;page-date&apos;).textContent =
-    d.toLocaleDateString(&apos;es-CO&apos;,{weekday:&apos;long&apos;,day:&apos;numeric&apos;,month:&apos;long&apos;});
+  document.getElementById('page-date').textContent =
+    d.toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'});
 }
 
 // ═══════════════════════════════════════════════════════
 // PERSISTENCIA
 // ═══════════════════════════════════════════════════════
 function saveData(){
-  try{ localStorage.setItem(&apos;nn_pages&apos;, JSON.stringify(pages)); }catch(e){}
+  try{ localStorage.setItem('nn_pages', JSON.stringify(pages)); }catch(e){}
 }
 function loadData(){
   try{
-    var d = localStorage.getItem(&apos;nn_pages&apos;);
+    var d = localStorage.getItem('nn_pages');
     if(d) pages = JSON.parse(d);
   }catch(e){ pages=[]; }
 }
@@ -4348,106 +4350,106 @@ function loadData(){
 // PÁGINAS
 // ═══════════════════════════════════════════════════════
 function addPage(){
-  var id = &apos;p&apos;+Date.now();
-  pages.push({ id:id, title:&apos;Página &apos;+(pages.length+1), strokes:[], text:&apos;&apos;, checklist:[], created:new Date().toISOString() });
+  var id = 'p'+Date.now();
+  pages.push({ id:id, title:'Página '+(pages.length+1), strokes:[], text:'', checklist:[], created:new Date().toISOString() });
   saveData(); renderPagesList(); switchPage(id);
 }
 function renderPagesList(){
-  var list = document.getElementById(&apos;pages-list&apos;);
-  list.innerHTML = &apos;&apos;;
+  var list = document.getElementById('pages-list');
+  list.innerHTML = '';
   pages.forEach(function(p){
-    var el = document.createElement(&apos;div&apos;);
-    el.className = &apos;page-item&apos; + (p.id===curPageId?&apos; active&apos;:&apos;&apos;);
-    el.innerHTML = &apos;<span class=&quot;page-name&quot;>&apos;+escHtml(p.title||&apos;Sin título&apos;)+&apos;</span>&apos;
-      +&apos;<span class=&quot;page-del&quot; onclick=&quot;delPage(event,\&apos;&apos;+p.id+&apos;\&apos;)&quot;>✕</span>&apos;;
-    el.onclick = function(e){ if(!e.target.classList.contains(&apos;page-del&apos;)) switchPage(p.id); };
+    var el = document.createElement('div');
+    el.className = 'page-item' + (p.id===curPageId?' active':'');
+    el.innerHTML = '<span class=&quot;page-name&quot;>'+escHtml(p.title||'Sin título')+'</span>'
+      +'<span class=&quot;page-del&quot; onclick=&quot;delPage(event,\''+p.id+'\')&quot;>✕</span>';
+    el.onclick = function(e){ if(!e.target.classList.contains('page-del')) switchPage(p.id); };
     list.appendChild(el);
   });
 }
 function switchPage(id){
   saveCurPage(); curPageId = id;
   var p = getCurPage(); if(!p) return;
-  document.getElementById(&apos;page-title&apos;).value = p.title||&apos;&apos;;
+  document.getElementById('page-title').value = p.title||'';
   strokes = p.strokes ? p.strokes.slice() : [];
   redoStack = [];
   redrawCanvas();
-  document.getElementById(&apos;rich-editor&apos;).innerHTML = p.text||&apos;&apos;;
+  document.getElementById('rich-editor').innerHTML = p.text||'';
   renderChecklist();
   renderPagesList();
 }
 function getCurPage(){ return pages.find(function(p){ return p.id===curPageId; }); }
 function saveCurPage(){
   var p = getCurPage(); if(!p) return;
-  p.title = document.getElementById(&apos;page-title&apos;).value||&apos;Sin título&apos;;
+  p.title = document.getElementById('page-title').value||'Sin título';
   p.strokes = strokes.slice();
-  p.text = document.getElementById(&apos;rich-editor&apos;).innerHTML;
+  p.text = document.getElementById('rich-editor').innerHTML;
   saveData(); renderPagesList();
 }
 function delPage(e,id){
   e.stopPropagation();
-  if(pages.length===1){ toast(&apos;Necesitas al menos una página&apos;,&apos;err&apos;); return; }
+  if(pages.length===1){ toast('Necesitas al menos una página','err'); return; }
   pages = pages.filter(function(p){ return p.id!==id; });
   if(curPageId===id){ curPageId=pages[0].id; switchPage(curPageId); }
   saveData(); renderPagesList();
 }
-function escHtml(t){ return t.replace(/&amp;/g,&apos;&amp;amp;&apos;).replace(/</g,&apos;&amp;lt;&apos;).replace(/>/g,&apos;&amp;gt;&apos;); }
+function escHtml(t){ return t.replace(/&amp;/g,'&amp;amp;').replace(/</g,'<').replace(/>/g,'>'); }
 
 // ═══════════════════════════════════════════════════════
 // MODOS
 // ═══════════════════════════════════════════════════════
 function setMode(m){
   curMode = m;
-  [&apos;draw&apos;,&apos;text&apos;,&apos;check&apos;].forEach(function(x){
-    document.getElementById(&apos;btn-&apos;+x+&apos;-mode&apos;).classList.toggle(&apos;on&apos;, x===m);
+  ['draw','text','check'].forEach(function(x){
+    document.getElementById('btn-'+x+'-mode').classList.toggle('on', x===m);
   });
-  document.getElementById(&apos;mt-draw&apos;).classList.toggle(&apos;on&apos;, m===&apos;draw&apos;);
-  document.getElementById(&apos;mt-text&apos;).classList.toggle(&apos;on&apos;, m===&apos;text&apos;);
-  document.getElementById(&apos;mt-check&apos;).classList.toggle(&apos;on&apos;, m===&apos;check&apos;);
-  document.getElementById(&apos;draw-tools&apos;).style.display   = m===&apos;draw&apos;  ? &apos;&apos; : &apos;none&apos;;
-  document.getElementById(&apos;text-tools&apos;).style.display   = m===&apos;text&apos;  ? &apos;&apos; : &apos;none&apos;;
-  document.getElementById(&apos;check-tools&apos;).style.display  = m===&apos;check&apos; ? &apos;&apos; : &apos;none&apos;;
-  document.getElementById(&apos;canvas-wrap&apos;).classList.toggle(&apos;active&apos;, m===&apos;draw&apos;);
-  document.getElementById(&apos;text-wrap&apos;).classList.toggle(&apos;active&apos;, m===&apos;text&apos;);
-  document.getElementById(&apos;checklist-wrap&apos;).classList.toggle(&apos;active&apos;, m===&apos;check&apos;);
-  if(m===&apos;draw&apos;){ resizeCanvas(); redrawCanvas(); }
+  document.getElementById('mt-draw').classList.toggle('on', m==='draw');
+  document.getElementById('mt-text').classList.toggle('on', m==='text');
+  document.getElementById('mt-check').classList.toggle('on', m==='check');
+  document.getElementById('draw-tools').style.display   = m==='draw'  ? '' : 'none';
+  document.getElementById('text-tools').style.display   = m==='text'  ? '' : 'none';
+  document.getElementById('check-tools').style.display  = m==='check' ? '' : 'none';
+  document.getElementById('canvas-wrap').classList.toggle('active', m==='draw');
+  document.getElementById('text-wrap').classList.toggle('active', m==='text');
+  document.getElementById('checklist-wrap').classList.toggle('active', m==='check');
+  if(m==='draw'){ resizeCanvas(); redrawCanvas(); }
 }
 
 // ═══════════════════════════════════════════════════════
-// CANVAS & DIBUJO — MOTOR DE ALTA PRECISIÓN
+// CANVAS &amp; DIBUJO — MOTOR DE ALTA PRECISIÓN
 // ═══════════════════════════════════════════════════════
 var dc, dctx, gc, gctx, rc, rctx;
 
 function setupCanvas(){
-  dc = document.getElementById(&apos;draw-canvas&apos;);
-  dctx = dc.getContext(&apos;2d&apos;);
-  gc = document.getElementById(&apos;grid-canvas&apos;);
-  gctx = gc.getContext(&apos;2d&apos;);
-  rc = document.getElementById(&apos;ruled-canvas&apos;);
-  rctx = rc.getContext(&apos;2d&apos;);
+  dc = document.getElementById('draw-canvas');
+  dctx = dc.getContext('2d');
+  gc = document.getElementById('grid-canvas');
+  gctx = gc.getContext('2d');
+  rc = document.getElementById('ruled-canvas');
+  rctx = rc.getContext('2d');
 
-  window.addEventListener(&apos;resize&apos;, resizeCanvas);
+  window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
 
   // Pointer events para lápiz óptico con presión real
-  dc.addEventListener(&apos;pointerdown&apos;, onDown, {passive:false});
-  dc.addEventListener(&apos;pointermove&apos;, onMove, {passive:false});
-  dc.addEventListener(&apos;pointerup&apos;,   onUp,   {passive:false});
-  dc.addEventListener(&apos;pointercancel&apos;,onUp,   {passive:false});
-  dc.addEventListener(&apos;pointerleave&apos;, onUp,   {passive:false});
+  dc.addEventListener('pointerdown', onDown, {passive:false});
+  dc.addEventListener('pointermove', onMove, {passive:false});
+  dc.addEventListener('pointerup',   onUp,   {passive:false});
+  dc.addEventListener('pointercancel',onUp,   {passive:false});
+  dc.addEventListener('pointerleave', onUp,   {passive:false});
 
   // Evitar scroll en tablet con lápiz
-  dc.addEventListener(&apos;touchstart&apos;, function(e){ e.preventDefault(); }, {passive:false});
+  dc.addEventListener('touchstart', function(e){ e.preventDefault(); }, {passive:false});
 }
 
 function resizeCanvas(){
-  var wrap = document.getElementById(&apos;canvas-wrap&apos;);
+  var wrap = document.getElementById('canvas-wrap');
   var w = wrap.offsetWidth, h = wrap.offsetHeight;
   // Escalar por DPR para nitidez en pantallas retina/alta densidad
   [dc,gc,rc].forEach(function(c){
     c.width  = Math.floor(w * DPR);
     c.height = Math.floor(h * DPR);
-    c.style.width  = w + &apos;px&apos;;
-    c.style.height = h + &apos;px&apos;;
+    c.style.width  = w + 'px';
+    c.style.height = h + 'px';
   });
   // Escalar contextos
   [dctx, gctx, rctx].forEach(function(ctx){
@@ -4474,17 +4476,17 @@ function lerp(a,b,t){ return a + (b-a)*t; }
 // ── Inicio del trazo ──
 function onDown(e){
   e.preventDefault();
-  if(tool === &apos;space&apos;){
+  if(tool === 'space'){
     insertSpace(e); return;
   }
   drawing = true;
   dc.setPointerCapture(e.pointerId);
   var pt = getPos(e);
   lastPoints = [pt, pt];
-  if(tool===&apos;eraser&apos;){
-    dctx.globalCompositeOperation=&apos;destination-out&apos;;
+  if(tool==='eraser'){
+    dctx.globalCompositeOperation='destination-out';
   } else {
-    dctx.globalCompositeOperation=&apos;source-over&apos;;
+    dctx.globalCompositeOperation='source-over';
   }
   strokes.push({ tool:tool, color:penColor, size:penSize, pts:[pt] });
   redoStack=[];
@@ -4505,29 +4507,29 @@ function onMove(e){
 
   // Tamaño dinámico según presión del lápiz
   var pressure = pt.p > 0 ? pt.p : 0.5;
-  var baseSize = (tool===&apos;eraser&apos;) ? penSize * 6
-               : (tool===&apos;marker&apos;)  ? penSize * 2.5
+  var baseSize = (tool==='eraser') ? penSize * 6
+               : (tool==='marker')  ? penSize * 2.5
                : penSize;
   var dynSize = baseSize * (0.4 + pressure * 1.2); // varía 0.4x a 1.6x según presión
 
   dctx.save();
-  if(tool===&apos;eraser&apos;){
-    dctx.globalCompositeOperation = &apos;destination-out&apos;;
+  if(tool==='eraser'){
+    dctx.globalCompositeOperation = 'destination-out';
     dctx.globalAlpha = 1;
-    dctx.strokeStyle = &apos;rgba(0,0,0,1)&apos;;
-  } else if(tool===&apos;marker&apos;){
+    dctx.strokeStyle = 'rgba(0,0,0,1)';
+  } else if(tool==='marker'){
     // Resaltador elegante: semitransparente con bordes suaves
-    dctx.globalCompositeOperation = &apos;source-over&apos;;
+    dctx.globalCompositeOperation = 'source-over';
     dctx.globalAlpha = 0.28;
     dctx.strokeStyle = penColor;
-    dctx.lineCap = &apos;square&apos;;
-    dctx.lineJoin = &apos;bevel&apos;;
+    dctx.lineCap = 'square';
+    dctx.lineJoin = 'bevel';
   } else {
-    dctx.globalCompositeOperation = &apos;source-over&apos;;
+    dctx.globalCompositeOperation = 'source-over';
     dctx.globalAlpha = 1;
     dctx.strokeStyle = penColor;
-    dctx.lineCap = &apos;round&apos;;
-    dctx.lineJoin = &apos;round&apos;;
+    dctx.lineCap = 'round';
+    dctx.lineJoin = 'round';
   }
 
   dctx.lineWidth = dynSize;
@@ -4555,7 +4557,7 @@ function onUp(e){
   if(!drawing) return;
   drawing = false;
   lastPoints = [];
-  dctx.globalCompositeOperation=&apos;source-over&apos;;
+  dctx.globalCompositeOperation='source-over';
   dctx.globalAlpha=1;
   saveCurPage();
 }
@@ -4567,30 +4569,30 @@ function redrawCanvas(){
   strokes.forEach(function(s){
     if(!s.pts || s.pts.length < 1) return;
     dctx.save();
-    if(s.tool===&apos;eraser&apos;){
-      dctx.globalCompositeOperation=&apos;destination-out&apos;;
+    if(s.tool==='eraser'){
+      dctx.globalCompositeOperation='destination-out';
       dctx.globalAlpha=1;
-      dctx.strokeStyle=&apos;rgba(0,0,0,1)&apos;;
-      dctx.lineCap=&apos;round&apos;;dctx.lineJoin=&apos;round&apos;;
+      dctx.strokeStyle='rgba(0,0,0,1)';
+      dctx.lineCap='round';dctx.lineJoin='round';
       dctx.lineWidth=(s.size||2)*6;
-    } else if(s.tool===&apos;marker&apos;){
-      dctx.globalCompositeOperation=&apos;source-over&apos;;
+    } else if(s.tool==='marker'){
+      dctx.globalCompositeOperation='source-over';
       dctx.globalAlpha=0.28;
-      dctx.strokeStyle=s.color||&apos;#f59e0b&apos;;
-      dctx.lineCap=&apos;square&apos;;dctx.lineJoin=&apos;bevel&apos;;
+      dctx.strokeStyle=s.color||'#f59e0b';
+      dctx.lineCap='square';dctx.lineJoin='bevel';
       dctx.lineWidth=(s.size||2)*2.5;
     } else {
-      dctx.globalCompositeOperation=&apos;source-over&apos;;
+      dctx.globalCompositeOperation='source-over';
       dctx.globalAlpha=1;
-      dctx.strokeStyle=s.color||&apos;#e0eaf5&apos;;
-      dctx.lineCap=&apos;round&apos;;dctx.lineJoin=&apos;round&apos;;
+      dctx.strokeStyle=s.color||'#e0eaf5';
+      dctx.lineCap='round';dctx.lineJoin='round';
       dctx.lineWidth=s.size||1.5;
     }
     if(s.pts.length === 1){
       // Punto solo: dibujar circulito
       dctx.beginPath();
       dctx.arc(s.pts[0].x, s.pts[0].y, (s.size||1.5)/2, 0, Math.PI*2);
-      dctx.fillStyle = s.color||&apos;#e0eaf5&apos;;
+      dctx.fillStyle = s.color||'#e0eaf5';
       dctx.fill();
     } else {
       dctx.beginPath();
@@ -4625,69 +4627,69 @@ function insertSpace(e){
       moved++;
     }
   });
-  if(moved>0){ redrawCanvas(); saveCurPage(); toast(&apos;Espacio insertado (&apos;+moved+&apos; trazos)&apos;,&apos;ok&apos;); }
-  else toast(&apos;Haz clic entre palabras para separar&apos;,&apos;info&apos;);
+  if(moved>0){ redrawCanvas(); saveCurPage(); toast('Espacio insertado ('+moved+' trazos)','ok'); }
+  else toast('Haz clic entre palabras para separar','info');
 }
 
 // ── Deshacer / Rehacer ──
 function undoStroke(){
-  if(strokes.length===0){ toast(&apos;Nada que deshacer&apos;,&apos;info&apos;); return; }
+  if(strokes.length===0){ toast('Nada que deshacer','info'); return; }
   redoStack.push(strokes.pop());
   redrawCanvas(); saveCurPage();
 }
 function redoStroke(){
-  if(redoStack.length===0){ toast(&apos;Nada que rehacer&apos;,&apos;info&apos;); return; }
+  if(redoStack.length===0){ toast('Nada que rehacer','info'); return; }
   strokes.push(redoStack.pop());
   redrawCanvas(); saveCurPage();
 }
 
 function clearCanvas(){
-  if(!confirm(&apos;¿Limpiar toda la página de dibujo?&apos;)) return;
+  if(!confirm('¿Limpiar toda la página de dibujo?')) return;
   strokes=[];redoStack=[];
   dctx.clearRect(0,0,dc.width/DPR,dc.height/DPR);
-  saveCurPage(); toast(&apos;Lienzo limpiado&apos;,&apos;ok&apos;);
+  saveCurPage(); toast('Lienzo limpiado','ok');
 }
 
 // ── Herramientas ──
 function setTool(t){
   tool=t;
-  [&apos;pen&apos;,&apos;marker&apos;,&apos;eraser&apos;,&apos;space&apos;].forEach(function(x){
-    var el=document.getElementById(&apos;btn-&apos;+x); if(el) el.classList.toggle(&apos;on&apos;,x===t);
+  ['pen','marker','eraser','space'].forEach(function(x){
+    var el=document.getElementById('btn-'+x); if(el) el.classList.toggle('on',x===t);
   });
-  dc.style.cursor = t===&apos;eraser&apos; ? &apos;cell&apos; : t===&apos;space&apos; ? &apos;col-resize&apos; : &apos;crosshair&apos;;
+  dc.style.cursor = t==='eraser' ? 'cell' : t==='space' ? 'col-resize' : 'crosshair';
 }
 
 function setColor(el){
-  document.querySelectorAll(&apos;#color-strip .color-btn&apos;).forEach(function(b){ b.classList.remove(&apos;on&apos;); });
-  el.classList.add(&apos;on&apos;);
+  document.querySelectorAll('#color-strip .color-btn').forEach(function(b){ b.classList.remove('on'); });
+  el.classList.add('on');
   penColor = el.dataset.color;
-  if(tool===&apos;eraser&apos;||tool===&apos;space&apos;) setTool(&apos;pen&apos;);
+  if(tool==='eraser'||tool==='space') setTool('pen');
   updatePreview();
 }
 
 function updatePenSize(v){
   penSize = parseFloat(v);
-  document.getElementById(&apos;size-lbl&apos;).textContent = v;
+  document.getElementById('size-lbl').textContent = v;
   updatePreview();
 }
 
 // ── Vista previa del grosor en tiempo real ──
 function updatePreview(){
-  var cv = document.getElementById(&apos;preview-cv&apos;);
+  var cv = document.getElementById('preview-cv');
   if(!cv) return;
-  var ctx = cv.getContext(&apos;2d&apos;);
+  var ctx = cv.getContext('2d');
   ctx.clearRect(0,0,40,40);
   ctx.beginPath();
-  if(tool===&apos;marker&apos;){
+  if(tool==='marker'){
     ctx.globalAlpha=0.35;
     ctx.strokeStyle=penColor;
     ctx.lineWidth=penSize*2.5;
-    ctx.lineCap=&apos;square&apos;;
+    ctx.lineCap='square';
   } else {
     ctx.globalAlpha=1;
     ctx.strokeStyle=penColor;
     ctx.lineWidth=penSize;
-    ctx.lineCap=&apos;round&apos;;
+    ctx.lineCap='round';
   }
   ctx.moveTo(8,20); ctx.lineTo(32,20);
   ctx.stroke();
@@ -4697,13 +4699,13 @@ function updatePreview(){
 // ── Cuadrícula ──
 function toggleGrid(){
   showGrid=!showGrid;
-  document.getElementById(&apos;btn-grid&apos;).classList.toggle(&apos;on&apos;,showGrid);
+  document.getElementById('btn-grid').classList.toggle('on',showGrid);
   if(showGrid) drawGrid(); else gctx.clearRect(0,0,gc.width/DPR,gc.height/DPR);
 }
 function drawGrid(){
   var w=gc.width/DPR, h=gc.height/DPR;
   gctx.clearRect(0,0,w,h);
-  gctx.strokeStyle=&apos;rgba(255,255,255,0.04)&apos;;
+  gctx.strokeStyle='rgba(255,255,255,0.04)';
   gctx.lineWidth=0.5;
   var step=24;
   for(var x=0;x<w;x+=step){ gctx.beginPath();gctx.moveTo(x,0);gctx.lineTo(x,h);gctx.stroke(); }
@@ -4713,61 +4715,61 @@ function drawGrid(){
 // ── Líneas de pauta (ruled) para escritura elegante ──
 function toggleRuled(){
   showRuled=!showRuled;
-  document.getElementById(&apos;btn-ruled&apos;).classList.toggle(&apos;on&apos;,showRuled);
+  document.getElementById('btn-ruled').classList.toggle('on',showRuled);
   if(showRuled) drawRuled(); else rctx.clearRect(0,0,rc.width/DPR,rc.height/DPR);
 }
 function drawRuled(){
   var w=rc.width/DPR, h=rc.height/DPR;
   rctx.clearRect(0,0,w,h);
   var lineH = 36; // espacio entre líneas — cómodo para escritura
-  rctx.strokeStyle=&apos;rgba(0,212,255,0.12)&apos;;
+  rctx.strokeStyle='rgba(0,212,255,0.12)';
   rctx.lineWidth=0.8;
   for(var y=lineH; y<h; y+=lineH){
     rctx.beginPath(); rctx.moveTo(0,y); rctx.lineTo(w,y); rctx.stroke();
   }
   // Margen izquierdo
-  rctx.strokeStyle=&apos;rgba(168,85,247,0.18)&apos;;
+  rctx.strokeStyle='rgba(168,85,247,0.18)';
   rctx.lineWidth=1.2;
   rctx.beginPath(); rctx.moveTo(48,0); rctx.lineTo(48,h); rctx.stroke();
 }
 
 function saveCanvasPNG(){
-  var link = document.createElement(&apos;a&apos;);
-  link.download = (getCurPage()||{title:&apos;nota&apos;}).title + &apos;.png&apos;;
-  link.href = dc.toDataURL(&apos;image/png&apos;);
+  var link = document.createElement('a');
+  link.download = (getCurPage()||{title:'nota'}).title + '.png';
+  link.href = dc.toDataURL('image/png');
   link.click();
-  toast(&apos;PNG descargado&apos;,&apos;ok&apos;);
+  toast('PNG descargado','ok');
 }
 
 // ═══════════════════════════════════════════════════════
 // EDITOR DE TEXTO
 // ═══════════════════════════════════════════════════════
 function execFmt(cmd, val){
-  document.getElementById(&apos;rich-editor&apos;).focus();
+  document.getElementById('rich-editor').focus();
   document.execCommand(cmd, false, val||null);
   saveCurPage();
 }
 function applyFont(font){
-  execFmt(&apos;fontName&apos;, font);
-  document.getElementById(&apos;rich-editor&apos;).style.fontFamily=font;
+  execFmt('fontName', font);
+  document.getElementById('rich-editor').style.fontFamily=font;
 }
 function applySize(sz){
-  document.getElementById(&apos;rich-editor&apos;).focus();
+  document.getElementById('rich-editor').focus();
   var sel = window.getSelection();
   if(sel&amp;&amp;sel.rangeCount){
     var range = sel.getRangeAt(0);
-    var span = document.createElement(&apos;span&apos;);
+    var span = document.createElement('span');
     span.style.fontSize=sz;
     try{ range.surroundContents(span); }catch(e){}
   }
   saveCurPage();
 }
 function applyTextColor(el){
-  document.querySelectorAll(&apos;#color-strip-text .color-btn&apos;).forEach(function(b){ b.classList.remove(&apos;on&apos;); });
-  el.classList.add(&apos;on&apos;);
-  execFmt(&apos;foreColor&apos;, el.dataset.color);
+  document.querySelectorAll('#color-strip-text .color-btn').forEach(function(b){ b.classList.remove('on'); });
+  el.classList.add('on');
+  execFmt('foreColor', el.dataset.color);
 }
-function exportTextPDF(){ saveCurPage(); toast(&apos;Contenido guardado&apos;,&apos;ok&apos;); }
+function exportTextPDF(){ saveCurPage(); toast('Contenido guardado','ok'); }
 
 // ═══════════════════════════════════════════════════════
 // CHECKLIST — mejorado con arrastrar y soltar visual
@@ -4776,58 +4778,58 @@ function getCL(){ var p=getCurPage(); return p?(p.checklist||(p.checklist=[])):[
 function saveCL(){ saveData(); updateProgress(); }
 
 function renderChecklist(){
-  var items=getCL(), el=document.getElementById(&apos;checklist-items&apos;);
-  el.innerHTML=&apos;&apos;;
+  var items=getCL(), el=document.getElementById('checklist-items');
+  el.innerHTML='';
   var pending=items.filter(function(i){ return !i.done; });
   var done=items.filter(function(i){ return i.done; });
   if(pending.length>0){
-    var h=document.createElement(&apos;div&apos;); h.className=&apos;cl-section-hdr&apos;; h.textContent=&apos;Pendientes (&apos;+pending.length+&apos;)&apos;;
+    var h=document.createElement('div'); h.className='cl-section-hdr'; h.textContent='Pendientes ('+pending.length+')';
     el.appendChild(h); pending.forEach(function(item){ el.appendChild(makeCLItem(item)); });
   }
   if(done.length>0){
-    var h2=document.createElement(&apos;div&apos;); h2.className=&apos;cl-section-hdr&apos;; h2.textContent=&apos;Completados (&apos;+done.length+&apos;)&apos;;
+    var h2=document.createElement('div'); h2.className='cl-section-hdr'; h2.textContent='Completados ('+done.length+')';
     el.appendChild(h2); done.forEach(function(item){ el.appendChild(makeCLItem(item)); });
   }
   if(items.length===0){
-    el.innerHTML=&apos;<div style=&quot;text-align:center;color:var(--txt3);padding:40px 20px;font-size:13px;&quot;>No hay tareas todavía.<br>Agrega una tarea abajo ↓</div>&apos;;
+    el.innerHTML='<div style=&quot;text-align:center;color:var(--txt3);padding:40px 20px;font-size:13px;&quot;>No hay tareas todavía.<br>Agrega una tarea abajo ↓</div>';
   }
   updateProgress();
 }
 
 function makeCLItem(item){
-  var div=document.createElement(&apos;div&apos;);
-  div.className=&apos;cl-item&apos;+(item.done?&apos; done&apos;:&apos;&apos;);
+  var div=document.createElement('div');
+  div.className='cl-item'+(item.done?' done':'');
   div.dataset.id=item.id;
-  var dot=document.createElement(&apos;div&apos;);
-  dot.className=&apos;cl-priority&apos;; dot.style.background=item.priority||&apos;#3d5a78&apos;;
-  dot.title=&apos;Clic para cambiar prioridad&apos;;
+  var dot=document.createElement('div');
+  dot.className='cl-priority'; dot.style.background=item.priority||'#3d5a78';
+  dot.title='Clic para cambiar prioridad';
   dot.onclick=function(){ cyclePriority(item.id); };
-  var cb=document.createElement(&apos;div&apos;);
-  cb.className=&apos;cl-cb&apos;+(item.done?&apos; checked&apos;:&apos;&apos;);
+  var cb=document.createElement('div');
+  cb.className='cl-cb'+(item.done?' checked':'');
   cb.onclick=function(){ toggleCLItem(item.id); };
-  var ta=document.createElement(&apos;textarea&apos;);
-  ta.className=&apos;cl-text&apos;; ta.rows=1; ta.value=item.text||&apos;&apos;; ta.placeholder=&apos;Tarea…&apos;;
+  var ta=document.createElement('textarea');
+  ta.className='cl-text'; ta.rows=1; ta.value=item.text||''; ta.placeholder='Tarea…';
   ta.oninput=function(){ item.text=ta.value; autoResizeTA(ta); saveCL(); };
-  ta.onkeydown=function(e){ if(e.key===&apos;Enter&apos;&amp;&amp;!e.shiftKey){ e.preventDefault(); document.getElementById(&apos;cl-new-input&apos;).focus(); } };
-  var del=document.createElement(&apos;span&apos;);
-  del.className=&apos;cl-del&apos;; del.textContent=&apos;✕&apos;;
+  ta.onkeydown=function(e){ if(e.key==='Enter'&amp;&amp;!e.shiftKey){ e.preventDefault(); document.getElementById('cl-new-input').focus(); } };
+  var del=document.createElement('span');
+  del.className='cl-del'; del.textContent='✕';
   del.onclick=function(){ deleteCLItem(item.id); };
   div.appendChild(dot); div.appendChild(cb); div.appendChild(ta); div.appendChild(del);
   setTimeout(function(){ autoResizeTA(ta); },0);
   return div;
 }
 
-function autoResizeTA(ta){ ta.style.height=&apos;auto&apos;; ta.style.height=ta.scrollHeight+&apos;px&apos;; }
+function autoResizeTA(ta){ ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px'; }
 
 function addCheckItem(){
-  var inp=document.getElementById(&apos;cl-new-input&apos;);
+  var inp=document.getElementById('cl-new-input');
   var text=inp.value.trim(); if(!text) return;
-  var priority=document.getElementById(&apos;cl-priority-sel&apos;).value;
-  getCL().push({id:&apos;cl&apos;+Date.now(), text:text, done:false, priority:priority, created:new Date().toISOString()});
-  saveCL(); renderChecklist(); inp.value=&apos;&apos;; inp.focus(); toast(&apos;✓ Tarea agregada&apos;,&apos;ok&apos;);
+  var priority=document.getElementById('cl-priority-sel').value;
+  getCL().push({id:'cl'+Date.now(), text:text, done:false, priority:priority, created:new Date().toISOString()});
+  saveCL(); renderChecklist(); inp.value=''; inp.focus(); toast('✓ Tarea agregada','ok');
 }
 
-function clKeydown(e){ if(e.key===&apos;Enter&apos;) addCheckItem(); }
+function clKeydown(e){ if(e.key==='Enter') addCheckItem(); }
 
 function toggleCLItem(id){
   var item=getCL().find(function(i){ return i.id===id; }); if(!item) return;
@@ -4839,39 +4841,39 @@ function deleteCLItem(id){
   saveCL(); renderChecklist();
 }
 function cyclePriority(id){
-  var prs=[&apos;#3d5a78&apos;,&apos;#22c55e&apos;,&apos;#f59e0b&apos;,&apos;#ef4444&apos;];
+  var prs=['#3d5a78','#22c55e','#f59e0b','#ef4444'];
   var item=getCL().find(function(i){ return i.id===id; }); if(!item) return;
-  var idx=prs.indexOf(item.priority||&apos;#3d5a78&apos;);
+  var idx=prs.indexOf(item.priority||'#3d5a78');
   item.priority=prs[(idx+1)%prs.length]; saveCL(); renderChecklist();
 }
 function updateProgress(){
   var items=getCL(), total=items.length, done=items.filter(function(i){ return i.done; }).length;
-  document.getElementById(&apos;cl-progress&apos;).textContent=done+&apos; / &apos;+total;
+  document.getElementById('cl-progress').textContent=done+' / '+total;
   var pct=total>0?Math.round(done/total*100):0;
-  document.getElementById(&apos;cl-progress-bar&apos;).style.width=pct+&apos;%&apos;;
+  document.getElementById('cl-progress-bar').style.width=pct+'%';
 }
-function checkAll(){ getCL().forEach(function(i){ i.done=true; }); saveCL(); renderChecklist(); toast(&apos;¡Todas completadas! 🎉&apos;,&apos;ok&apos;); }
+function checkAll(){ getCL().forEach(function(i){ i.done=true; }); saveCL(); renderChecklist(); toast('¡Todas completadas! 🎉','ok'); }
 function clearDone(){
   var p=getCurPage(); if(!p) return;
   var n=(p.checklist||[]).filter(function(i){ return i.done; }).length;
-  if(n===0){ toast(&apos;No hay tareas completadas&apos;,&apos;info&apos;); return; }
+  if(n===0){ toast('No hay tareas completadas','info'); return; }
   p.checklist=(p.checklist||[]).filter(function(i){ return !i.done; });
-  saveCL(); renderChecklist(); toast(n+&apos; tareas eliminadas&apos;,&apos;ok&apos;);
+  saveCL(); renderChecklist(); toast(n+' tareas eliminadas','ok');
 }
 function addSection(){
-  var name=prompt(&apos;Nombre de la sección:&apos;,&apos;Nueva sección&apos;); if(!name) return;
-  getCL().push({id:&apos;sec&apos;+Date.now(), text:&apos;── &apos;+name+&apos; ──&apos;, done:false, priority:&apos;#3d5a78&apos;, isSection:true});
+  var name=prompt('Nombre de la sección:','Nueva sección'); if(!name) return;
+  getCL().push({id:'sec'+Date.now(), text:'── '+name+' ──', done:false, priority:'#3d5a78', isSection:true});
   saveCL(); renderChecklist();
 }
 function exportChecklist(){
-  var items=getCL(); if(items.length===0){ toast(&apos;Lista vacía&apos;,&apos;info&apos;); return; }
-  var lines=[&apos;# Checklist: &apos;+(getCurPage()||{title:&apos;Nota&apos;}).title,&apos;&apos;];
-  items.forEach(function(i){ lines.push(i.isSection?&apos;
-## &apos;+i.text:(i.done?&apos;[x]&apos;:&apos;[ ]&apos;)+&apos; &apos;+i.text); });
-  var blob=new Blob([lines.join(&apos;
-&apos;)],{type:&apos;text/plain&apos;});
-  var a=document.createElement(&apos;a&apos;); a.href=URL.createObjectURL(blob); a.download=&apos;checklist.txt&apos;; a.click();
-  URL.revokeObjectURL(a.href); toast(&apos;Checklist exportado&apos;,&apos;ok&apos;);
+  var items=getCL(); if(items.length===0){ toast('Lista vacía','info'); return; }
+  var lines=['# Checklist: '+(getCurPage()||{title:'Nota'}).title,''];
+  items.forEach(function(i){ lines.push(i.isSection?'
+## '+i.text:(i.done?'[x]':'[ ]')+' '+i.text); });
+  var blob=new Blob([lines.join('
+')],{type:'text/plain'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='checklist.txt'; a.click();
+  URL.revokeObjectURL(a.href); toast('Checklist exportado','ok');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -4879,18 +4881,16 @@ function exportChecklist(){
 // ═══════════════════════════════════════════════════════
 var _toastT=null;
 function toast(msg,type){
-  var el=document.getElementById(&apos;toast&apos;);
-  el.textContent=msg; el.className=&apos;show &apos;+(type||&apos;&apos;);
+  var el=document.getElementById('toast');
+  el.textContent=msg; el.className='show '+(type||'');
   if(_toastT) clearTimeout(_toastT);
-  _toastT=setTimeout(function(){ el.className=&apos;&apos;; },2500);
+  _toastT=setTimeout(function(){ el.className=''; },2500);
 }
 
 // ═══════════════════════════════════════════════════════
 // INICIALIZAR líneas de pauta al cargar
 // ═══════════════════════════════════════════════════════
-window.addEventListener(&apos;load&apos;, function(){
-  document.getElementById(&apos;btn-ruled&apos;).classList.add(&apos;on&apos;);
-});
+
 </script>
 </body>
 </html>
