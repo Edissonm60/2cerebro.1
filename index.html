@@ -4073,9 +4073,17 @@ select.tb{font-family:var(--font);}
 }
 #text-wrap.active{display:flex;}
 #rich-editor{
-  flex:1;padding:20px 24px;outline:none;overflow-y:auto;
-  font-size:15px;line-height:1.7;color:var(--txt);
+  flex:1;padding:20px 28px;outline:none;overflow-y:auto;
+  font-size:16px;line-height:1.85;color:var(--txt);
   caret-color:var(--acc);
+  word-spacing:0.08em;
+  letter-spacing:0.01em;
+  word-break:break-word;
+  overflow-wrap:break-word;
+  text-rendering:optimizeLegibility;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  max-width:820px;
 }
 #rich-editor::-webkit-scrollbar{width:4px;}
 #rich-editor::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px;}
@@ -4296,7 +4304,8 @@ select.tb{font-family:var(--font);}
 
     <!-- Text editor -->
     <div id=&quot;text-wrap&quot;>
-      <div id=&quot;rich-editor&quot; contenteditable=&quot;true&quot; spellcheck=&quot;true&quot;
+      <div id=&quot;rich-editor&quot; contenteditable=&quot;true&quot; spellcheck=&quot;false&quot;
+           autocorrect=&quot;off&quot; autocapitalize=&quot;off&quot; autocomplete=&quot;off&quot;
            data-placeholder=&quot;Escribe aquí… Usa la barra superior para cambiar fuente, tamaño, negrita, cursiva…&quot;
            oninput=&quot;saveCurPage()&quot;>
       </div>
@@ -4493,10 +4502,21 @@ function setupCanvas(){
 function resizeCanvas(){
   var wrap = document.getElementById('canvas-wrap');
   var w = wrap.offsetWidth, h = wrap.offsetHeight;
-  dc.width = w; dc.height = h;
-  gc.width = w; gc.height = h;
+  var dpr = window.devicePixelRatio || 1;
+  // Physical pixels = logical * dpr — eliminates blur/pixelation on retina/tablet
+  dc.width = Math.round(w * dpr);
+  dc.height = Math.round(h * dpr);
+  gc.width = Math.round(w * dpr);
+  gc.height = Math.round(h * dpr);
+  // CSS size stays at logical pixels
   dc.style.width = w+'px'; dc.style.height = h+'px';
   gc.style.width = w+'px'; gc.style.height = h+'px';
+  // Scale context so all drawing coordinates stay in logical pixels
+  dctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // Restore quality settings after resize
+  dctx.imageSmoothingEnabled = true;
+  dctx.imageSmoothingQuality = 'high';
   redrawCanvas();
   if(showGrid) drawGrid();
 }
@@ -4568,7 +4588,7 @@ function getPressureWidth(e, stroke){
 
 function getPos(e){
   var rect = dc.getBoundingClientRect();
-  // Use offsetX/offsetY when available — sub-pixel accuracy on stylus
+  // offsetX/offsetY already in logical CSS pixels — correct for DPR-scaled context
   return {
     x: e.offsetX !== undefined ? e.offsetX : e.clientX - rect.left,
     y: e.offsetY !== undefined ? e.offsetY : e.clientY - rect.top
@@ -4577,7 +4597,8 @@ function getPos(e){
 
 function redrawCanvas(){
   if(!dctx) return;
-  dctx.clearRect(0,0,dc.width,dc.height);
+  // Clear using logical size (DPR transform is active, so this covers full canvas)
+  dctx.clearRect(0, 0, dc.width / (window.devicePixelRatio||1), dc.height / (window.devicePixelRatio||1));
   strokes.forEach(function(s){
     if(!s.pts||s.pts.length<2) return;
     dctx.save();
