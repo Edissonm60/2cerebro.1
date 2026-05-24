@@ -1372,10 +1372,19 @@ function hitText(wx,wy){
   return null;
 }
 
-// ═══ EVENT POSITION — handles both mouse and touch ═══
+// ═══ EVENT POSITION — lápiz óptico + palm rejection + touch ═══
+var _planoPenDetected=false, _planoPenLastTime=0;
 function evPos(e){
   const r=oc2.getBoundingClientRect();
-  // Touch: use changedTouches if touches is empty (touchend)
+  // PointerEvent con lápiz: coordenadas de subpíxel del digitalizador
+  if(e.pointerType==='pen'){
+    _planoPenDetected=true; _planoPenLastTime=Date.now();
+    return{x:e.clientX-r.left,y:e.clientY-r.top};
+  }
+  // Palm rejection: ignorar dedo durante 1s después de usar lápiz
+  if(e.pointerType==='touch'||e.touches){
+    if(_planoPenDetected&amp;&amp;(Date.now()-_planoPenLastTime)<1000) return null;
+  }
   if(e.touches&amp;&amp;e.touches.length>0)
     return{x:e.touches[0].clientX-r.left,y:e.touches[0].clientY-r.top};
   if(e.changedTouches&amp;&amp;e.changedTouches.length>0)
@@ -1401,7 +1410,8 @@ function onDown(e){
     return;
   }
 
-  const sp=evPos(e);const wp=s2w(sp.x,sp.y);
+  const sp=evPos(e); if(!sp) return;
+  const wp=s2w(sp.x,sp.y);
 
   if(tool===&quot;place&quot;&amp;&amp;activeEq){
     saveUndo();
@@ -2579,6 +2589,7 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
         <button class=&quot;bd2b&quot; onclick=&quot;filterMeets('presencial',this)&quot;>Presencial</button>
         <button class=&quot;bp&quot; style=&quot;margin-left:auto;font-size:11px&quot; onclick=&quot;openModal('mo-meet')&quot;><i class=&quot;fa fa-plus&quot; style=&quot;margin-right:5px&quot;></i>Nueva reunión</button>
         <button class=&quot;bs&quot; style=&quot;font-size:11px&quot; onclick=&quot;exportAllICS()&quot; title=&quot;Exportar todo a Google Calendar / Outlook&quot;><i class=&quot;fa fa-calendar-export&quot; style=&quot;margin-right:5px&quot;></i>Exportar .ics</button>
+        <button class=&quot;bs&quot; style=&quot;font-size:11px;color:#6264A7;border-color:rgba(98,100,167,.4)&quot; onclick=&quot;openTeamsSync()&quot; title=&quot;Sincronizar con Microsoft Teams Calendar&quot;><i class=&quot;fab fa-microsoft&quot; style=&quot;margin-right:5px;color:#6264A7&quot;></i>Sync Teams</button>
       </div>
       <div class=&quot;sect&quot;>Hoy — 17 de mayo</div>
       <div id=&quot;meets-today&quot;></div>
@@ -2747,6 +2758,84 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
       </div>
     </div>
     <div class=&quot;mdf&quot;><button class=&quot;bs&quot; onclick=&quot;closeModal('mo-trans')&quot;>Cancelar</button><button class=&quot;bp&quot; onclick=&quot;addTrans()&quot;>Registrar</button></div>
+  </div>
+</div>
+
+
+<!-- ══ TEAMS SYNC MODAL ══ -->
+<div class="mo" id="mo-teams-sync" onclick="if(event.target===this)closeTeamsSync()">
+  <div class="md" style="width:520px;max-width:95vw">
+    <div class="mdh"><i class="fab fa-microsoft" style="color:#6264A7;font-size:18px"></i><h3>Sincronizar con Microsoft Teams Calendar</h3><button class="xb" onclick="closeTeamsSync()"><i class="fa fa-times"></i></button></div>
+    <div class="mdc">
+      <!-- Status cards -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px" id="teams-stats-wrap">
+        <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:700;font-family:var(--mono);color:var(--ac)" id="teams-stat-total">0</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:3px">Reuniones totales</div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid rgba(98,100,167,.4);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:700;font-family:var(--mono);color:#8899FF" id="teams-stat-teams">0</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:3px">Tipo Teams</div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid rgba(34,197,94,.3);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:22px;font-weight:700;font-family:var(--mono);color:var(--ok)" id="teams-stat-synced">0</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:3px">Exportadas</div>
+        </div>
+      </div>
+
+      <!-- Info box -->
+      <div style="background:rgba(98,100,167,.08);border:1px solid rgba(98,100,167,.3);border-radius:8px;padding:14px;margin-bottom:16px">
+        <div style="font-size:12px;font-weight:600;color:#8899FF;margin-bottom:6px"><i class="fab fa-microsoft" style="margin-right:6px"></i>Integración con Microsoft Teams</div>
+        <div style="font-size:11px;color:var(--t2);line-height:1.7">
+          Teams Calendar se sincroniza automáticamente con <strong>Outlook</strong>. Para integrar tus reuniones:<br>
+          <span style="color:var(--ac)">① Descarga el archivo .ics</span> → <span style="color:#8899FF">② Abre Outlook Web o Desktop</span> → <span style="color:var(--ok)">③ Importa → aparece en Teams automáticamente</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:14px;display:flex;align-items:center;gap:12px">
+          <div style="width:38px;height:38px;border-radius:8px;background:rgba(98,100,167,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa fa-file-download" style="color:#8899FF;font-size:16px"></i></div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;margin-bottom:2px">Exportar reuniones Teams (.ics)</div>
+            <div style="font-size:11px;color:var(--t3)">Genera archivo estándar iCalendar con todas tus reuniones Teams para importar en Outlook</div>
+          </div>
+          <button class="bp" style="font-size:11px;white-space:nowrap;flex-shrink:0" onclick="teamsExportICS()">⬇ Descargar .ics</button>
+        </div>
+
+        <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:14px;display:flex;align-items:center;gap:12px">
+          <div style="width:38px;height:38px;border-radius:8px;background:rgba(14,165,233,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa fa-calendar-alt" style="color:var(--ac);font-size:16px"></i></div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;margin-bottom:2px">Exportar TODO a Outlook/Teams</div>
+            <div style="font-size:11px;color:var(--t3)">Exporta todas las reuniones (Teams, Meet, Zoom) en un solo archivo</div>
+          </div>
+          <button class="bs" style="font-size:11px;white-space:nowrap;flex-shrink:0" onclick="exportAllICS();localStorage.setItem('nn_teams_synced',MEETS.length);teamsGetStatus();T('✅ Exportadas',MEETS.length+' reuniones — importa en Outlook','📅')">⬇ Todas (.ics)</button>
+        </div>
+
+        <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:14px;display:flex;align-items:center;gap:12px">
+          <div style="width:38px;height:38px;border-radius:8px;background:rgba(98,100,167,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fab fa-microsoft" style="color:#6264A7;font-size:16px"></i></div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;margin-bottom:2px">Abrir Outlook Calendar Online</div>
+            <div style="font-size:11px;color:var(--t3)">Ir a outlook.office.com para importar el .ics y ver el calendario de Teams</div>
+          </div>
+          <button class="bs" style="font-size:11px;white-space:nowrap;flex-shrink:0" onclick="teamsOpenCalendar()">🌐 Abrir Outlook</button>
+        </div>
+
+        <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:14px;display:flex;align-items:center;gap:12px">
+          <div style="width:38px;height:38px;border-radius:8px;background:rgba(98,100,167,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa fa-plus-circle" style="color:#8899FF;font-size:16px"></i></div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;margin-bottom:2px">Crear reunión directamente en Teams</div>
+            <div style="font-size:11px;color:var(--t3)">Abre Teams con los datos de tu próxima reunión Teams precompletados</div>
+          </div>
+          <button class="bs" style="font-size:11px;white-space:nowrap;flex-shrink:0" onclick="teamsCreateAllMeetings()">📹 Abrir Teams</button>
+        </div>
+      </div>
+
+      <!-- Footer note -->
+      <div style="margin-top:14px;font-size:10px;color:var(--t3);text-align:center;font-family:var(--mono)">
+        💡 Para sincronización automática bidireccional, la API de Microsoft Graph requiere una cuenta Azure. Contacta al administrador TI de tu organización.
+      </div>
+    </div>
   </div>
 </div>
 
@@ -3877,6 +3966,115 @@ function exportAllICS(){
   T('Exportadas '+MEETS.length+' reuniones', 'Importa el .ics en Google Calendar o Outlook', '📅');
 }
 
+
+// ══════════════════════════════════════════════════════
+// MICROSOFT TEAMS CALENDAR INTEGRATION
+// Usa el protocolo deep-link de Teams + .ics para sincronizar
+// La API de Microsoft Graph requiere autenticación OAuth2;
+// esta implementación usa el flujo más accesible sin backend:
+//   1) Genera .ics → importar en Outlook (que sincroniza con Teams)
+//   2) Deep-links directos a Teams para crear reuniones individuales
+//   3) Abre el calendario de Teams Online con prefill de datos
+// ══════════════════════════════════════════════════════
+
+function openTeamsSync(){
+  var modal = document.getElementById('mo-teams-sync');
+  if(modal){ modal.classList.add('op'); teamsGetStatus(); }
+}
+function closeTeamsSync(){
+  var modal = document.getElementById('mo-teams-sync');
+  if(modal) modal.classList.remove('op');
+}
+
+function teamsExportICS(){
+  // Exportar solo reuniones de Teams
+  var teamsMeets = MEETS.filter(function(m){ return m.plat==='teams'; });
+  if(teamsMeets.length===0){
+    T('Sin reuniones Teams','Agrega reuniones con plataforma "Microsoft Teams"','⚠️');
+    return;
+  }
+  var now = new Date();
+  var blocks = teamsMeets.map(function(meet){
+    var parts=(meet.date||'').split('/');
+    var year=now.getFullYear();
+    var month=String(parseInt(parts[1]||now.getMonth()+1)).padStart(2,'0');
+    var day=String(parseInt(parts[0]||now.getDate())).padStart(2,'0');
+    var tp=(meet.time||'09:00').split(':');
+    var h=String(parseInt(tp[0])).padStart(2,'0');
+    var m2=String(parseInt(tp[1]||0)).padStart(2,'0');
+    var dtstart=year+month+day+'T'+h+m2+'00';
+    var endH=String((parseInt(h)+1)%24).padStart(2,'0');
+    var dtend=year+month+day+'T'+endH+m2+'00';
+    var stamp=now.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+    return [
+      'BEGIN:VEVENT',
+      'UID:nn-teams-'+meet.id+'@neuronotes.app',
+      'DTSTAMP:'+stamp,
+      'DTSTART:'+dtstart,
+      'DTEND:'+dtend,
+      'SUMMARY:'+meet.t,
+      'DESCRIPTION:'+(meet.agenda||'').replace(/\n/g,'\\n')+
+        (meet.link?'\\nLink: '+meet.link:''),
+      'LOCATION:Microsoft Teams',
+      'STATUS:CONFIRMED',
+      'BEGIN:VALARM',
+      'TRIGGER:-PT15M',
+      'ACTION:DISPLAY',
+      'DESCRIPTION:Reunión Teams en 15 min: '+meet.t,
+      'END:VALARM',
+      'END:VEVENT'
+    ].join('\r\n');
+  });
+  var ics='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//NeuroNotes v2//ES\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\n'
+    +blocks.join('\r\n')+'\r\nEND:VCALENDAR';
+  var blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='teams-reuniones.ics';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  T('✅ Teams .ics generado ('+teamsMeets.length+')', 'Importa en Outlook → sincroniza automáticamente con Teams', '📅');
+}
+
+function teamsOpenCalendar(){
+  // Abrir el calendario de Outlook/Teams Online
+  window.open('https://outlook.office.com/calendar/view/month','_blank');
+  T('Abriendo Outlook Calendar','Importa el .ics descargado para ver tus reuniones en Teams','📅');
+}
+
+function teamsCreateMeeting(meet){
+  // Deep-link de Teams para crear una reunión nueva con datos prefilled
+  // Formato: https://teams.microsoft.com/l/meeting/new?...
+  if(!meet){ T('Selecciona una reunión','','⚠️'); return; }
+  var subject = encodeURIComponent(meet.t||'Reunión');
+  var content = encodeURIComponent((meet.agenda||'Agenda pendiente')+
+    '\n\nParticipantes: '+(meet.parts||[]).join(', '));
+  var url = 'https://teams.microsoft.com/l/meeting/new?subject='+subject+'&content='+content;
+  window.open(url,'_blank');
+  T('Abriendo Teams','Completa la hora y participantes en Teams','📹');
+}
+
+function teamsCreateAllMeetings(){
+  var teamsMeets = MEETS.filter(function(m){ return m.plat==='teams'; });
+  if(teamsMeets.length===0){
+    T('Sin reuniones Teams','','⚠️'); return;
+  }
+  // Abrir la primera; el usuario puede repetir el proceso para cada una
+  teamsCreateMeeting(teamsMeets[0]);
+  if(teamsMeets.length>1){
+    T('Primer evento abierto en Teams','Repite para las '+( teamsMeets.length-1)+' reuniones restantes','📹');
+  }
+}
+
+function teamsGetStatus(){
+  var total = MEETS.length;
+  var teams = MEETS.filter(function(m){ return m.plat==='teams'; }).length;
+  var synced = parseInt(localStorage.getItem('nn_teams_synced')||'0');
+  document.getElementById('teams-stat-total').textContent = total;
+  document.getElementById('teams-stat-teams').textContent = teams;
+  document.getElementById('teams-stat-synced').textContent = synced;
+}
+
 // ── Checker cada minuto para alarmas pendientes ──
 function checkAlarms(){
   MEETS.forEach(function(m){
@@ -4498,9 +4696,20 @@ function resizeCanvas(){
   if(showGrid) drawGrid();
 }
 
+// ─── LÁPIZ ÓPTICO: variables de suavizado ────────────────
+var _lastPt = null;      // último punto para Bézier
+var _isPen  = false;     // true si el evento viene de lápiz (no dedo)
+
 function onDown(e){
   e.preventDefault();
+  // Ignorar toques de dedo cuando hay lápiz activo (palm rejection básico)
+  _isPen = (e.pointerType === 'pen');
+  // Si es dedo y tenemos lápiz conectado, ignorar para evitar trazos accidentales
+  if(e.pointerType === 'touch' && _penDetected) return;
+  if(e.pointerType === 'pen') _penDetected = true;
+
   drawing = true;
+  _lastPt = null;
   dc.setPointerCapture(e.pointerId);
   var pt = getPos(e);
   if(tool==='eraser'){
@@ -4510,40 +4719,74 @@ function onDown(e){
   }
   dctx.beginPath();
   dctx.moveTo(pt.x, pt.y);
-  // Start new stroke in history
-  strokes.push({tool:tool, color:penColor, size:penSize, pts:[pt]});
+  strokes.push({tool:tool, color:penColor, size:penSize, pts:[{x:pt.x,y:pt.y,p:pt.pressure}]});
   redoStack=[];
+  _lastPt = pt;
 }
 
 function onMove(e){
   e.preventDefault();
   if(!drawing) return;
-  var pt = getPos(e);
+  if(e.pointerType === 'touch' && _penDetected) return;
+
+  // getCoalescedEvents: obtiene todos los puntos intermedios para máxima precisión
+  var rawEvents = (e.getCoalescedEvents && e.getCoalescedEvents()) || [e];
   var stroke = strokes[strokes.length-1];
-  stroke.pts.push(pt);
-  // Draw incrementally
-  dctx.lineTo(pt.x, pt.y);
-  dctx.strokeStyle = tool==='eraser' ? 'rgba(0,0,0,1)' : penColor;
-  dctx.lineWidth = tool==='marker' ? penSize*3 : penSize;
-  dctx.lineCap = 'round';
-  dctx.lineJoin = 'round';
-  dctx.globalAlpha = tool==='marker' ? 0.4 : 1;
-  dctx.stroke();
+
+  rawEvents.forEach(function(ev){
+    var pt = getPos(ev);
+    stroke.pts.push({x:pt.x, y:pt.y, p:pt.pressure});
+
+    // Ancho dinámico según presión del lápiz (si hay presión disponible)
+    var pressure = (ev.pressure && ev.pressure > 0) ? ev.pressure : 0.5;
+    var dynSize = tool==='marker'
+      ? penSize*3
+      : (tool==='pen' && _isPen)
+        ? Math.max(1, penSize * (0.5 + pressure))
+        : penSize;
+
+    dctx.strokeStyle = tool==='eraser' ? 'rgba(0,0,0,1)' : penColor;
+    dctx.lineWidth   = dynSize;
+    dctx.lineCap     = 'round';
+    dctx.lineJoin    = 'round';
+    dctx.globalAlpha = tool==='marker' ? 0.35 : 1;
+
+    // Curva Bézier cuadrática para trazo suave (vs lineTo que hace ángulos)
+    if(_lastPt){
+      var midX = (_lastPt.x + pt.x) / 2;
+      var midY = (_lastPt.y + pt.y) / 2;
+      dctx.beginPath();
+      dctx.moveTo(_lastPt.x, _lastPt.y);
+      dctx.quadraticCurveTo(_lastPt.x, _lastPt.y, midX, midY);
+      dctx.stroke();
+    }
+    _lastPt = pt;
+  });
+
+  // Punto actual como inicio del siguiente segmento
   dctx.beginPath();
-  dctx.moveTo(pt.x, pt.y);
+  if(_lastPt) dctx.moveTo(_lastPt.x, _lastPt.y);
 }
 
 function onUp(e){
   if(!drawing) return;
   drawing = false;
+  _lastPt = null;
   dctx.globalCompositeOperation='source-over';
   dctx.globalAlpha=1;
   saveCurPage();
 }
 
+// Palm rejection: se activa cuando detectamos lápiz por primera vez en la sesión
+var _penDetected = false;
+
 function getPos(e){
   var rect = dc.getBoundingClientRect();
-  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  return {
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top,
+    pressure: e.pressure || 0.5
+  };
 }
 
 function redrawCanvas(){
@@ -4557,16 +4800,23 @@ function redrawCanvas(){
       dctx.globalAlpha=1;
     } else {
       dctx.globalCompositeOperation='source-over';
-      dctx.globalAlpha = s.tool==='marker' ? 0.4 : 1;
+      dctx.globalAlpha = s.tool==='marker' ? 0.35 : 1;
     }
     dctx.strokeStyle = s.color||'#e0eaf5';
-    dctx.lineWidth = s.tool==='marker' ? (s.size||3)*3 : (s.size||3);
     dctx.lineCap='round';
     dctx.lineJoin='round';
+    // Redibujar con Bézier cuadrático para suavidad coherente
     dctx.beginPath();
     dctx.moveTo(s.pts[0].x, s.pts[0].y);
     for(var i=1;i<s.pts.length;i++){
-      dctx.lineTo(s.pts[i].x, s.pts[i].y);
+      var prev = s.pts[i-1], cur = s.pts[i];
+      var midX = (prev.x + cur.x) / 2;
+      var midY = (prev.y + cur.y) / 2;
+      // Ancho dinámico por presión si está guardado
+      var p = cur.p || 0.5;
+      dctx.lineWidth = s.tool==='marker' ? (s.size||3)*3
+        : (s.size||3) * (s.tool==='pen' ? (0.5+p) : 1);
+      dctx.quadraticCurveTo(prev.x, prev.y, midX, midY);
     }
     dctx.stroke();
     dctx.restore();
