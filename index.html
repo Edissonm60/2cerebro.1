@@ -4061,7 +4061,7 @@ select.tb{font-family:var(--font);}
   background:var(--bg);cursor:crosshair;
 }
 #canvas-wrap.active{display:block;}
-#draw-canvas{position:absolute;top:0;left:0;touch-action:none;}
+#draw-canvas{position:absolute;top:0;left:0;touch-action:none;will-change:contents;cursor:crosshair;}
 
 /* Grid overlay */
 #grid-canvas{position:absolute;top:0;left:0;pointer-events:none;}
@@ -4473,7 +4473,10 @@ function setMode(m){
 var dc, dctx, gc, gctx;
 function setupCanvas(){
   dc = document.getElementById('draw-canvas');
-  dctx = dc.getContext('2d');
+  dctx = dc.getContext('2d', {willReadFrequently: false, desynchronized: true});
+  // High-quality rendering for stylus precision
+  dctx.imageSmoothingEnabled = true;
+  dctx.imageSmoothingQuality = 'high';
   gc = document.getElementById('grid-canvas');
   gctx = gc.getContext('2d');
   window.addEventListener('resize', resizeCanvas);
@@ -4498,9 +4501,13 @@ function resizeCanvas(){
   if(showGrid) drawGrid();
 }
 
+// Precision stylus drawing — midpoint quadratic curves + pressure support
+var _prevPt = null;
+
 function onDown(e){
   e.preventDefault();
   drawing = true;
+  _prevPt = null;
   dc.setPointerCapture(e.pointerId);
   var pt = getPos(e);
   if(tool==='eraser'){
@@ -4508,42 +4515,64 @@ function onDown(e){
   } else {
     dctx.globalCompositeOperation='source-over';
   }
-  dctx.beginPath();
-  dctx.moveTo(pt.x, pt.y);
-  // Start new stroke in history
   strokes.push({tool:tool, color:penColor, size:penSize, pts:[pt]});
   redoStack=[];
+  _prevPt = pt;
 }
 
 function onMove(e){
   e.preventDefault();
   if(!drawing) return;
-  var pt = getPos(e);
+  // Use getCoalescedEvents for maximum pointer precision on stylus/tablet
+  var events = (e.getCoalescedEvents && e.getCoalescedEvents()) || [e];
   var stroke = strokes[strokes.length-1];
-  stroke.pts.push(pt);
-  // Draw incrementally
-  dctx.lineTo(pt.x, pt.y);
-  dctx.strokeStyle = tool==='eraser' ? 'rgba(0,0,0,1)' : penColor;
-  dctx.lineWidth = tool==='marker' ? penSize*3 : penSize;
-  dctx.lineCap = 'round';
-  dctx.lineJoin = 'round';
-  dctx.globalAlpha = tool==='marker' ? 0.4 : 1;
-  dctx.stroke();
-  dctx.beginPath();
-  dctx.moveTo(pt.x, pt.y);
+  for(var ei=0; ei<events.length; ei++){
+    var ev = events[ei];
+    var pt = getPos(ev);
+    stroke.pts.push(pt);
+    if(!_prevPt){ _prevPt = pt; continue; }
+    // Midpoint smoothing — eliminates jagged lineTo artifacts
+    var mx = (_prevPt.x + pt.x) / 2;
+    var my = (_prevPt.y + pt.y) / 2;
+    var lw = getPressureWidth(ev, stroke);
+    dctx.strokeStyle = tool==='eraser' ? 'rgba(0,0,0,1)' : penColor;
+    dctx.lineWidth = lw;
+    dctx.lineCap = 'round';
+    dctx.lineJoin = 'round';
+    dctx.globalAlpha = tool==='marker' ? 0.38 : 1;
+    dctx.beginPath();
+    dctx.moveTo(_prevPt.x, _prevPt.y);
+    dctx.quadraticCurveTo(_prevPt.x, _prevPt.y, mx, my);
+    dctx.stroke();
+    _prevPt = pt;
+  }
 }
 
 function onUp(e){
   if(!drawing) return;
   drawing = false;
+  _prevPt = null;
   dctx.globalCompositeOperation='source-over';
   dctx.globalAlpha=1;
   saveCurPage();
 }
 
+function getPressureWidth(e, stroke){
+  // Use stylus pressure when available (0.5 = no pressure info)
+  var pressure = (e.pointerType==='pen' && e.pressure && e.pressure!==0.5)
+    ? e.pressure : 1;
+  var base = stroke.tool==='marker' ? (stroke.size||3)*3 : (stroke.size||3);
+  // Pressure modulates width between 55% and 100% of base for pen feel
+  return e.pointerType==='pen' ? base * (0.55 + pressure*0.45) : base;
+}
+
 function getPos(e){
   var rect = dc.getBoundingClientRect();
-  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  // Use offsetX/offsetY when available — sub-pixel accuracy on stylus
+  return {
+    x: e.offsetX !== undefined ? e.offsetX : e.clientX - rect.left,
+    y: e.offsetY !== undefined ? e.offsetY : e.clientY - rect.top
+  };
 }
 
 function redrawCanvas(){
@@ -4563,11 +4592,15 @@ function redrawCanvas(){
     dctx.lineWidth = s.tool==='marker' ? (s.size||3)*3 : (s.size||3);
     dctx.lineCap='round';
     dctx.lineJoin='round';
+    // Redraw with midpoint-quadratic curves — matches live drawing quality
+    var pts = s.pts;
     dctx.beginPath();
-    dctx.moveTo(s.pts[0].x, s.pts[0].y);
-    for(var i=1;i<s.pts.length;i++){
-      dctx.lineTo(s.pts[i].x, s.pts[i].y);
+    dctx.moveTo(pts[0].x, pts[0].y);
+    for(var i=1;i<pts.length-1;i++){
+      var mx=(pts[i].x+pts[i+1].x)/2, my=(pts[i].y+pts[i+1].y)/2;
+      dctx.quadraticCurveTo(pts[i].x,pts[i].y,mx,my);
     }
+    dctx.lineTo(pts[pts.length-1].x, pts[pts.length-1].y);
     dctx.stroke();
     dctx.restore();
   });
