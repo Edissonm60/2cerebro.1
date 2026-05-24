@@ -4430,6 +4430,16 @@ function setupCanvas(){
   window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
 
+  // Escuchar postMessage del shell cuando el tab se activa
+  window.addEventListener('message', function(e){
+    if(e.data && e.data.type === 'EM_CANVAS_RESIZE'){
+      resizeCanvas();
+      redrawCanvas();
+      if(showGrid) drawGrid();
+      if(showRuled) drawRuled();
+    }
+  });
+
   // Pointer events para lápiz óptico con presión real
   dc.addEventListener('pointerdown', onDown, {passive:false});
   dc.addEventListener('pointermove', onMove, {passive:false});
@@ -5791,6 +5801,14 @@ function sw(n){
   document.getElementById("f1").className="fr "+(n===1?"on":"off");
   document.getElementById("f2").className="fr "+(n===2?"on":"off");
   document.getElementById("f3").className="fr "+(n===3?"on":"off");
+  // Notificar al iframe de Notas & Canvas para que redimensione el canvas
+  if(n===3){
+    var f3=document.getElementById("f3");
+    if(f3&&f3.contentWindow){
+      // Pequeño delay para que el iframe sea visible antes de medir dimensiones
+      setTimeout(function(){ f3.contentWindow.postMessage({type:"EM_CANVAS_RESIZE"},"*"); },50);
+    }
+  }
   var f4=document.getElementById("f4");
   var p4=document.getElementById("p4");
   if(f4){f4.className="fr "+(n===4?"on":"off");}
