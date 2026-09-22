@@ -47,13 +47,13 @@ html,body{height:100%;overflow:hidden;background:#080C14;color:#E8F0FE;font-fami
 <div id="suite">
   <div id="tabbar">
     <div class="brand"><span class="badge">EM</span> Suite PRO</div>
-    <button class="tbtn on" id="t1" onclick="sw(1)">
-      <span class="dot" style="background:#0ea5e9;color:#0ea5e9;"></span>
-      🗺️&nbsp; Planos de Seguridad
-    </button>
-    <button class="tbtn" id="t2" onclick="sw(2)">
+    <button class="tbtn on" id="t2" onclick="sw(2)">
       <span class="dot" style="background:#00D4FF;color:#00D4FF;"></span>
       🧠&nbsp; NeuroNotes — Life OS
+    </button>
+    <button class="tbtn" id="t1" onclick="sw(1)">
+      <span class="dot" style="background:#0ea5e9;color:#0ea5e9;"></span>
+      🗺️&nbsp; Planos de Seguridad
     </button>
     <button class="tbtn" id="t3" onclick="sw(3)">
       <span class="dot" style="background:#a855f7;color:#a855f7;"></span>
@@ -68,7 +68,7 @@ html,body{height:100%;overflow:hidden;background:#080C14;color:#E8F0FE;font-fami
     <div class="ver">v7 · Desarrollado por Ing. Edisson Mac&iacute;as Quevedo</div>
   </div>
   <div id="frames">
-    <iframe class="fr on"  id="f1" title="Planos"      srcdoc="<!DOCTYPE html>
+    <iframe class="fr off" id="f1" title="Planos"      srcdoc="<!DOCTYPE html>
 <html lang=&quot;es&quot;>
 <head>
 <meta charset=&quot;UTF-8&quot;/>
@@ -4189,7 +4189,7 @@ setTimeout(()=>showToast(&quot;EM Seguridad PRO — Ing. Edisson Macías Quevedo
 <script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js&quot; defer></script>
 </body>
 </html>"></iframe>
-    <iframe class="fr off" id="f2" title="NeuroNotes"  srcdoc="<!DOCTYPE html>
+    <iframe class="fr on"  id="f2" title="NeuroNotes"  srcdoc="<!DOCTYPE html>
 <html lang=&quot;es&quot;>
 <head>
 <meta charset=&quot;UTF-8&quot;>
@@ -9193,7 +9193,7 @@ setTimeout(emCheckReminders,4000);
   </div>
 </div>
 <script>
-var cur=1;
+var cur=2;   // la app abre en NeuroNotes
 function sw(n){
   if(n===cur)return;
   cur=n;
@@ -9220,8 +9220,8 @@ function sw(n){
   if(n===4){ setBadge(0); }
 }
 document.addEventListener("keydown",function(e){
-  if(e.altKey&&e.key==="1")sw(1);
-  if(e.altKey&&e.key==="2")sw(2);
+  if(e.altKey&&e.key==="1")sw(2);   // 1 = NeuroNotes (primera pestaña)
+  if(e.altKey&&e.key==="2")sw(1);   // 2 = Planos
   if(e.altKey&&e.key==="3")sw(3);
   if(e.altKey&&e.key==="4")sw(4);
 });
