@@ -8,6 +8,12 @@
 <meta name="theme-color" content="#080C14"/>
 <title>EM — Suite Profesional</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="icon" href="icon-192.png"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<meta name="application-name" content="EM Suite PRO"/>
+<meta name="apple-mobile-web-app-title" content="EM Suite PRO"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;overflow:hidden;background:#080C14;color:#E8F0FE;font-family:"IBM Plex Sans",sans-serif;}
@@ -65,7 +71,8 @@ html,body{height:100%;overflow:hidden;background:#080C14;color:#E8F0FE;font-fami
       <span id="notif-badge" style="display:none;position:absolute;top:4px;right:4px;background:#ef4444;color:#fff;font-size:9px;font-weight:800;border-radius:50%;width:18px;height:18px;line-height:18px;text-align:center;box-shadow:0 0 6px rgba(239,68,68,.7);animation:badge-pulse 1.5s infinite;">0</span>
     </button>
     <div class="sp"></div>
-    <div class="ver">v7 · Desarrollado por Ing. Edisson Mac&iacute;as Quevedo</div>
+    <button class="tbtn" id="btn-install" onclick="instalarApp()" style="display:none;border-color:#00D4FF;color:#00D4FF;">&#128241; Instalar app</button>
+    <div class="ver">v8 · Desarrollado por Ing. Edisson Mac&iacute;as Quevedo</div>
   </div>
   <div id="frames">
     <iframe class="fr off" id="f1" title="Planos"      srcdoc="<!DOCTYPE html>
@@ -4480,6 +4487,24 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
 
 @media(max-width:900px){#app{grid-template-columns:52px 180px 1fr;}.g4{grid-template-columns:1fr 1fr;}}
 @media(max-width:700px){#app{grid-template-columns:0 0 1fr;}#rail,#sb{display:none;}}
+
+/* ── Levantamiento portería virtual ── */
+.lv-wrap{display:flex;gap:16px;align-items:flex-start;}
+.lv-nav{width:230px;min-width:230px;background:var(--bg2);border:1px solid var(--bd);
+  border-radius:var(--r);padding:8px;max-height:70vh;overflow-y:auto;position:sticky;top:0;}
+.lv-main{flex:1;min-width:0;}
+.lv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;}
+.lv-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.lv-tbl th{text-align:left;font-size:10px;font-family:var(--mono);text-transform:uppercase;
+  color:var(--t3);padding:8px 6px;border-bottom:1px solid var(--bd);}
+.lv-tbl td{padding:6px;border-bottom:1px solid var(--bd);color:var(--t2);vertical-align:middle;}
+.lv-tbl td.n{font-family:var(--mono);text-align:right;color:var(--t1);}
+.lv-tbl tfoot td{padding:7px 6px;font-size:12px;}
+.lv-tbl tr.tot td{font-weight:700;color:var(--ac);border-top:2px solid var(--bd);font-size:13px;}
+@media(max-width:900px){
+  .lv-wrap{flex-direction:column;}
+  .lv-nav{width:100%;min-width:0;position:static;max-height:190px;}
+}
 </style>
 </head>
 <body>
@@ -4519,6 +4544,8 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
     <div class=&quot;si&quot; onclick=&quot;V('home')&quot;><i class=&quot;fa fa-house-user&quot;></i> Hogar &amp; Gastos</div>
     <div class=&quot;sl&quot;>Trabajo</div>
     <div class=&quot;si&quot; onclick=&quot;V('kanban')&quot;><i class=&quot;fa fa-tasks&quot;></i> Proyectos</div>
+    <div class=&quot;si&quot; onclick=&quot;V('lev')&quot;><i class=&quot;fa fa-building&quot; style=&quot;color:var(--ac3)&quot;></i> Portería virtual</div>
+    <div class=&quot;si&quot; onclick=&quot;V('control')&quot;><i class=&quot;fa fa-clipboard-list&quot; style=&quot;color:var(--ok)&quot;></i> Control técnico</div>
     <div class=&quot;si&quot; onclick=&quot;V('notes')&quot;><i class=&quot;fa fa-file-alt&quot;></i> Notas Técnicas</div>
     <div class=&quot;si&quot; onclick=&quot;V('tools')&quot;><i class=&quot;fa fa-tools&quot;></i> Herramientas</div>
     <div class=&quot;sl&quot;>Finanzas detalle</div>
@@ -4540,8 +4567,8 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
     <div class=&quot;tbb&quot;><i class=&quot;fa fa-home&quot; style=&quot;font-size:11px&quot;></i><i class=&quot;fa fa-chevron-right&quot; style=&quot;font-size:9px&quot;></i><span class=&quot;cur&quot; id=&quot;bc&quot;>Dashboard</span></div>
     <div class=&quot;tba&quot;>
       <div class=&quot;online&quot;></div>
-      <span style=&quot;font-size:10px;color:var(--t3)&quot;>neuronotes.duckdns.org</span>
-      <button class=&quot;bi&quot; onclick=&quot;T('Sync','Sincronizado con Google &amp; Teams','✅')&quot;><i class=&quot;fa fa-sync-alt&quot;></i></button>
+      <span style=&quot;font-size:10px;color:var(--t3)&quot; id=&quot;nn-sync-txt&quot;>Sincronización lista</span>
+      <button class=&quot;bi&quot; onclick=&quot;nnSyncAhora()&quot; title=&quot;Sincronizar ahora con los demás equipos&quot;><i class=&quot;fa fa-sync-alt&quot;></i></button>
       <button class=&quot;bi&quot; onclick=&quot;openModal('mo-new')&quot;><i class=&quot;fa fa-plus&quot;></i></button>
       <button class=&quot;bi&quot; onclick=&quot;toggleAI()&quot;><i class=&quot;fa fa-robot&quot;></i></button>
     </div>
@@ -4786,6 +4813,89 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
       <div style=&quot;display:flex;gap:14px;overflow-x:auto;flex:1;padding-bottom:8px&quot; id=&quot;kb-board&quot;></div>
     </div>
 
+    <!-- ══ CONTROL TÉCNICO ══ -->
+    <div class=&quot;view&quot; id=&quot;v-control&quot;>
+      <div class=&quot;pg&quot;><h1 class=&quot;pgh1&quot;>Control <em>técnico</em></h1><p class=&quot;pgp&quot;>Lo que el técnico diligencia en obra: llega por correo a la coordinación, queda en la hoja de control y avisa por Telegram</p></div>
+      <div class=&quot;g2&quot;>
+        <div>
+          <div class=&quot;sect&quot;>Datos del servicio</div>
+          <div class=&quot;card&quot;>
+            <div class=&quot;fg2&quot;>
+              <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Técnico responsable *</label>
+                <div style=&quot;display:flex;gap:6px&quot;>
+                  <select class=&quot;fs&quot; id=&quot;ct-tec-sel&quot; style=&quot;flex:1&quot; onchange=&quot;ctrlTecSel()&quot;></select>
+                  <button class=&quot;bs&quot; onclick=&quot;tecAbrir()&quot; title=&quot;Gestionar técnicos&quot;>👷</button></div>
+                <input class=&quot;fi&quot; id=&quot;ct-tec&quot; placeholder=&quot;o escríbelo aquí&quot; style=&quot;margin-top:6px&quot; oninput=&quot;ctrlGuardarBorrador()&quot;></div>
+              <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Cliente *</label><input class=&quot;fi&quot; id=&quot;ct-cliente&quot; placeholder=&quot;Empresa o persona&quot; oninput=&quot;ctrlGuardarBorrador()&quot;></div>
+            </div>
+            <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Dirección / sede</label><input class=&quot;fi&quot; id=&quot;ct-dir&quot; placeholder=&quot;Dirección donde se hizo el trabajo&quot; oninput=&quot;ctrlGuardarBorrador()&quot;></div>
+            <div class=&quot;fg2&quot;>
+              <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Proyecto</label><select class=&quot;fs&quot; id=&quot;ct-proj&quot; onchange=&quot;ctrlGuardarBorrador()&quot;></select></div>
+              <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Tipo de trabajo</label>
+                <select class=&quot;fs&quot; id=&quot;ct-tipo&quot; onchange=&quot;ctrlChecklist();ctrlGuardarBorrador()&quot;>
+                  <option value=&quot;CCTV&quot;>CCTV / Videovigilancia</option>
+                  <option value=&quot;Acceso&quot;>Control de acceso</option>
+                  <option value=&quot;Alarma&quot;>Alarma / Intrusión</option>
+                  <option value=&quot;Red&quot;>Red / Cableado</option>
+                </select></div>
+            </div>
+            <div class=&quot;fg2&quot;>
+              <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Hora de inicio</label><input class=&quot;fi&quot; type=&quot;time&quot; id=&quot;ct-ini&quot; oninput=&quot;ctrlGuardarBorrador()&quot;></div>
+              <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Hora de finalización</label><input class=&quot;fi&quot; type=&quot;time&quot; id=&quot;ct-fin&quot; oninput=&quot;ctrlGuardarBorrador()&quot;></div>
+            </div>
+            <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Estado del servicio</label>
+              <select class=&quot;fs&quot; id=&quot;ct-estado&quot; onchange=&quot;ctrlGuardarBorrador()&quot;>
+                <option value=&quot;Terminado&quot;>✅ Terminado</option>
+                <option value=&quot;Terminado con pendientes&quot;>⚠️ Terminado con pendientes</option>
+                <option value=&quot;En proceso&quot;>🔄 En proceso — continúa otro día</option>
+                <option value=&quot;No se pudo ejecutar&quot;>🚫 No se pudo ejecutar</option>
+                <option value=&quot;Requiere repuesto&quot;>📦 Requiere repuesto</option>
+              </select></div>
+          </div>
+
+          <div class=&quot;sect&quot; style=&quot;margin-top:16px&quot;>Evidencia fotográfica</div>
+          <div class=&quot;card&quot;>
+            <input type=&quot;file&quot; id=&quot;ct-file&quot; accept=&quot;image/*&quot; capture=&quot;environment&quot; multiple style=&quot;display:none&quot; onchange=&quot;ctrlFoto(this)&quot;>
+            <button class=&quot;bs&quot; style=&quot;width:100%&quot; onclick=&quot;document.getElementById('ct-file').click()&quot;><i class=&quot;fa fa-camera&quot; style=&quot;margin-right:6px&quot;></i>Tomar o elegir foto (máx. 4)</button>
+            <div id=&quot;ct-fotos&quot; style=&quot;margin-top:10px&quot;></div>
+            <div style=&quot;font-size:10px;color:var(--t3);margin-top:6px;line-height:1.5&quot;>Las fotos se reducen y se les pone fecha y hora antes de enviarlas.</div>
+          </div>
+        </div>
+
+        <div>
+          <div class=&quot;sect&quot;>Verificación en sitio</div>
+          <div class=&quot;card&quot;><div id=&quot;ct-check&quot;></div></div>
+
+          <div class=&quot;sect&quot; style=&quot;margin-top:16px&quot;>Detalle del trabajo</div>
+          <div class=&quot;card&quot;>
+            <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Materiales usados</label><textarea class=&quot;ft&quot; id=&quot;ct-mat&quot; placeholder=&quot;50 m UTP Cat6, 2 conectores, 1 canaleta 60x40...&quot; oninput=&quot;ctrlGuardarBorrador()&quot;></textarea></div>
+            <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Observaciones</label><textarea class=&quot;ft&quot; id=&quot;ct-obs&quot; placeholder=&quot;Qué se hizo, qué se encontró...&quot; oninput=&quot;ctrlGuardarBorrador()&quot;></textarea></div>
+            <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Queda pendiente</label><textarea class=&quot;ft&quot; id=&quot;ct-pend&quot; placeholder=&quot;Lo que falta y por qué&quot; oninput=&quot;ctrlGuardarBorrador()&quot;></textarea></div>
+          </div>
+
+          <div class=&quot;sect&quot; style=&quot;margin-top:16px&quot;>Firma del cliente</div>
+          <div class=&quot;card&quot;>
+            <canvas id=&quot;ct-firma&quot; style=&quot;width:100%;height:150px;background:#fff;border-radius:var(--r);touch-action:none;cursor:crosshair&quot;></canvas>
+            <button class=&quot;bs&quot; style=&quot;margin-top:8px;font-size:11px&quot; onclick=&quot;ctrlLimpiarFirma()&quot;>Borrar firma</button>
+          </div>
+
+          <div style=&quot;display:flex;gap:8px;margin-top:14px;flex-wrap:wrap&quot;>
+            <button class=&quot;bp&quot; id=&quot;ct-enviar&quot; style=&quot;flex:2;min-width:180px&quot; onclick=&quot;ctrlEnviar()&quot;><i class=&quot;fa fa-paper-plane&quot; style=&quot;margin-right:6px&quot;></i>Enviar reporte</button>
+            <button class=&quot;bs&quot; style=&quot;flex:1;min-width:120px&quot; onclick=&quot;ctrlTelegram()&quot;>Solo Telegram</button>
+            <button class=&quot;bs&quot; style=&quot;flex:1;min-width:120px&quot; onclick=&quot;ctrlDescargar()&quot;>Descargar</button>
+          </div>
+          <div id=&quot;ct-estado-envio&quot; style=&quot;display:none;margin-top:10px;font-size:12px;color:var(--ok);background:rgba(0,255,136,.07);border:1px solid rgba(0,255,136,.25);border-radius:var(--r);padding:10px 12px&quot;></div>
+          <div style=&quot;font-size:11px;color:var(--t3);margin-top:10px;line-height:1.6&quot;>
+            El reporte va a los correos configurados en <b>Alertas → ⚙ Configuración</b>, con las fotos y la firma adjuntas,
+            y queda registrado en la hoja de control técnico.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ LEVANTAMIENTO PORTERÍA VIRTUAL ══ -->
+    <div class=&quot;view&quot; id=&quot;v-lev&quot;></div>
+
     <!-- ══ NOTES ══ -->
     <div class=&quot;view-full&quot; id=&quot;v-notes&quot; style=&quot;padding:0&quot;>
       <div style=&quot;display:grid;grid-template-columns:240px 1fr;height:100%&quot;>
@@ -4872,6 +4982,46 @@ Usa Markdown: **negrita**, *cursiva*, `código`&quot; oninput=&quot;markUns()&qu
       <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Descripción</label><textarea class=&quot;ft&quot; id=&quot;new-desc&quot; placeholder=&quot;Detalles...&quot;></textarea></div>
     </div>
     <div class=&quot;mdf&quot;><button class=&quot;bs&quot; onclick=&quot;closeModal('mo-new')&quot;>Cancelar</button><button class=&quot;bp&quot; onclick=&quot;addNew()&quot;><i class=&quot;fa fa-check&quot; style=&quot;margin-right:5px&quot;></i>Crear</button></div>
+  </div>
+</div>
+
+<div class=&quot;mo&quot; id=&quot;mo-tec&quot;>
+  <div class=&quot;md&quot;>
+    <div class=&quot;mdh&quot;><i class=&quot;fa fa-hard-hat&quot; style=&quot;color:var(--warn)&quot;></i><h3>Directorio de técnicos</h3><button class=&quot;xb&quot; onclick=&quot;closeModal('mo-tec')&quot;><i class=&quot;fa fa-times&quot;></i></button></div>
+    <div class=&quot;mdc&quot;>
+      <div id=&quot;tec-lista&quot; style=&quot;margin-bottom:14px;max-height:230px;overflow-y:auto&quot;></div>
+      <div class=&quot;sect&quot;>Agregar técnico</div>
+      <div class=&quot;fg2&quot;>
+        <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Nombre *</label><input class=&quot;fi&quot; id=&quot;tec-nombre&quot; placeholder=&quot;Juan Pérez&quot;></div>
+        <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Correo corporativo</label><input class=&quot;fi&quot; id=&quot;tec-correo&quot; type=&quot;email&quot; placeholder=&quot;juan@empresa.com&quot;></div>
+      </div>
+      <div class=&quot;fg2&quot;>
+        <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Teléfono</label><input class=&quot;fi&quot; id=&quot;tec-tel&quot; type=&quot;tel&quot;></div>
+        <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Rol</label><input class=&quot;fi&quot; id=&quot;tec-rol&quot; placeholder=&quot;Técnico CCTV&quot;></div>
+      </div>
+      <div style=&quot;font-size:11px;color:var(--t3);line-height:1.6&quot;>El correo es el que se usa para buscarlo en Teams y para mandarle la invitación de calendario.</div>
+    </div>
+    <div class=&quot;mdf&quot;><button class=&quot;bs&quot; onclick=&quot;closeModal('mo-tec')&quot;>Cerrar</button><button class=&quot;bp&quot; onclick=&quot;tecGuardar()&quot;><i class=&quot;fa fa-plus&quot; style=&quot;margin-right:5px&quot;></i>Agregar</button></div>
+  </div>
+</div>
+
+<div class=&quot;mo&quot; id=&quot;mo-asig&quot;>
+  <div class=&quot;md&quot;>
+    <div class=&quot;mdh&quot;><i class=&quot;fa fa-user-check&quot; style=&quot;color:var(--ac)&quot;></i><h3>Asignar a un técnico</h3><button class=&quot;xb&quot; onclick=&quot;closeModal('mo-asig')&quot;><i class=&quot;fa fa-times&quot;></i></button></div>
+    <div class=&quot;mdc&quot;>
+      <div class=&quot;card&quot; style=&quot;padding:11px 13px;margin-bottom:12px;font-size:12px&quot; id=&quot;asig-info&quot;></div>
+      <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Técnico</label>
+        <div style=&quot;display:flex;gap:6px&quot;><select class=&quot;fs&quot; id=&quot;asig-tec&quot; style=&quot;flex:1&quot;></select>
+        <button class=&quot;bs&quot; onclick=&quot;tecAbrir()&quot; title=&quot;Gestionar técnicos&quot;>👷</button></div></div>
+      <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Mensaje</label><textarea class=&quot;ft&quot; id=&quot;asig-msg&quot;></textarea></div>
+      <label style=&quot;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t2);margin-bottom:6px&quot;>
+        <input type=&quot;checkbox&quot; id=&quot;asig-correo&quot; checked style=&quot;width:auto&quot;> Enviarle correo con invitación de calendario
+      </label>
+      <label style=&quot;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t2)&quot;>
+        <input type=&quot;checkbox&quot; id=&quot;asig-teams&quot; style=&quot;width:auto&quot;> Abrir el chat de Teams con el mensaje
+      </label>
+    </div>
+    <div class=&quot;mdf&quot;><button class=&quot;bs&quot; onclick=&quot;closeModal('mo-asig')&quot;>Cancelar</button><button class=&quot;bp&quot; onclick=&quot;asignarConfirm()&quot;><i class=&quot;fa fa-paper-plane&quot; style=&quot;margin-right:5px&quot;></i>Asignar y avisar</button></div>
   </div>
 </div>
 
@@ -5078,11 +5228,11 @@ const DEFAULT_BUDGET_CATS = [
 ];
 const DEFAULT_KB = {'Pendiente':[],'Iniciado':[],'En Progreso':[],'Revisión':[],'Completado':[],'Cancelado':[]};
 
-function nnSave() {
+function nnSave(sinSubir) {
   try {
     const data = {
       NOTES, KB, MEETS, GOALS, COURSES, TRIPS,
-      TRANSACTIONS, DEBTS, BUDGET_CATS, HOME_FIXED, HOME_TASKS, PROJECTS
+      TRANSACTIONS, DEBTS, BUDGET_CATS, HOME_FIXED, HOME_TASKS, PROJECTS, LVS, TECNICOS
     };
     const serialized = JSON.stringify(data);
     localStorage.setItem(NN_KEY, serialized);
@@ -5093,6 +5243,8 @@ function nnSave() {
     try {
       window.parent.postMessage({ type: 'EM_SUITE_NN_DATA', payload: serialized }, '*');
     } catch(_e) {}
+    // y a la nube, para que el otro equipo vea lo mismo
+    try{ if(!sinSubir&amp;&amp;typeof nnSyncProgramar==='function')nnSyncProgramar(); }catch(_e2){}
   } catch(e) { console.warn('NeuroNotes: error guardando', e); }
 }
 
@@ -5132,13 +5284,15 @@ let BUDGET_CATS  = _saved ? (_saved.BUDGET_CATS  || DEFAULT_BUDGET_CATS.map(c=>(
 let HOME_FIXED   = _saved ? (_saved.HOME_FIXED   || []) : [];
 let HOME_TASKS   = _saved ? (_saved.HOME_TASKS   || []) : [];
 let PROJECTS     = _saved ? (_saved.PROJECTS     || []) : [];
+var _LVS_INIT    = _saved ? (_saved.LVS          || []) : [];
+var _TEC_INIT    = _saved ? (_saved.TECNICOS     || []) : [];
 
 // ══ FINANCE SUB-TAB ══
 let finTab = 'all'; // 'all' | 'ingresos' | 'egresos' | 'deudas' | 'presupuesto'
 
 // ══ VIEWS ══
 const VIEW_NAMES = {dash:'Dashboard',finance:'Finanzas',calendar:'Calendario',meetings:'Reuniones',
-  goals:'Metas &amp; Cursos',travel:'Viajes',kanban:'Proyectos',notes:'Notas Técnicas',tools:'Herramientas',home:'Hogar'};
+  goals:'Metas &amp; Cursos',travel:'Viajes',kanban:'Proyectos',lev:'Portería virtual',control:'Control técnico',notes:'Notas Técnicas',tools:'Herramientas',home:'Hogar'};
 
 function V(name) {
   document.querySelectorAll('.view,.view-full').forEach(v => v.classList.remove('on'));
@@ -5152,6 +5306,8 @@ function V(name) {
   document.querySelectorAll('.si').forEach(s => s.classList.remove('on'));
   document.getElementById('bc').textContent = VIEW_NAMES[name]||name;
   if(name==='kanban'){renderKB();renderProjects();}
+  if(name==='control'){ctrlLlenarProyectos();ctrlInit();}
+  if(name==='lev')      lvRender();
   if(name==='notes')    renderNotes();
   if(name==='goals')    renderGoals();
   if(name==='travel')   renderTrips();
@@ -5448,7 +5604,7 @@ function renderKB() {
       const cd = document.createElement('div');
       cd.className='card'; cd.style.cursor='default';
       const otherCols = KB_COLS.filter(x=>x!==col).map(x=>`<option value=&quot;${x}&quot;>${x}</option>`).join('');
-      cd.innerHTML=`<div style=&quot;display:flex;align-items:center;justify-content:space-between;margin-bottom:7px&quot;><span style=&quot;font-size:10px;font-weight:600;color:${PC[c.p]||'#00D4FF'};display:flex;align-items:center;gap:4px&quot;><i class=&quot;fa fa-circle&quot; style=&quot;font-size:5px&quot;></i>${c.p||'Normal'}</span><button onclick=&quot;deleteTask('${col}',${c.id})&quot; style=&quot;background:none;border:none;color:var(--t3);cursor:pointer;font-size:12px;padding:2px 4px;border-radius:4px&quot; title=&quot;Eliminar tarea&quot; onmouseover=&quot;this.style.color='#FF4444'&quot; onmouseout=&quot;this.style.color='var(--t3)'&quot;><i class=&quot;fa fa-trash&quot;></i></button></div><h4 style=&quot;font-size:12px;font-weight:500;line-height:1.4;margin-bottom:8px&quot;>${c.t}</h4>${c.tags&amp;&amp;c.tags.length?`<div style=&quot;display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px&quot;>${c.tags.map(t=>`<span class=&quot;tag&quot;>${t}</span>`).join('')}</div>`:''}<div style=&quot;display:flex;align-items:center;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--bd)&quot;><span style=&quot;font-size:10px;color:var(--t3);font-family:var(--mono);flex:1&quot;><i class=&quot;fa fa-calendar-alt&quot; style=&quot;margin-right:3px&quot;></i>${c.due||'—'}</span><select onchange=&quot;moveTask('${col}',${c.id},this.value)&quot; style=&quot;font-size:10px;background:var(--bg4);border:1px solid var(--bd);border-radius:5px;color:var(--t2);padding:2px 4px;cursor:pointer;font-family:var(--fm)&quot; title=&quot;Cambiar estado&quot;><option value=&quot;${col}&quot; selected>${col}</option>${otherCols}</select></div>`;
+      cd.innerHTML=`<div style=&quot;display:flex;align-items:center;justify-content:space-between;margin-bottom:7px&quot;><span style=&quot;font-size:10px;font-weight:600;color:${PC[c.p]||'#00D4FF'};display:flex;align-items:center;gap:4px&quot;><i class=&quot;fa fa-circle&quot; style=&quot;font-size:5px&quot;></i>${c.p||'Normal'}</span><button onclick=&quot;asignarAbrir('${col}',${c.id})&quot; style=&quot;background:none;border:none;color:${c.asignado?'var(--ok)':'var(--t3)'};cursor:pointer;font-size:12px;padding:2px 4px;border-radius:4px&quot; title=&quot;${c.asignado?('Asignado a '+c.asignado.nombre):'Asignar a un técnico'}&quot;><i class=&quot;fa fa-user-check&quot;></i></button><button onclick=&quot;deleteTask('${col}',${c.id})&quot; style=&quot;background:none;border:none;color:var(--t3);cursor:pointer;font-size:12px;padding:2px 4px;border-radius:4px&quot; title=&quot;Eliminar tarea&quot; onmouseover=&quot;this.style.color='#FF4444'&quot; onmouseout=&quot;this.style.color='var(--t3)'&quot;><i class=&quot;fa fa-trash&quot;></i></button></div><h4 style=&quot;font-size:12px;font-weight:500;line-height:1.4;margin-bottom:8px&quot;>${c.t}</h4>${c.tags&amp;&amp;c.tags.length?`<div style=&quot;display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px&quot;>${c.tags.map(t=>`<span class=&quot;tag&quot;>${t}</span>`).join('')}</div>`:''}<div style=&quot;display:flex;align-items:center;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--bd)&quot;><span style=&quot;font-size:10px;color:var(--t3);font-family:var(--mono);flex:1&quot;><i class=&quot;fa fa-calendar-alt&quot; style=&quot;margin-right:3px&quot;></i>${c.due||'—'}${c.asignado?' · <span style=&quot;color:var(--ok)&quot;>'+c.asignado.nombre.split(' ')[0]+'</span>':''}</span><select onchange=&quot;moveTask('${col}',${c.id},this.value)&quot; style=&quot;font-size:10px;background:var(--bg4);border:1px solid var(--bd);border-radius:5px;color:var(--t2);padding:2px 4px;cursor:pointer;font-family:var(--fm)&quot; title=&quot;Cambiar estado&quot;><option value=&quot;${col}&quot; selected>${col}</option>${otherCols}</select></div>`;
       el.appendChild(cd);
     });
     const add = document.createElement('div');
@@ -6083,6 +6239,10 @@ function ht(){document.getElementById('toast').classList.remove('sh');}
 // ══ INIT ══
 renderCal('cal-main',calM);
 try{
+  LVS=_LVS_INIT||[];
+  TECNICOS=_TEC_INIT||[];
+  tecLlenarSelects();
+  nnSyncInit();
   projFillSelect(); calFillProjects(); renderProjects();
   var _cd=document.getElementById('cal-new-date'); if(_cd)_cd.value=nnHoy();
 }catch(e){console.warn('init proyectos',e);}
@@ -6584,6 +6744,7 @@ function renderProjects(){
       '<div style=&quot;display:flex;gap:5px;flex-wrap:wrap&quot;>'+
         '<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 8px&quot; onclick=&quot;projAddTask(\''+p.id+'\')&quot;><i class=&quot;fa fa-plus&quot;></i> Tarea</button>'+
         '<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 8px&quot; onclick=&quot;projPlano(\''+p.id+'\')&quot;><i class=&quot;fa fa-map&quot;></i> Plano</button>'+
+        '<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 8px;color:var(--ac3)&quot; onclick=&quot;lvAbrirProyecto(\''+p.id+'\')&quot;><i class=&quot;fa fa-building&quot;></i> '+(lvPorProyecto(p.id)?'Levantamiento ✓':'Levantamiento')+'</button>'+
         '<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 8px;color:#6264A7&quot; onclick=&quot;projTeams(\''+p.id+'\')&quot;><i class=&quot;fab fa-microsoft&quot;></i> Teams</button>'+
         '<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 8px;color:var(--danger)&quot; onclick=&quot;projDelete(\''+p.id+'\')&quot;><i class=&quot;fa fa-trash&quot;></i></button>'+
       '</div></div>';
@@ -6842,6 +7003,7 @@ function openIntegra(cual){
   var H={
     teams:{t:'Microsoft Teams',c:
       '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:10px&quot;>Desde aquí creas reuniones de Teams con los datos ya puestos, y dejas tu agenda visible en el calendario de Microsoft.</p>'+
+      cuentaHTML('teams','Cuenta de Teams')+
       '<button class=&quot;bp&quot; style=&quot;width:100%;margin-bottom:8px&quot; onclick=&quot;teamsRapida()&quot;><i class=&quot;fab fa-microsoft&quot; style=&quot;margin-right:6px&quot;></i>Crear reunión ahora en Teams</button>'+
       '<button class=&quot;bs&quot; style=&quot;width:100%;margin-bottom:8px&quot; onclick=&quot;window.open(\'https://teams.microsoft.com/\',\'_blank\')&quot;>Abrir Microsoft Teams</button>'+
       '<button class=&quot;bs&quot; style=&quot;width:100%;margin-bottom:8px&quot; onclick=&quot;window.open(\'https://outlook.office.com/calendar/\',\'_blank\')&quot;>Abrir el calendario de Outlook</button>'+
@@ -6849,13 +7011,15 @@ function openIntegra(cual){
       '<p style=&quot;font-size:11px;color:var(--t3);line-height:1.6&quot;>En Outlook: <b>Agregar calendario → Suscribirse desde la web</b> y pega la URL. Los eventos aparecen solos y se actualizan.<br>Ojo: el calendario suscrito se ve en Outlook, no dentro de la pestaña Calendario de Teams — Teams solo muestra el calendario principal. Por eso cada evento trae su botón para crear la reunión de verdad.</p>'},
     gcal:{t:'Google Calendar',c:
       '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:10px&quot;>Lleva tu agenda a Google Calendar: suscrita (se actualiza sola) o evento por evento.</p>'+
+      cuentaHTML('google','Cuenta de Google')+
       '<button class=&quot;bp&quot; style=&quot;width:100%;margin-bottom:8px&quot; onclick=&quot;gcalRapida()&quot;><i class=&quot;fa fa-calendar-plus&quot; style=&quot;margin-right:6px&quot;></i>Crear evento ahora en Google</button>'+
       '<button class=&quot;bs&quot; style=&quot;width:100%;margin-bottom:8px&quot; onclick=&quot;window.open(\'https://calendar.google.com/\',\'_blank\')&quot;>Abrir Google Calendar</button>'+
       '<button class=&quot;bs&quot; style=&quot;width:100%;margin-bottom:8px&quot; onclick=&quot;calExportIcs()&quot;><i class=&quot;fa fa-file-export&quot; style=&quot;margin-right:6px&quot;></i>Exportar mi agenda (.ics)</button>'+
       nota+
       '<p style=&quot;font-size:11px;color:var(--t3);line-height:1.6&quot;>En Google Calendar: <b>Otros calendarios → + → Desde URL</b> y pega la dirección. Google la refresca cada varias horas; Outlook es más rápido.</p>'},
     drive:{t:'Google Drive — respaldo',c:
-      '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:10px&quot;>Tus notas, tareas, proyectos y finanzas viven en esta tablet. Descarga el respaldo y súbelo a Drive cada tanto; si cambias de equipo, lo restauras aquí mismo.</p>'+
+      '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:10px&quot;>Tus notas, tareas, proyectos y finanzas ya se sincronizan entre tus equipos por Firebase. Este respaldo es para guardar una copia completa, con fotos incluidas.</p>'+
+      cuentaHTML('drive','Cuenta de Drive')+
       '<button class=&quot;bp&quot; style=&quot;width:100%;margin-bottom:8px&quot; onclick=&quot;backupNN()&quot;><i class=&quot;fa fa-download&quot; style=&quot;margin-right:6px&quot;></i>Descargar respaldo completo (.json)</button>'+
       '<button class=&quot;bs&quot; style=&quot;width:100%;margin-bottom:8px&quot; onclick=&quot;restoreNN()&quot;><i class=&quot;fa fa-upload&quot; style=&quot;margin-right:6px&quot;></i>Restaurar desde un respaldo</button>'+
       '<button class=&quot;bs&quot; style=&quot;width:100%;margin-bottom:8px&quot; onclick=&quot;window.open(\'https://drive.google.com/\',\'_blank\')&quot;>Abrir Google Drive</button>'+
@@ -6865,6 +7029,1841 @@ function openIntegra(cual){
   document.getElementById('int-ttl').textContent=h.t;
   document.getElementById('int-body').innerHTML=h.c;
   openModal('mo-integra');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONTROL TÉCNICO — lo que el técnico diligencia en obra
+// El reporte sale por correo a las direcciones configuradas, queda
+// en una hoja de cálculo como historial y llega aviso por Telegram.
+// ═══════════════════════════════════════════════════════════════
+var CTRL_FOTOS=[];          // hasta 4 fotos comprimidas
+var CTRL_FIRMA=null;        // firma del cliente (dataURL)
+var CTRL_KEY='nn_reporte_borrador';
+
+function ctrlInit(){
+  var g=function(id){return document.getElementById(id);};
+  if(!g('ct-tipo'))return;
+  ctrlLlenarProyectos();
+  tecLlenarSelects();
+  ctrlChecklist();
+  ctrlFirmaInit();
+  // recuperar borrador
+  try{
+    var b=JSON.parse(localStorage.getItem(CTRL_KEY)||'null');
+    if(b){
+      ['ct-tec','ct-cliente','ct-dir','ct-ini','ct-fin','ct-mat','ct-obs','ct-pend'].forEach(function(id){
+        if(b[id]&amp;&amp;g(id))g(id).value=b[id];
+      });
+      if(b['ct-tipo'])g('ct-tipo').value=b['ct-tipo'];
+      if(b['ct-estado'])g('ct-estado').value=b['ct-estado'];
+      ctrlChecklist();
+    }
+  }catch(e){}
+  if(!g('ct-ini').value){
+    var n=new Date();
+    g('ct-ini').value=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+  }
+}
+function ctrlGuardarBorrador(){
+  var b={};
+  ['ct-tec','ct-cliente','ct-dir','ct-ini','ct-fin','ct-mat','ct-obs','ct-pend','ct-tipo','ct-estado'].forEach(function(id){
+    var e=document.getElementById(id); if(e)b[id]=e.value;
+  });
+  try{localStorage.setItem(CTRL_KEY,JSON.stringify(b));}catch(e){}
+}
+function ctrlTecSel(){
+  var s=document.getElementById('ct-tec-sel');
+  var t=s?tecFind(s.value):null;
+  var i=document.getElementById('ct-tec');
+  if(t&amp;&amp;i){i.value=t.nombre;ctrlGuardarBorrador();}
+}
+function ctrlLlenarProyectos(){
+  var sel=document.getElementById('ct-proj'); if(!sel)return;
+  sel.innerHTML='<option value=&quot;&quot;>— Sin proyecto —</option>'+
+    PROJECTS.map(function(p){return'<option value=&quot;'+nnEsc(p.name)+'&quot;>'+nnEsc(p.name)+(p.client?' — '+nnEsc(p.client):'')+'</option>';}).join('');
+}
+function ctrlChecklist(){
+  var box=document.getElementById('ct-check'); if(!box)return;
+  var tipo=document.getElementById('ct-tipo').value;
+  var items=(typeof CHECKS!=='undefined'&amp;&amp;CHECKS[tipo])?CHECKS[tipo]:[];
+  box.innerHTML=items.map(function(it,i){
+    return'<label style=&quot;display:flex;align-items:flex-start;gap:9px;padding:7px 9px;margin-bottom:4px;'+
+      'background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);font-size:12px;line-height:1.5;cursor:pointer&quot;>'+
+      '<input type=&quot;checkbox&quot; class=&quot;ct-ck&quot; data-n=&quot;'+nnEsc(it)+'&quot; style=&quot;width:auto;margin-top:2px&quot;>'+
+      '<span>'+nnEsc(it)+'</span></label>';
+  }).join('')||'<div style=&quot;font-size:12px;color:var(--t3);padding:10px&quot;>Sin checklist para este tipo</div>';
+}
+// Comprime la foto antes de mandarla: una foto de celular pesa 4 MB y
+// no hace falta esa resolución para dejar constancia del trabajo.
+function ctrlFoto(input){
+  var files=Array.prototype.slice.call(input.files||[]);
+  files.forEach(function(f){
+    if(CTRL_FOTOS.length>=4){T('Máximo 4 fotos','Borra alguna para agregar otra','⚠️');return;}
+    var r=new FileReader();
+    r.onload=function(ev){
+      var im=new Image();
+      im.onload=function(){
+        var max=1100, k=Math.min(1,max/Math.max(im.width,im.height));
+        var c=document.createElement('canvas');
+        c.width=Math.round(im.width*k); c.height=Math.round(im.height*k);
+        var x=c.getContext('2d');
+        x.drawImage(im,0,0,c.width,c.height);
+        // sello con fecha y hora, para que la evidencia tenga cuándo
+        var t=new Date().toLocaleString('es-CO');
+        x.font='bold '+Math.max(14,c.width*0.028)+'px sans-serif';
+        var w=x.measureText(t).width+16;
+        x.fillStyle='rgba(0,0,0,.55)';x.fillRect(8,c.height-38,w,28);
+        x.fillStyle='#fff';x.fillText(t,16,c.height-18);
+        CTRL_FOTOS.push(c.toDataURL('image/jpeg',.62));
+        ctrlRenderFotos();
+      };
+      im.src=ev.target.result;
+    };
+    r.readAsDataURL(f);
+  });
+  input.value='';
+}
+function ctrlRenderFotos(){
+  var box=document.getElementById('ct-fotos'); if(!box)return;
+  var peso=Math.round(CTRL_FOTOS.join('').length*0.75/1024);
+  box.innerHTML=CTRL_FOTOS.map(function(f,i){
+    return'<div style=&quot;position:relative;display:inline-block;margin:0 6px 6px 0&quot;>'+
+      '<img src=&quot;'+f+'&quot; style=&quot;width:86px;height:86px;object-fit:cover;border-radius:var(--r);border:1px solid var(--bd)&quot;>'+
+      '<button onclick=&quot;ctrlQuitarFoto('+i+')&quot; style=&quot;position:absolute;top:2px;right:2px;background:rgba(255,68,68,.9);'+
+      'border:none;color:#fff;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:11px&quot;>✕</button></div>';
+  }).join('')+(CTRL_FOTOS.length?'<div style=&quot;font-size:10px;color:var(--t3);font-family:var(--mono)&quot;>'+CTRL_FOTOS.length+' foto(s) · '+peso+' KB</div>':'');
+}
+function ctrlQuitarFoto(i){CTRL_FOTOS.splice(i,1);ctrlRenderFotos();}
+
+// ── Firma del cliente ──
+function ctrlFirmaInit(){
+  var c=document.getElementById('ct-firma'); if(!c||c._listo)return;
+  c._listo=true;
+  var r=c.getBoundingClientRect();
+  c.width=Math.max(300,Math.round(r.width||460)); c.height=150;
+  var x=c.getContext('2d');
+  x.fillStyle='#ffffff';x.fillRect(0,0,c.width,c.height);
+  x.strokeStyle='#0b1118';x.lineWidth=2.2;x.lineCap='round';x.lineJoin='round';
+  var pintando=false;
+  function pos(e){
+    var b=c.getBoundingClientRect();
+    var p=(e.touches&amp;&amp;e.touches[0])||e;
+    return{x:(p.clientX-b.left)*(c.width/b.width),y:(p.clientY-b.top)*(c.height/b.height)};
+  }
+  function ini(e){pintando=true;var p=pos(e);x.beginPath();x.moveTo(p.x,p.y);if(e.cancelable)e.preventDefault();}
+  function mov(e){if(!pintando)return;var p=pos(e);x.lineTo(p.x,p.y);x.stroke();if(e.cancelable)e.preventDefault();}
+  function fin(){if(!pintando)return;pintando=false;CTRL_FIRMA=c.toDataURL('image/png');}
+  c.addEventListener('mousedown',ini);c.addEventListener('mousemove',mov);
+  window.addEventListener('mouseup',fin);
+  c.addEventListener('touchstart',ini,{passive:false});
+  c.addEventListener('touchmove',mov,{passive:false});
+  c.addEventListener('touchend',fin,{passive:false});
+}
+function ctrlLimpiarFirma(){
+  var c=document.getElementById('ct-firma'); if(!c)return;
+  var x=c.getContext('2d');
+  x.fillStyle='#ffffff';x.fillRect(0,0,c.width,c.height);
+  x.strokeStyle='#0b1118';x.lineWidth=2.2;
+  CTRL_FIRMA=null;
+}
+
+// ── Envío ──
+function ctrlDatos(){
+  var g=function(id){var e=document.getElementById(id);return e?e.value.trim():'';};
+  var checks=[];
+  document.querySelectorAll('#ct-check .ct-ck').forEach(function(c){
+    checks.push({n:c.getAttribute('data-n'),ok:c.checked});
+  });
+  return {
+    tipo:'reporte',
+    id:'rep_'+Date.now(),
+    fecha:new Date().toLocaleString('es-CO'),
+    tecnico:g('ct-tec'), cliente:g('ct-cliente'), direccion:g('ct-dir'),
+    proyecto:g('ct-proj'), tipoTrabajo:g('ct-tipo'), estado:g('ct-estado'),
+    horaIni:g('ct-ini'), horaFin:g('ct-fin'),
+    materiales:g('ct-mat'), observaciones:g('ct-obs'), pendientes:g('ct-pend'),
+    checklist:checks, fotos:CTRL_FOTOS, firma:CTRL_FIRMA,
+    correos:(EMCFG_NN&amp;&amp;EMCFG_NN.correos)||[]
+  };
+}
+function ctrlEnviar(){
+  var d=ctrlDatos();
+  if(!d.tecnico||!d.cliente){T('Faltan datos','Escribe el técnico y el cliente','⚠️');return;}
+  var url=(EMCFG_NN&amp;&amp;EMCFG_NN.gasUrl)||'';
+  if(!url){
+    T('Falta la URL del robot','Pégala en Alertas → Configuración','⚠️');
+    ctrlDescargar();
+    return;
+  }
+  var btn=document.getElementById('ct-enviar');
+  if(btn){btn.disabled=true;btn.textContent='Enviando…';}
+  var cuerpo=JSON.stringify(d);
+  // Apps Script acepta texto plano sin preflight de CORS
+  fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:cuerpo})
+    .then(function(r){return r.json();})
+    .then(function(j){
+      ctrlOk(j&amp;&amp;j.ok,j);
+    })
+    .catch(function(){
+      // Si el navegador bloquea la lectura de la respuesta, el reporte igual
+      // viaja: se reenvía en modo no-cors y se confirma por Telegram.
+      fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:cuerpo})
+        .then(function(){ctrlOk(true,null,true);})
+        .catch(function(){ctrlOk(false);});
+    });
+}
+function ctrlOk(ok,j,ciego){
+  var btn=document.getElementById('ct-enviar');
+  if(btn){btn.disabled=false;btn.innerHTML='<i class=&quot;fa fa-paper-plane&quot; style=&quot;margin-right:6px&quot;></i>Enviar reporte';}
+  if(ok){
+    var correos=(j&amp;&amp;j.correos)||((EMCFG_NN&amp;&amp;EMCFG_NN.correos)||[]).length||2;
+    T('Reporte enviado',ciego?'Confirma la llegada en Telegram':'Enviado a '+correos+' correo(s)','📨');
+    var est=document.getElementById('ct-estado-envio');
+    if(est){
+      est.style.display='block';
+      est.innerHTML='✅ Reporte enviado '+new Date().toLocaleString('es-CO')+
+        (j&amp;&amp;j.hoja?' · <a href=&quot;'+j.hoja+'&quot; target=&quot;_blank&quot; style=&quot;color:var(--ac)&quot;>ver hoja de control</a>':'');
+    }
+    CTRL_FOTOS=[];ctrlRenderFotos();ctrlLimpiarFirma();
+    try{localStorage.removeItem(CTRL_KEY);}catch(e){}
+    ['ct-obs','ct-pend','ct-mat'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+    document.querySelectorAll('#ct-check .ct-ck').forEach(function(c){c.checked=false;});
+  }else{
+    T('No se pudo enviar','Revisa la URL del robot o la conexión','⚠️');
+    ctrlDescargar();
+  }
+}
+// Respaldo: si no hay conexión, el técnico se lleva el reporte en archivo
+function ctrlDescargar(){
+  var d=ctrlDatos();
+  var t='REPORTE DE SERVICIO TÉCNICO — '+(d.tipoTrabajo||'')+'\n';
+  t+='Fecha: '+d.fecha+'\n';
+  t+='Técnico: '+d.tecnico+'\nCliente: '+d.cliente+'\nDirección: '+d.direccion+'\n';
+  t+='Proyecto: '+d.proyecto+'\nEstado: '+d.estado+'\nHorario: '+d.horaIni+' — '+d.horaFin+'\n\n';
+  t+='CHECKLIST\n';
+  d.checklist.forEach(function(c){t+=(c.ok?'[X] ':'[ ] ')+c.n+'\n';});
+  t+='\nMateriales: '+d.materiales+'\nObservaciones: '+d.observaciones+'\nPendientes: '+d.pendientes+'\n';
+  t+='\nFirma del cliente: __________________   Técnico: __________________\n';
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([t],{type:'text/plain;charset=utf-8'}));
+  a.download='reporte-'+(d.cliente||'cliente').replace(/[^a-z0-9]+/gi,'-').toLowerCase()+'-'+nnHoy()+'.txt';
+  a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+  T('Reporte descargado','Guardado en la tablet para enviarlo después','💾');
+}
+function ctrlTelegram(){
+  var d=ctrlDatos();
+  if(!d.tecnico||!d.cliente){T('Faltan datos','Escribe el técnico y el cliente','⚠️');return;}
+  var hechos=d.checklist.filter(function(c){return c.ok;}).length;
+  var m='🔧 '+nnB('Reporte de servicio')+'\n━━━━━━━━━━━━━━━\n';
+  m+='👷 '+nnEsc(d.tecnico)+'\n🏢 '+nnEsc(d.cliente)+'\n';
+  if(d.direccion)m+='📍 '+nnEsc(d.direccion)+'\n';
+  if(d.proyecto)m+='📂 '+nnEsc(d.proyecto)+'\n';
+  m+='🧰 '+nnEsc(d.tipoTrabajo)+'\n📌 '+nnEsc(d.estado)+'\n';
+  if(d.checklist.length)m+='✅ Checklist: '+hechos+'/'+d.checklist.length+'\n';
+  if(d.observaciones)m+='📝 '+nnEsc(d.observaciones.slice(0,200))+'\n';
+  if(d.pendientes)m+='⚠️ Pendiente: '+nnEsc(d.pendientes.slice(0,200))+'\n';
+  m+='🕐 '+nnEsc(d.fecha)+'\n<i>EM Suite PRO</i>';
+  nnTg(m);
+  T('Resumen enviado','Revisa Telegram (sin fotos)','📨');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LEVANTAMIENTO TÉCNICO — PORTERÍA VIRTUAL
+// EM Suite PRO · Ing. Edisson Macías Quevedo
+//
+// Se llena durante la visita desde el celular. Cada levantamiento
+// puede quedar amarrado a un proyecto del tablero. Al terminar
+// calcula la factibilidad, arma el presupuesto preliminar y saca
+// el informe PDF para el cliente.
+// ═══════════════════════════════════════════════════════════════
+
+var LV_SINO=['Sí','No'];
+var LV_EST=['Excelente','Bueno','Regular','Malo','No aplica'];
+
+var LV_SEC=[
+{id:'general',n:'Información general',ico:'🏢',campos:[
+  {k:'nombre',l:'Nombre del edificio o conjunto',req:1,ph:'Conjunto Torres del Parque'},
+  {k:'nit',l:'NIT',ph:'900.123.456-7'},
+  {k:'direccion',l:'Dirección',req:1,ph:'Calle 100 # 7-55'},
+  {k:'ciudad',l:'Ciudad',req:1,ph:'Bogotá'},
+  {k:'estrato',l:'Estrato',t:'select',o:['1','2','3','4','5','6','Comercial']},
+  {k:'anio',l:'Año de construcción',t:'num',ph:'2015'},
+  {k:'administracion',l:'Administración',ph:'Empresa administradora'},
+  {k:'contacto',l:'Contacto principal',req:1,ph:'Nombre y cargo'},
+  {k:'correo',l:'Correo',t:'email'},
+  {k:'telefono',l:'Teléfono',t:'tel'},
+  {k:'torres',l:'Torres',t:'num'},
+  {k:'pisos',l:'Pisos',t:'num'},
+  {k:'apartamentos',l:'Apartamentos',t:'num',req:1},
+  {k:'locales',l:'Locales',t:'num'},
+  {k:'residentes',l:'Residentes',t:'num'}
+]},
+{id:'perfil',n:'Perfil de la copropiedad',ico:'👥',campos:[
+  {k:'poblacion',l:'Tipo de población',t:'chips',o:['Adultos mayores','Familias','Jóvenes','Mixta','Uso turístico','Airbnb']},
+  {k:'rotacion',l:'Rotación de residentes',t:'select',o:['Baja','Media','Alta','Muy alta']},
+  {k:'dependencia',l:'¿Requiere atención presencial frecuente?',t:'select',o:LV_SINO,
+   ay:'Adultos mayores, movilidad reducida, muchos visitantes sin autorizar.'},
+  {k:'problemas',l:'Principales problemas actuales',t:'area',ph:'Robos, suplantación, domicilios sin control, quejas...'}
+]},
+{id:'peatonal',n:'Acceso peatonal',ico:'🚪',rep:1,item:'Acceso peatonal',campos:[
+  {k:'ubicacion',l:'Ubicación',ph:'Portería principal'},
+  {k:'material',l:'Material de la puerta',t:'select',o:['Vidrio templado','Aluminio','Metálica','Madera','Mixta']},
+  {k:'estadoPuerta',l:'Estado de la puerta',t:'select',o:LV_EST},
+  {k:'electroiman',l:'¿Tiene electroimán?',t:'select',o:LV_SINO},
+  {k:'marcaEim',l:'Marca del electroimán'},
+  {k:'estadoEim',l:'Estado del electroimán',t:'select',o:LV_EST},
+  {k:'brazo',l:'¿Tiene brazo cierrapuertas?',t:'select',o:LV_SINO},
+  {k:'estadoBrazo',l:'Estado del brazo',t:'select',o:LV_EST},
+  {k:'control',l:'¿Tiene control de acceso?',t:'select',o:LV_SINO},
+  {k:'tecnologia',l:'Tecnología',t:'select',o:['Ninguna','Proximidad 125 kHz','Mifare 13.56 MHz','Biométrico','Facial','QR / App','Teclado']},
+  {k:'moderniza',l:'¿Requiere modernización?',t:'select',o:LV_SINO},
+  {k:'obs',l:'Observaciones',t:'area'}
+]},
+{id:'vehicular',n:'Acceso vehicular',ico:'🚗',rep:1,item:'Acceso vehicular',campos:[
+  {k:'ubicacion',l:'Ubicación',ph:'Entrada sótano 1'},
+  {k:'hojas',l:'Simple o doble',t:'select',o:['Simple','Doble']},
+  {k:'material',l:'Material',t:'select',o:['Metálica','Enrollable','Corrediza','Batiente','Reja']},
+  {k:'automatizacion',l:'Automatización',t:'select',o:['Ninguna / manual','Motor corredizo','Motor batiente','Enrollable','Talanquera','Barrera + puerta']},
+  {k:'marcaMotor',l:'Marca del motor'},
+  {k:'estadoMotor',l:'Estado del motor',t:'select',o:LV_EST},
+  {k:'estadoPuerta',l:'Estado de la puerta',t:'select',o:LV_EST},
+  {k:'camara',l:'¿Cámara de reconocimiento vehicular?',t:'select',o:LV_SINO},
+  {k:'lpr',l:'¿LPR existente?',t:'select',o:LV_SINO},
+  {k:'requerimientos',l:'Requerimientos adicionales',t:'area',ph:'Fotoceldas, espira, semáforo, talanquera...'}
+]},
+{id:'sotanos',n:'Sótanos',ico:'🅿️',campos:[
+  {k:'cantidad',l:'Cantidad de sótanos',t:'num'},
+  {k:'escaleras',l:'Accesos a escaleras',t:'num'},
+  {k:'ascensores',l:'Accesos a ascensores',t:'num'},
+  {k:'riesgos',l:'Riesgos de intrusión detectados',t:'area',ph:'Puertas sin cierre, rejillas, ductos, muros bajos...'},
+  {k:'puertaSeg',l:'¿Requiere puerta de seguridad?',t:'select',o:LV_SINO},
+  {k:'esclusa',l:'¿Requiere esclusa?',t:'select',o:LV_SINO},
+  {k:'control',l:'¿Requiere control de acceso?',t:'select',o:LV_SINO}
+]},
+{id:'esclusa',n:'Esclusa de seguridad',ico:'🔐',campos:[
+  {k:'existe',l:'¿Existe esclusa?',t:'select',o:LV_SINO},
+  {k:'estado',l:'Estado',t:'select',o:LV_EST},
+  {k:'material',l:'Material',t:'select',o:['Vidrio templado','Aluminio y vidrio','Metálica','Mixta','No aplica']},
+  {k:'reutilizable',l:'¿Viable reutilizarla?',t:'select',o:LV_SINO},
+  {k:'propuesta',l:'Propuesta conceptual (si no existe)',t:'area',ph:'Ubicación, medidas, sentido de circulación...'},
+  {k:'tipoSugerido',l:'Tipo sugerido',t:'select',o:['No aplica','Doble puerta con interbloqueo','Puerta + torniquete','Torniquete media altura','Torniquete altura completa','Puerta batiente doble']},
+  {k:'materialRec',l:'Material recomendado',t:'select',o:['No aplica','Vidrio templado 10 mm','Aluminio y vidrio','Acero inoxidable','Metálica pintura electrostática']}
+]},
+{id:'ascensores',n:'Ascensores',ico:'🛗',campos:[
+  {k:'cantidad',l:'Cantidad',t:'num'},
+  {k:'marca',l:'Marca',ph:'Otis, Schindler, Mitsubishi...'},
+  {k:'estado',l:'Estado',t:'select',o:LV_EST},
+  {k:'citofonia',l:'¿Citofonía existente?',t:'select',o:LV_SINO},
+  {k:'tipoCitofonia',l:'Tipo de citofonía',t:'select',o:['No tiene','Analógica','IP','Híbrida']},
+  {k:'integrable',l:'¿Compatible con integración?',t:'select',o:['Sí','No','Por verificar']},
+  {k:'camara',l:'¿Cámara en cabina?',t:'select',o:LV_SINO},
+  {k:'conectividad',l:'Conectividad en cabina',t:'select',o:['Ninguna','Cable viajero libre','Red UTP','WiFi','Fibra']},
+  {k:'controlPisos',l:'¿Requiere control por piso?',t:'select',o:LV_SINO}
+]},
+{id:'cctv',n:'CCTV',ico:'📹',campos:[
+  {k:'total',l:'Total de cámaras',t:'num'},
+  {k:'uPeatonal',l:'Ingreso peatonal',t:'num'},
+  {k:'uVehicular',l:'Ingreso vehicular',t:'num'},
+  {k:'uLobby',l:'Lobby',t:'num'},
+  {k:'uAscensores',l:'Ascensores',t:'num'},
+  {k:'uSotanos',l:'Sótanos',t:'num'},
+  {k:'uPiscina',l:'Piscina',t:'num'},
+  {k:'uSalon',l:'Salón comunal',t:'num'},
+  {k:'uPerimetro',l:'Perímetro',t:'num'},
+  {k:'uComunes',l:'Otras zonas comunes',t:'num'},
+  {k:'marcaCam',l:'Marca predominante',ph:'Hikvision, Dahua...'},
+  {k:'tecnologia',l:'Tecnología',t:'select',o:['IP','Analógica HD','Mixta']},
+  {k:'resolucion',l:'Resolución predominante',t:'select',o:['2 MP','4 MP','5 MP','8 MP / 4K','Mixta','Menor a 2 MP']},
+  {k:'estadoCam',l:'Estado general',t:'select',o:LV_EST},
+  {k:'grabMarca',l:'Grabador — marca y modelo'},
+  {k:'grabCanales',l:'Canales',t:'num'},
+  {k:'grabCapacidad',l:'Capacidad de disco (TB)',t:'num'},
+  {k:'grabDias',l:'Días de almacenamiento',t:'num'},
+  {k:'grabRemoto',l:'¿Acceso remoto funcionando?',t:'select',o:LV_SINO},
+  {k:'grabUsuario',l:'¿Entregan usuario al centro de monitoreo?',t:'select',o:LV_SINO},
+  {k:'obs',l:'Observaciones',t:'area'}
+]},
+{id:'redes',n:'Redes y comunicaciones',ico:'🌐',campos:[
+  {k:'proveedor',l:'Proveedor de internet',ph:'Claro, ETB, Movistar...'},
+  {k:'bajada',l:'Velocidad de bajada (Mbps)',t:'num'},
+  {k:'subida',l:'Velocidad de subida (Mbps)',t:'num',req:1,
+   ay:'El dato más importante: el video viaja del edificio hacia el centro remoto.'},
+  {k:'fibra',l:'¿Fibra óptica?',t:'select',o:LV_SINO},
+  {k:'respaldo',l:'¿Canal de respaldo?',t:'select',o:['No','Sí, otro proveedor','Sí, LTE/4G','En trámite']},
+  {k:'wifi',l:'Cobertura WiFi en zonas comunes',t:'select',o:['Ninguna','Parcial','Completa']},
+  {k:'rack',l:'¿Rack de comunicaciones?',t:'select',o:LV_SINO},
+  {k:'estadoRack',l:'Estado del rack',t:'select',o:LV_EST},
+  {k:'cuarto',l:'¿Cuarto técnico independiente?',t:'select',o:LV_SINO},
+  {k:'puntos',l:'Puntos de red disponibles',t:'num'},
+  {k:'obs',l:'Observaciones',t:'area'}
+]},
+{id:'electrico',n:'Respaldo eléctrico',ico:'⚡',campos:[
+  {k:'planta',l:'¿Planta eléctrica?',t:'select',o:LV_SINO},
+  {k:'cobertura',l:'Cobertura de la planta',t:'select',o:['No aplica','Solo ascensores','Zonas comunes','Total','Parcial']},
+  {k:'transferencia',l:'¿Transferencia automática?',t:'select',o:LV_SINO},
+  {k:'ups',l:'¿UPS en cuarto técnico?',t:'select',o:LV_SINO},
+  {k:'autonomia',l:'Autonomía de la UPS (minutos)',t:'num'},
+  {k:'estado',l:'Estado general del respaldo',t:'select',o:LV_EST},
+  {k:'obs',l:'Observaciones',t:'area'}
+]},
+{id:'operacion',n:'Operación actual',ico:'👮',campos:[
+  {k:'empresa',l:'Empresa de vigilancia'},
+  {k:'vigilantes',l:'Número de vigilantes',t:'num'},
+  {k:'cobertura',l:'Cobertura actual',t:'select',o:['24/7','Diurno','Nocturno','Turnos parciales']},
+  {k:'horarios',l:'Horarios',ph:'3 turnos de 8 horas'},
+  {k:'costo',l:'Costo mensual estimado (COP)',t:'num',ph:'12000000'},
+  {k:'vencimiento',l:'Vencimiento del contrato',t:'date'},
+  {k:'problemas',l:'Problemas operativos actuales',t:'area'}
+]},
+{id:'visitantes',n:'Visitantes y domicilios',ico:'📦',campos:[
+  {k:'autorizacion',l:'Método de autorización',t:'select',o:['Citófono','Llamada','WhatsApp','App','Minuta en papel','Ninguno']},
+  {k:'domicilios',l:'Entrega de domicilios',t:'select',o:['El domiciliario sube','Se deja en portería','Casillero','Mixto']},
+  {k:'paquetes',l:'Gestión de paquetes',t:'select',o:['Sin control','Minuta en papel','Registro digital','Lockers']},
+  {k:'registro',l:'Registro de visitantes',t:'select',o:['Minuta en papel','Digital','Ninguno']},
+  {k:'volumen',l:'Visitantes por día (aprox.)',t:'num'},
+  {k:'problemas',l:'Problemas frecuentes',t:'area'}
+]},
+{id:'restricciones',n:'Restricciones',ico:'⚠️',campos:[
+  {k:'obra',l:'Restricciones de obra civil',t:'area',ph:'Fachada patrimonial, muros estructurales, sin ductos...'},
+  {k:'admin',l:'Restricciones administrativas',t:'area',ph:'Requiere asamblea, presupuesto, contrato vigente...'},
+  {k:'horarios',l:'Horarios permitidos para trabajos'},
+  {k:'asamblea',l:'¿Requiere aprobación en asamblea?',t:'select',o:LV_SINO},
+  {k:'reutilizable',l:'Infraestructura reutilizable',t:'area',ph:'Ductería, cableado, cámaras, citófonos...'}
+]},
+{id:'fotos',n:'Registro fotográfico',ico:'📷',tipo:'fotos'},
+{id:'evaluacion',n:'Evaluación y factibilidad',ico:'📊',tipo:'eval'},
+{id:'presupuesto',n:'Presupuesto preliminar',ico:'💰',tipo:'presupuesto'},
+{id:'comercial',n:'Gestión comercial',ico:'🤝',campos:[
+  {k:'consultor',l:'Consultor asignado',req:1},
+  {k:'estado',l:'Estado de la oportunidad',t:'select',o:['Prospecto','Diagnóstico entregado','Cotización enviada','Negociación','Ganado','Perdido']},
+  {k:'fechaVisita',l:'Fecha de la visita',t:'date'},
+  {k:'proximo',l:'Próximo paso',ph:'Presentar diagnóstico al consejo'},
+  {k:'fechaProximo',l:'Fecha del próximo paso',t:'date'},
+  {k:'decisor',l:'¿Quién decide?',ph:'Consejo de administración / asamblea'},
+  {k:'competencia',l:'Competencia presente'},
+  {k:'notas',l:'Notas comerciales',t:'area'}
+]}
+];
+
+var LV_FOTOS=['Fachada','Recepción','Acceso peatonal','Acceso vehicular','Sótanos','Ascensores',
+  'CCTV','Cuarto técnico','Rack','Internet','Planta eléctrica','Equipos existentes'];
+
+// Precios de referencia en pesos (edítalos en la sección de presupuesto)
+var LV_PRECIOS_DEF={
+  esclusa:14000000, torniquete:9500000, puertaSeguridad:3800000,
+  electroiman:850000, cierrapuertas:420000, controlAcceso:2400000,
+  lectorFacial:2900000, camaraIP:680000, camaraLPR:4200000, nvr:2600000,
+  disco:900000, citofoniaIP:1250000, motorVehicular:4800000, talanquera:6500000,
+  ups:2200000, plantaElectrica:18000000, rack:1900000, redPunto:180000,
+  internetRespaldo:180000, obraCivil:2500000, ingenieria:3500000, senalizacion:450000
+};
+var LV_ITEMS={
+  esclusa:'Esclusa de seguridad (suministro e instalación)',
+  torniquete:'Torniquete de control',
+  puertaSeguridad:'Puerta de seguridad sótano',
+  electroiman:'Electroimán 600 lb con fuente',
+  cierrapuertas:'Brazo cierrapuertas',
+  controlAcceso:'Control de acceso por puerta',
+  lectorFacial:'Lector facial / biométrico',
+  camaraIP:'Cámara IP 4 MP',
+  camaraLPR:'Cámara LPR lectura de placas',
+  nvr:'NVR / grabador',
+  disco:'Disco de almacenamiento',
+  citofoniaIP:'Citofonía IP por torre',
+  motorVehicular:'Motor puerta vehicular',
+  talanquera:'Talanquera vehicular',
+  ups:'UPS cuarto técnico',
+  plantaElectrica:'Planta eléctrica con transferencia',
+  rack:'Rack y organización de cuarto técnico',
+  redPunto:'Punto de red certificado',
+  internetRespaldo:'Canal de respaldo (mes)',
+  obraCivil:'Obra civil y adecuaciones',
+  ingenieria:'Ingeniería, configuración y puesta en marcha',
+  senalizacion:'Señalización y avisos'
+};
+
+// ── Estado ──────────────────────────────────────────────────
+var LVS=[];                 // todos los levantamientos (se guardan con nnSave)
+var LV=null;                // el que se está editando
+var LV_VISTA='general';
+
+function lvEsc(x){return String(x==null?'':x).replace(/&amp;/g,'&amp;amp;').replace(/</g,'&amp;lt;').replace(/>/g,'&amp;gt;').replace(/&quot;/g,'&amp;quot;');}
+function lvNum(v){var n=parseFloat(String(v==null?'':v).replace(/[^\d.-]/g,''));return isNaN(n)?0:n;}
+function lvCop(n){return '$'+Math.round(n||0).toLocaleString('es-CO');}
+function lvSi(v){return String(v||'').toLowerCase().indexOf('sí')===0||String(v||'').toLowerCase()==='si';}
+
+function lvNuevo(projId){
+  var p=projId?projFind(projId):null;
+  var d={id:'lev_'+Date.now(),projId:projId||'',creado:nnHoy(),fotos:{},rep:{peatonal:[{}],vehicular:[{}]},precios:{}};
+  LV_SEC.forEach(function(s){if(!s.tipo&amp;&amp;!s.rep)d[s.id]={};});
+  if(p){
+    d.general.nombre=p.name||'';
+    d.general.administracion=p.client||'';
+    d.comercial.consultor='Ing. Edisson Macías Quevedo';
+  }
+  d.comercial.estado='Prospecto';
+  d.comercial.fechaVisita=nnHoy();
+  LVS.unshift(d);
+  LV=d; LV_VISTA='general';
+  nnSave();
+  return d;
+}
+function lvPorProyecto(projId){
+  return LVS.filter(function(l){return String(l.projId||'')===String(projId);})[0]||null;
+}
+function lvAbrirProyecto(projId){
+  var l=lvPorProyecto(projId)||lvNuevo(projId);
+  LV=l; LV_VISTA='general';
+  V('lev');
+}
+function lvAbrir(id){
+  var l=LVS.filter(function(x){return x.id===id;})[0];
+  if(!l)return;
+  LV=l;LV_VISTA='general';V('lev');
+}
+function lvBorrar(id){
+  if(!confirm('¿Eliminar este levantamiento y sus fotos?'))return;
+  LVS=LVS.filter(function(x){return x.id!==id;});
+  if(LV&amp;&amp;LV.id===id)LV=null;
+  nnSave();lvRender();
+}
+
+// ── Render ──────────────────────────────────────────────────
+function lvCompleta(s){
+  if(!LV)return false;
+  if(s.tipo==='fotos')return LV_FOTOS.some(function(c){return (LV.fotos[c]||[]).length;});
+  if(s.tipo)return false;
+  if(s.rep){var a=(LV.rep&amp;&amp;LV.rep[s.id])||[];return a.length>0&amp;&amp;Object.keys(a[0]||{}).length>2;}
+  var d=LV[s.id]||{},req=(s.campos||[]).filter(function(c){return c.req;});
+  if(req.length)return req.every(function(c){return String(d[c.k]||'').trim();});
+  return Object.keys(d).filter(function(k){return String(d[k]||'').trim();}).length>=Math.ceil((s.campos||[]).length*0.5);
+}
+function lvPct(){
+  if(!LV)return 0;
+  return Math.round(LV_SEC.filter(lvCompleta).length*100/LV_SEC.length);
+}
+function lvIr(id){LV_VISTA=id;lvRender();var m=document.getElementById('lv-main');if(m)m.scrollTop=0;}
+
+function lvCampoHTML(s,c,val,idx){
+  var ev=idx!==undefined
+    ? &quot;lvSetRep('&quot;+s.id+&quot;',&quot;+idx+&quot;,'&quot;+c.k+&quot;',this.value)&quot;
+    : &quot;lvSet('&quot;+s.id+&quot;','&quot;+c.k+&quot;',this.value)&quot;;
+  var h='<div class=&quot;fg&quot;><label class=&quot;fl&quot;>'+lvEsc(c.l)+(c.req?' <span style=&quot;color:var(--danger)&quot;>*</span>':'')+'</label>';
+  if(c.t==='select'){
+    h+='<select class=&quot;fs&quot; onchange=&quot;'+ev+'&quot;><option value=&quot;&quot;>—</option>'+
+      (c.o||[]).map(function(o){return'<option '+(val===o?'selected':'')+'>'+lvEsc(o)+'</option>';}).join('')+'</select>';
+  }else if(c.t==='area'){
+    h+='<textarea class=&quot;ft&quot; placeholder=&quot;'+lvEsc(c.ph||'')+'&quot; oninput=&quot;'+ev+'&quot;>'+lvEsc(val||'')+'</textarea>';
+  }else if(c.t==='chips'){
+    var sel=String(val||'').split('|').filter(Boolean);
+    h+='<div style=&quot;display:flex;flex-wrap:wrap;gap:6px&quot;>'+(c.o||[]).map(function(o){
+      var on=sel.indexOf(o)>=0;
+      return'<span onclick=&quot;lvChip(\''+s.id+'\',\''+c.k+'\',\''+o.replace(/'/g,&quot;\\'&quot;)+'\')&quot; style=&quot;padding:7px 12px;font-size:12px;border-radius:20px;cursor:pointer;'+
+        'border:1px solid '+(on?'var(--ac)':'var(--bd)')+';background:'+(on?'rgba(0,212,255,.15)':'var(--bg3)')+';color:'+(on?'var(--ac)':'var(--t2)')+'&quot;>'+lvEsc(o)+'</span>';
+    }).join('')+'</div>';
+  }else{
+    var tipo=c.t==='num'?'number':c.t==='date'?'date':c.t==='email'?'email':c.t==='tel'?'tel':'text';
+    h+='<input class=&quot;fi&quot; type=&quot;'+tipo+'&quot; value=&quot;'+lvEsc(val||'')+'&quot; placeholder=&quot;'+lvEsc(c.ph||'')+'&quot; oninput=&quot;'+ev+'&quot;>';
+  }
+  if(c.ay)h+='<div style=&quot;font-size:10px;color:var(--t3);margin-top:4px;line-height:1.5&quot;>'+lvEsc(c.ay)+'</div>';
+  return h+'</div>';
+}
+function lvSet(sid,k,v){LV[sid]=LV[sid]||{};LV[sid][k]=v;nnSave();lvBarra();}
+function lvSetRep(sid,i,k,v){LV.rep[sid]=LV.rep[sid]||[];LV.rep[sid][i]=LV.rep[sid][i]||{};LV.rep[sid][i][k]=v;nnSave();lvBarra();}
+function lvChip(sid,k,o){
+  LV[sid]=LV[sid]||{};
+  var sel=String(LV[sid][k]||'').split('|').filter(Boolean);
+  var p=sel.indexOf(o); if(p>=0)sel.splice(p,1);else sel.push(o);
+  LV[sid][k]=sel.join('|');nnSave();lvRender();
+}
+function lvAddRep(sid){LV.rep[sid]=LV.rep[sid]||[];LV.rep[sid].push({});nnSave();lvRender();}
+function lvDelRep(sid,i){LV.rep[sid].splice(i,1);if(!LV.rep[sid].length)LV.rep[sid].push({});nnSave();lvRender();}
+
+function lvBarra(){
+  var p=lvPct();
+  var b=document.getElementById('lv-bar'); if(b)b.style.width=p+'%';
+  var t=document.getElementById('lv-bar-t');
+  if(t)t.textContent=LV_SEC.filter(lvCompleta).length+' de '+LV_SEC.length+' secciones · '+p+'%';
+  var n=document.getElementById('lv-titulo');
+  if(n&amp;&amp;LV)n.textContent=(LV.general&amp;&amp;LV.general.nombre)||'Levantamiento sin nombre';
+  lvMenu();
+}
+function lvMenu(){
+  var nav=document.getElementById('lv-nav'); if(!nav||!LV)return;
+  nav.innerHTML=LV_SEC.map(function(s,i){
+    var c=lvCompleta(s),on=LV_VISTA===s.id;
+    return'<div onclick=&quot;lvIr(\''+s.id+'\')&quot; style=&quot;display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:3px;'+
+      'border-radius:var(--rs);cursor:pointer;font-size:12px;border:1px solid '+(on?'rgba(0,212,255,.3)':'transparent')+';'+
+      'background:'+(on?'rgba(0,212,255,.1)':'transparent')+';color:'+(on?'var(--ac)':'var(--t2)')+'&quot;>'+
+      '<span style=&quot;width:21px;height:21px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;'+
+      'font-size:10px;font-family:var(--mono);background:'+(c?'rgba(0,255,136,.2)':'var(--bg4)')+';color:'+(c?'var(--ok)':'var(--t3)')+'&quot;>'+
+      (c?'✓':(i+1))+'</span><span style=&quot;flex:1;line-height:1.3&quot;>'+s.ico+' '+lvEsc(s.n)+'</span></div>';
+  }).join('');
+}
+
+function lvRender(){
+  var cont=document.getElementById('v-lev'); if(!cont)return;
+  if(!LV){ cont.innerHTML=lvListaHTML(); return; }
+  var s=LV_SEC.filter(function(x){return x.id===LV_VISTA;})[0]||LV_SEC[0];
+  var cuerpo;
+  if(s.tipo==='fotos')cuerpo=lvFotosHTML();
+  else if(s.tipo==='eval')cuerpo=lvEvalHTML();
+  else if(s.tipo==='presupuesto')cuerpo=lvPresupuestoHTML();
+  else if(s.rep){
+    var arr=(LV.rep&amp;&amp;LV.rep[s.id])||[{}];
+    cuerpo='<p class=&quot;pgp&quot; style=&quot;margin-bottom:12px&quot;>Un bloque por cada acceso.</p>'+
+      arr.map(function(d,i){
+        return'<div class=&quot;card&quot;><div style=&quot;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px&quot;>'+
+          '<div style=&quot;font-size:13px;font-weight:600;color:var(--ac)&quot;>'+lvEsc(s.item)+' '+(i+1)+'</div>'+
+          '<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:4px 8px;color:var(--danger)&quot; onclick=&quot;lvDelRep(\''+s.id+'\','+i+')&quot;>Quitar</button></div>'+
+          '<div class=&quot;lv-grid&quot;>'+s.campos.map(function(c){return lvCampoHTML(s,c,d[c.k],i);}).join('')+'</div></div>';
+      }).join('')+
+      '<button class=&quot;bs&quot; onclick=&quot;lvAddRep(\''+s.id+'\')&quot;>✚ Agregar otro '+lvEsc(s.item.toLowerCase())+'</button>';
+  }else{
+    var d=LV[s.id]||{};
+    cuerpo='<div class=&quot;card&quot;><div class=&quot;lv-grid&quot;>'+s.campos.map(function(c){return lvCampoHTML(s,c,d[c.k]);}).join('')+'</div></div>';
+    var i=LV_SEC.indexOf(s);
+    if(i<LV_SEC.length-1)cuerpo+='<button class=&quot;bp&quot; onclick=&quot;lvIr(\''+LV_SEC[i+1].id+'\')&quot;>Siguiente: '+LV_SEC[i+1].ico+' '+lvEsc(LV_SEC[i+1].n)+' →</button>';
+  }
+  var proy=LV.projId?projFind(LV.projId):null;
+  cont.innerHTML=
+    '<div class=&quot;pg&quot; style=&quot;display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap&quot;>'+
+      '<div style=&quot;flex:1;min-width:220px&quot;>'+
+        '<h1 class=&quot;pgh1&quot;>Levantamiento <em>portería virtual</em></h1>'+
+        '<p class=&quot;pgp&quot;><span id=&quot;lv-titulo&quot;>'+lvEsc((LV.general&amp;&amp;LV.general.nombre)||'Sin nombre')+'</span>'+
+        (proy?' · proyecto <b style=&quot;color:var(--ac3)&quot;>'+lvEsc(proy.name)+'</b>':'')+'</p>'+
+      '</div>'+
+      '<div style=&quot;display:flex;gap:6px;flex-wrap:wrap&quot;>'+
+        '<button class=&quot;bs&quot; style=&quot;font-size:11px&quot; onclick=&quot;LV=null;lvRender()&quot;>← Mis levantamientos</button>'+
+        '<button class=&quot;bs&quot; style=&quot;font-size:11px&quot; onclick=&quot;lvExportarJSON()&quot;>⬇ JSON</button>'+
+        '<button class=&quot;bs&quot; style=&quot;font-size:11px;color:var(--ac3)&quot; onclick=&quot;lvEnviar()&quot;>📨 Enviar</button>'+
+        '<button class=&quot;bp&quot; style=&quot;font-size:11px&quot; onclick=&quot;lvPDF()&quot;>📄 Informe PDF</button>'+
+      '</div>'+
+    '</div>'+
+    '<div style=&quot;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-bottom:5px&quot;>'+
+      '<div id=&quot;lv-bar&quot; style=&quot;height:100%;width:0;background:linear-gradient(90deg,var(--ac2),var(--ac))&quot;></div></div>'+
+    '<div id=&quot;lv-bar-t&quot; style=&quot;font-size:10px;font-family:var(--mono);color:var(--t3);margin-bottom:14px&quot;></div>'+
+    '<div class=&quot;lv-wrap&quot;><div id=&quot;lv-nav&quot; class=&quot;lv-nav&quot;></div>'+
+    '<div id=&quot;lv-main&quot; class=&quot;lv-main&quot;><div class=&quot;sect&quot;>'+s.ico+' '+lvEsc(s.n)+'</div>'+cuerpo+'</div></div>';
+  lvBarra();
+}
+
+function lvListaHTML(){
+  var h='<div class=&quot;pg&quot;><h1 class=&quot;pgh1&quot;>Levantamiento <em>portería virtual</em></h1>'+
+    '<p class=&quot;pgp&quot;>Visitas técnicas para determinar viabilidad de portería virtual 100%, híbrida o modernización</p></div>'+
+    '<div style=&quot;display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap&quot;>'+
+    '<button class=&quot;bp&quot; onclick=&quot;lvNuevo();lvRender()&quot;><i class=&quot;fa fa-plus&quot; style=&quot;margin-right:6px&quot;></i>Nuevo levantamiento</button>'+
+    '<button class=&quot;bs&quot; onclick=&quot;lvImportarJSON()&quot;>⬆ Importar JSON</button></div>';
+  if(!LVS.length)return h+'<div class=&quot;card&quot; style=&quot;text-align:center;padding:30px;color:var(--t3);font-size:13px&quot;>'+
+    'Sin levantamientos todavía. Crea uno antes de la visita y llénalo desde el celular.</div>';
+  h+='<div class=&quot;g3&quot;>'+LVS.map(function(l){
+    var pct=(function(){var tmp=LV;LV=l;var p=lvPct();LV=tmp;return p;})();
+    var ev=(function(){var tmp=LV;LV=l;var e=lvEvaluar();LV=tmp;return e;})();
+    var p=l.projId?projFind(l.projId):null;
+    var est=(l.comercial&amp;&amp;l.comercial.estado)||'Prospecto';
+    return'<div class=&quot;card&quot; style=&quot;border-left:3px solid '+ev.color100+'&quot;>'+
+      '<div style=&quot;display:flex;align-items:center;gap:8px;margin-bottom:6px&quot;>'+
+        '<h4 style=&quot;font-size:13px;font-weight:600;flex:1&quot;>'+lvEsc((l.general&amp;&amp;l.general.nombre)||'Sin nombre')+'</h4>'+
+        '<span class=&quot;tag&quot; style=&quot;font-size:9px&quot;>'+lvEsc(est)+'</span></div>'+
+      '<div style=&quot;font-size:11px;color:var(--t3);margin-bottom:8px&quot;>'+
+        lvEsc((l.general&amp;&amp;l.general.ciudad)||'')+(l.general&amp;&amp;l.general.apartamentos?' · '+l.general.apartamentos+' aptos':'')+
+        (p?' · <span style=&quot;color:var(--ac3)&quot;>'+lvEsc(p.name)+'</span>':'')+'</div>'+
+      '<div style=&quot;height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-bottom:6px&quot;>'+
+        '<div style=&quot;height:100%;width:'+pct+'%;background:var(--ac)&quot;></div></div>'+
+      '<div style=&quot;display:flex;justify-content:space-between;font-size:10px;font-family:var(--mono);color:var(--t3);margin-bottom:10px&quot;>'+
+        '<span>'+pct+'% diligenciado</span><span style=&quot;color:'+ev.color100+'&quot;>PV 100%: '+ev.pv100+'</span></div>'+
+      '<div style=&quot;display:flex;gap:5px;flex-wrap:wrap&quot;>'+
+        '<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 9px&quot; onclick=&quot;lvAbrir(\''+l.id+'\')&quot;>Abrir</button>'+
+        '<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 9px&quot; onclick=&quot;LV=LVS.filter(function(x){return x.id===\''+l.id+'\'})[0];lvPDF()&quot;>PDF</button>'+
+        '<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 9px;color:var(--danger)&quot; onclick=&quot;lvBorrar(\''+l.id+'\')&quot;>🗑</button>'+
+      '</div></div>';
+  }).join('')+'</div>';
+  return h;
+}
+
+// ── Fotos ───────────────────────────────────────────────────
+function lvFotosHTML(){
+  return'<p class=&quot;pgp&quot; style=&quot;margin-bottom:12px&quot;>Se reducen y se les estampa fecha y hora. Salen en el informe PDF.</p>'+
+    LV_FOTOS.map(function(cat){
+      var fs=(LV.fotos[cat]||[]);
+      return'<div class=&quot;card&quot;><div style=&quot;display:flex;align-items:center;justify-content:space-between;margin-bottom:9px&quot;>'+
+        '<div style=&quot;font-size:13px;font-weight:600;color:var(--ac)&quot;>'+lvEsc(cat)+'</div>'+
+        '<span style=&quot;font-size:10px;font-family:var(--mono);color:var(--t3)&quot;>'+fs.length+'</span></div>'+
+        '<div style=&quot;display:flex;flex-wrap:wrap;gap:8px&quot;>'+
+        fs.map(function(f,i){
+          return'<div style=&quot;position:relative;width:92px;height:92px;border-radius:var(--rs);overflow:hidden;border:1px solid var(--bd)&quot;>'+
+            '<img src=&quot;'+f+'&quot; style=&quot;width:100%;height:100%;object-fit:cover;display:block&quot;>'+
+            '<button onclick=&quot;lvDelFoto(\''+lvEsc(cat)+'\','+i+')&quot; style=&quot;position:absolute;top:3px;right:3px;width:20px;height:20px;'+
+            'border-radius:50%;border:none;background:rgba(255,68,68,.9);color:#fff;cursor:pointer;font-size:11px&quot;>✕</button></div>';
+        }).join('')+
+        '<label style=&quot;width:92px;height:92px;border:1px dashed var(--bd);border-radius:var(--rs);display:flex;flex-direction:column;'+
+        'align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--t3);font-size:10px&quot;>'+
+        '<span style=&quot;font-size:20px&quot;>＋</span>Agregar'+
+        '<input type=&quot;file&quot; accept=&quot;image/*&quot; capture=&quot;environment&quot; multiple style=&quot;display:none&quot; onchange=&quot;lvFoto(this,\''+lvEsc(cat)+'\')&quot;></label>'+
+        '</div></div>';
+    }).join('');
+}
+function lvFoto(input,cat){
+  var files=Array.prototype.slice.call(input.files||[]);
+  files.forEach(function(f){
+    var r=new FileReader();
+    r.onload=function(ev){
+      var im=new Image();
+      im.onload=function(){
+        var max=1000,k=Math.min(1,max/Math.max(im.width,im.height));
+        var c=document.createElement('canvas');
+        c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+        var x=c.getContext('2d');
+        x.drawImage(im,0,0,c.width,c.height);
+        var t=new Date().toLocaleString('es-CO');
+        x.font='bold '+Math.max(13,c.width*0.026)+'px sans-serif';
+        var w=x.measureText(t).width+14;
+        x.fillStyle='rgba(0,0,0,.55)';x.fillRect(6,c.height-32,w,24);
+        x.fillStyle='#fff';x.fillText(t,13,c.height-15);
+        LV.fotos[cat]=LV.fotos[cat]||[];
+        LV.fotos[cat].push(c.toDataURL('image/jpeg',.55));
+        nnSave();lvRender();
+      };
+      im.src=ev.target.result;
+    };
+    r.readAsDataURL(f);
+  });
+  input.value='';
+}
+function lvDelFoto(cat,i){(LV.fotos[cat]||[]).splice(i,1);nnSave();lvRender();}
+function lvTotalFotos(){return LV_FOTOS.reduce(function(a,c){return a+((LV.fotos[c]||[]).length);},0);}
+
+// ═══════════════════════════════════════════════════════════════
+// EVALUACIÓN AUTOMÁTICA
+// El puntaje no es un adorno: cada punto sale de un dato del
+// levantamiento, y el informe muestra por qué. Así se sustenta
+// delante del consejo de administración.
+// ═══════════════════════════════════════════════════════════════
+function lvEvaluar(){
+  var g=LV.general||{}, p=LV.perfil||{}, so=LV.sotanos||{}, es=LV.esclusa||{},
+      as=LV.ascensores||{}, cc=LV.cctv||{}, rd=LV.redes||{}, el=LV.electrico||{},
+      vi=LV.visitantes||{}, re=LV.restricciones||{};
+  var pea=(LV.rep&amp;&amp;LV.rep.peatonal)||[], veh=(LV.rep&amp;&amp;LV.rep.vehicular)||[];
+  var peaR=pea.filter(function(a){return a.ubicacion||a.material;});
+  var vehR=veh.filter(function(a){return a.ubicacion||a.material;});
+  var razones={pv:[],hib:[],seg:[],riesgo:[]};
+
+  // ── Internet: lo que manda en portería virtual ──
+  var sub=lvNum(rd.subida);
+  var ptsNet = sub>=20?20 : sub>=10?14 : sub>=5?8 : sub>0?3 : 0;
+  if(lvSi(rd.fibra))ptsNet+=3;
+  if(String(rd.respaldo||'').indexOf('Sí')===0)ptsNet+=5;
+  ptsNet=Math.min(28,ptsNet);
+  razones.pv.push({t:'Internet de subida '+(sub?sub+' Mbps':'sin dato')+(lvSi(rd.fibra)?' por fibra':''),p:ptsNet,max:28,
+    c:sub>=20?'ok':sub>=10?'warn':'dan'});
+
+  // ── Respaldo eléctrico ──
+  var ptsEl=0;
+  if(lvSi(el.planta))ptsEl+=6;
+  if(lvSi(el.transferencia))ptsEl+=3;
+  if(lvSi(el.ups))ptsEl+=3;
+  razones.pv.push({t:'Respaldo eléctrico'+(lvSi(el.planta)?' con planta':' sin planta')+(lvSi(el.ups)?' y UPS':''),p:ptsEl,max:12,
+    c:ptsEl>=9?'ok':ptsEl>=5?'warn':'dan'});
+
+  // ── Accesos peatonales automatizables ──
+  var conEim=peaR.filter(function(a){return lvSi(a.electroiman);}).length;
+  var conCtrl=peaR.filter(function(a){return lvSi(a.control);}).length;
+  var ptsPea=peaR.length? Math.round((conEim/peaR.length)*7+(conCtrl/peaR.length)*5) : 0;
+  razones.pv.push({t:'Accesos peatonales: '+conEim+'/'+(peaR.length||0)+' con electroimán, '+conCtrl+' con control',p:ptsPea,max:12,
+    c:ptsPea>=9?'ok':ptsPea>=5?'warn':'dan'});
+
+  // ── Esclusa: es lo que separa una portería virtual seria de una puerta con citófono ──
+  var ptsEsc = lvSi(es.existe)? (lvSi(es.reutilizable)?12:7) : (String(so.esclusa||'')&amp;&amp;lvSi(so.esclusa)?4:2);
+  razones.pv.push({t:lvSi(es.existe)?('Esclusa existente'+(lvSi(es.reutilizable)?' y reutilizable':' pero requiere intervención')):'Sin esclusa — hay que construirla',
+    p:ptsEsc,max:12,c:ptsEsc>=10?'ok':ptsEsc>=5?'warn':'dan'});
+
+  // ── CCTV ──
+  var camas=lvNum(cc.total);
+  var ideal=Math.max(6,(peaR.length*2)+(vehR.length*2)+2+lvNum(as.cantidad)+lvNum(so.cantidad)*2);
+  var cob=ideal?Math.min(1,camas/ideal):0;
+  var ptsCam=Math.round(cob*9);
+  if(String(cc.tecnologia||'')==='IP')ptsCam+=2;
+  if(lvSi(cc.grabUsuario))ptsCam+=3;
+  ptsCam=Math.min(14,ptsCam);
+  razones.pv.push({t:'CCTV: '+camas+' cámaras de '+ideal+' recomendadas'+(lvSi(cc.grabUsuario)?', con usuario remoto':', sin usuario remoto'),
+    p:ptsCam,max:14,c:ptsCam>=11?'ok':ptsCam>=6?'warn':'dan'});
+
+  // ── Citofonía ──
+  var ptsCit = String(as.tipoCitofonia||'')==='IP'?10 : String(as.tipoCitofonia||'')==='Híbrida'?7 :
+               String(as.integrable||'')==='Sí'?6 : lvSi(as.citofonia)?3:0;
+  razones.pv.push({t:'Citofonía '+(as.tipoCitofonia||'no registrada'),p:ptsCit,max:10,
+    c:ptsCit>=8?'ok':ptsCit>=4?'warn':'dan'});
+
+  // ── Sótanos ──
+  var ptsSot = lvNum(so.cantidad)===0?8 : (lvSi(so.control)?3:6) - (lvSi(so.puertaSeg)?0:1);
+  ptsSot=Math.max(0,Math.min(8,ptsSot));
+  razones.pv.push({t:lvNum(so.cantidad)?('Sótanos: '+so.cantidad+(lvSi(so.control)?' — requieren control de acceso':'')):'Sin sótanos',
+    p:ptsSot,max:8,c:ptsSot>=6?'ok':'warn'});
+
+  // ── Vehicular ──
+  var autom=vehR.filter(function(a){return a.automatizacion&amp;&amp;a.automatizacion.indexOf('Ninguna')<0;}).length;
+  var ptsVeh=vehR.length?Math.round((autom/vehR.length)*7):7;
+  razones.pv.push({t:vehR.length?('Accesos vehiculares automatizados: '+autom+'/'+vehR.length):'Sin acceso vehicular',
+    p:ptsVeh,max:7,c:ptsVeh>=5?'ok':'warn'});
+
+  var basePV=ptsNet+ptsEl+ptsPea+ptsEsc+ptsCam+ptsCit+ptsSot+ptsVeh;   // máx 101
+
+  // ── Penalizaciones ──
+  var pen=0, penTxt=[];
+  if(String(re.obra||'').trim().length>15){pen+=5;penTxt.push('restricciones de obra civil');}
+  if(lvSi(re.asamblea)){pen+=3;penTxt.push('requiere aprobación de asamblea');}
+  if(lvSi(p.dependencia)){pen+=8;penTxt.push('población que requiere atención presencial');}
+  if(String(p.rotacion||'')==='Muy alta'||String(p.poblacion||'').indexOf('Airbnb')>=0){pen+=4;penTxt.push('rotación muy alta / uso turístico');}
+
+  var pv100=Math.max(0,Math.min(100,Math.round(basePV-pen)));
+  // La híbrida perdona lo que un conserje presencial resuelve
+  var penHib=pen-(lvSi(p.dependencia)?8:0)-(String(p.rotacion||'')==='Muy alta'?4:0);
+  var hibrida=Math.max(0,Math.min(100,Math.round(basePV-Math.max(0,penHib)+
+    (lvSi(es.existe)?0:6)+(ptsPea<9?4:0)+(ptsCit<8?4:0))));
+
+  // ── Seguridad actual ──
+  var seg=0;
+  seg+=Math.round(cob*30);
+  if(String(cc.tecnologia||'')==='IP')seg+=5;
+  if(lvNum(cc.grabDias)>=15)seg+=7; else if(lvNum(cc.grabDias)>=7)seg+=4;
+  seg+=peaR.length?Math.round((conCtrl/peaR.length)*15):0;
+  seg+=vehR.length?Math.round((autom/vehR.length)*6):6;
+  if(vehR.some(function(a){return lvSi(a.lpr);}))seg+=4;
+  if(lvSi(es.existe))seg+=8;
+  if(lvNum(so.cantidad)===0||lvSi(so.control))seg+=8;
+  if(lvSi(el.planta))seg+=5;
+  if(String(vi.registro||'')==='Digital')seg+=7; else if(String(vi.registro||'')==='Minuta en papel')seg+=2;
+  seg=Math.max(0,Math.min(100,seg));
+
+  // ── Riesgo de implementación ──
+  var riesgo=0;
+  if(String(re.obra||'').trim().length>15)riesgo+=25;
+  if(lvSi(re.asamblea))riesgo+=20;
+  if(String(re.admin||'').trim().length>15)riesgo+=15;
+  if(sub<10)riesgo+=20;
+  if(!lvSi(el.planta))riesgo+=10;
+  if(String(as.integrable||'')==='No')riesgo+=10;
+  if(LV.operacion&amp;&amp;LV.operacion.vencimiento){
+    var dias=(new Date(LV.operacion.vencimiento+'T12:00')-new Date())/86400000;
+    if(dias>180)riesgo+=10;
+  }
+  riesgo=Math.min(100,riesgo);
+
+  var pres=lvPresupuesto();
+  var inv=pres.total;
+  var nivelInv= inv<30000000?'Bajo' : inv<80000000?'Medio' : 'Alto';
+
+  function color(v){return v>=70?'#00FF88':v>=45?'#FFB800':'#FF4444';}
+  function colorInv(v){return v<30000000?'#00FF88':v<80000000?'#FFB800':'#FF4444';}
+  function colorR(v){return v<35?'#00FF88':v<65?'#FFB800':'#FF4444';}
+
+  return{
+    pv100:pv100, hibrida:hibrida, seguridad:seg, riesgo:riesgo,
+    inversion:inv, nivelInv:nivelInv,
+    color100:color(pv100), colorHib:color(hibrida), colorSeg:color(seg),
+    colorRiesgo:colorR(riesgo), colorInv:colorInv(inv),
+    razones:razones.pv, penalizaciones:penTxt, penTotal:pen,
+    recomendacion: pv100>=70?'Portería Virtual 100%'
+                  : hibrida>=65?'Portería Virtual Híbrida'
+                  : pv100>=45||hibrida>=45?'Híbrida por fases, con modernización previa'
+                  : 'Modernización tecnológica antes de migrar a portería virtual',
+    hallazgos:lvHallazgos()
+  };
+}
+
+// Hallazgos concretos: lo que hay que arreglar, en orden de importancia
+function lvHallazgos(){
+  var h=[], rd=LV.redes||{}, el=LV.electrico||{}, cc=LV.cctv||{}, es=LV.esclusa||{},
+      so=LV.sotanos||{}, as=LV.ascensores||{}, vi=LV.visitantes||{}, re=LV.restricciones||{};
+  var pea=((LV.rep&amp;&amp;LV.rep.peatonal)||[]).filter(function(a){return a.ubicacion||a.material;});
+  var veh=((LV.rep&amp;&amp;LV.rep.vehicular)||[]).filter(function(a){return a.ubicacion||a.material;});
+  var sub=lvNum(rd.subida);
+  if(sub&amp;&amp;sub<10)h.push({n:'alto',t:'Canal de internet insuficiente',d:'Subida de '+sub+' Mbps. Para transmitir el video al centro remoto se requieren al menos 10 Mbps de subida estables, idealmente 20.'});
+  if(!sub)h.push({n:'alto',t:'No se midió la velocidad de internet',d:'Es el dato que decide la viabilidad. Hay que medirlo antes de cotizar.'});
+  if(String(rd.respaldo||'').indexOf('No')===0)h.push({n:'medio',t:'Sin canal de respaldo',d:'Si se cae el proveedor principal, el edificio queda sin portería. Se recomienda un canal LTE de respaldo.'});
+  if(!lvSi(el.planta))h.push({n:'alto',t:'Sin planta eléctrica',d:'Un corte de energía deja sin acceso y sin cámaras. Mínimo UPS con autonomía para acceso, cámaras y comunicaciones.'});
+  else if(!lvSi(el.transferencia))h.push({n:'medio',t:'Planta sin transferencia automática',d:'El arranque manual deja minutos sin servicio y depende de que haya alguien.'});
+  if(!lvSi(el.ups))h.push({n:'medio',t:'Sin UPS en cuarto técnico',d:'Los equipos de red y control deben quedar respaldados.'});
+  if(!lvSi(es.existe))h.push({n:'alto',t:'No existe esclusa de seguridad',d:'Sin esclusa, la portería virtual no controla el ingreso peatonal: cualquiera entra detrás de un residente.'});
+  else if(!lvSi(es.reutilizable))h.push({n:'medio',t:'Esclusa existente no reutilizable',d:'Requiere intervención o reemplazo.'});
+  pea.forEach(function(a,i){
+    if(!lvSi(a.electroiman))h.push({n:'alto',t:'Acceso peatonal '+(a.ubicacion||(i+1))+' sin electroimán',d:'Sin cierre electromagnético no hay control remoto de la puerta.'});
+    if(!lvSi(a.brazo))h.push({n:'medio',t:'Acceso peatonal '+(a.ubicacion||(i+1))+' sin brazo cierrapuertas',d:'La puerta queda entreabierta y anula el control.'});
+    if(!lvSi(a.control))h.push({n:'medio',t:'Acceso peatonal '+(a.ubicacion||(i+1))+' sin control de acceso',d:'Los residentes deben poder entrar sin depender del operador remoto.'});
+  });
+  veh.forEach(function(a,i){
+    if(String(a.automatizacion||'').indexOf('Ninguna')===0)h.push({n:'alto',t:'Acceso vehicular '+(a.ubicacion||(i+1))+' sin automatizar',d:'Requiere motorización para operarse en remoto.'});
+    if(!lvSi(a.lpr))h.push({n:'bajo',t:'Sin LPR en acceso vehicular '+(a.ubicacion||(i+1)),d:'La lectura de placas agiliza el ingreso de residentes y deja trazabilidad.'});
+  });
+  if(lvNum(so.cantidad)>0&amp;&amp;!lvSi(so.control))h.push({n:'alto',t:'Sótanos sin control de acceso',d:'Es la vía de intrusión más frecuente: se entra tras un vehículo y se sube por escaleras.'});
+  if(String(as.tipoCitofonia||'')==='Analógica')h.push({n:'medio',t:'Citofonía analógica',d:'Debe migrar a IP o integrarse por gateway para que el centro remoto atienda las llamadas.'});
+  if(!lvSi(as.camara)&amp;&amp;lvNum(as.cantidad)>0)h.push({n:'bajo',t:'Ascensores sin cámara en cabina',d:'Recomendado para trazabilidad de incidentes.'});
+  if(lvNum(cc.grabDias)&amp;&amp;lvNum(cc.grabDias)<15)h.push({n:'medio',t:'Almacenamiento de video corto ('+cc.grabDias+' días)',d:'Se recomiendan mínimo 30 días para investigar hechos reportados tarde.'});
+  if(!lvSi(cc.grabUsuario))h.push({n:'alto',t:'Sin usuario de acceso remoto al grabador',d:'El centro de monitoreo necesita ver las cámaras: sin usuario no hay servicio.'});
+  if(String(vi.registro||'')==='Minuta en papel'||String(vi.registro||'')==='Ninguno')h.push({n:'medio',t:'Registro de visitantes en papel',d:'Sin trazabilidad ni consulta posterior. La portería virtual lo digitaliza.'});
+  if(lvSi(re.asamblea))h.push({n:'medio',t:'Requiere aprobación en asamblea',d:'Hay que contemplar el calendario de asambleas en el cronograma comercial.'});
+  var orden={alto:0,medio:1,bajo:2};
+  return h.sort(function(a,b){return orden[a.n]-orden[b.n];});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PRESUPUESTO PRELIMINAR
+// Las cantidades salen del levantamiento; los precios se editan.
+// ═══════════════════════════════════════════════════════════════
+function lvCantidades(){
+  var q={}, rd=LV.redes||{}, el=LV.electrico||{}, cc=LV.cctv||{}, es=LV.esclusa||{},
+      so=LV.sotanos||{}, as=LV.ascensores||{}, g=LV.general||{};
+  var pea=((LV.rep&amp;&amp;LV.rep.peatonal)||[]).filter(function(a){return a.ubicacion||a.material;});
+  var veh=((LV.rep&amp;&amp;LV.rep.vehicular)||[]).filter(function(a){return a.ubicacion||a.material;});
+  if(!lvSi(es.existe))q.esclusa=1; else if(!lvSi(es.reutilizable))q.obraCivil=1;
+  if(String(es.tipoSugerido||'').indexOf('orniquete')>0)q.torniquete=1;
+  q.electroiman=pea.filter(function(a){return !lvSi(a.electroiman)||a.estadoEim==='Malo';}).length;
+  q.cierrapuertas=pea.filter(function(a){return !lvSi(a.brazo)||a.estadoBrazo==='Malo';}).length;
+  q.controlAcceso=pea.filter(function(a){return !lvSi(a.control);}).length;
+  q.lectorFacial=pea.length?1:0;
+  var ideal=Math.max(6,(pea.length*2)+(veh.length*2)+2+lvNum(as.cantidad)+lvNum(so.cantidad)*2);
+  q.camaraIP=Math.max(0,ideal-lvNum(cc.total));
+  q.camaraLPR=veh.filter(function(a){return !lvSi(a.lpr);}).length;
+  if(!String(cc.grabMarca||'').trim()||lvNum(cc.grabCanales)<ideal)q.nvr=1;
+  if(lvNum(cc.grabDias)<30)q.disco=1;
+  if(String(as.tipoCitofonia||'')!=='IP')q.citofoniaIP=Math.max(1,lvNum(g.torres));
+  q.motorVehicular=veh.filter(function(a){return String(a.automatizacion||'').indexOf('Ninguna')===0;}).length;
+  if(!lvSi(el.ups))q.ups=1;
+  if(!lvSi(el.planta))q.plantaElectrica=0;   // se cotiza aparte: decisión del cliente
+  if(!lvSi(rd.rack)||rd.estadoRack==='Malo')q.rack=1;
+  q.redPunto=(q.camaraIP||0)+pea.length*2+veh.length;
+  if(lvNum(so.cantidad)>0&amp;&amp;!lvSi(so.control))q.puertaSeguridad=lvNum(so.escaleras)||1;
+  q.senalizacion=1;
+  q.ingenieria=1;
+  if(q.esclusa)q.obraCivil=1;
+  return q;
+}
+function lvPresupuesto(){
+  var q=LV.cant||lvCantidades();
+  var pr=LV.precios||{};
+  var lineas=[],sub=0;
+  Object.keys(LV_ITEMS).forEach(function(k){
+    var cant=(LV.cant&amp;&amp;LV.cant[k]!==undefined)?lvNum(LV.cant[k]):(q[k]||0);
+    if(!cant)return;
+    var precio=pr[k]!==undefined?lvNum(pr[k]):LV_PRECIOS_DEF[k];
+    var tot=cant*precio;
+    sub+=tot;
+    lineas.push({k:k,n:LV_ITEMS[k],cant:cant,precio:precio,total:tot});
+  });
+  var iva=sub*0.19;
+  return {lineas:lineas,subtotal:sub,iva:iva,total:sub+iva};
+}
+function lvSetCant(k,v){LV.cant=LV.cant||lvCantidades();LV.cant[k]=lvNum(v);nnSave();lvRender();}
+function lvSetPrecio(k,v){LV.precios=LV.precios||{};LV.precios[k]=lvNum(v);nnSave();lvRender();}
+function lvResetPresupuesto(){LV.cant=lvCantidades();LV.precios={};nnSave();lvRender();}
+
+function lvPresupuestoHTML(){
+  var p=lvPresupuesto();
+  var h='<p class=&quot;pgp&quot; style=&quot;margin-bottom:12px&quot;>Las cantidades salen de lo que registraste; los precios son de referencia y se pueden editar. Esto es un estimado para la conversación comercial, no una cotización en firme.</p>';
+  h+='<div class=&quot;card&quot; style=&quot;overflow-x:auto&quot;><table class=&quot;lv-tbl&quot;><thead><tr>'+
+     '<th>Ítem</th><th style=&quot;width:80px&quot;>Cant.</th><th style=&quot;width:130px&quot;>Valor unitario</th><th style=&quot;width:120px&quot;>Total</th></tr></thead><tbody>';
+  p.lineas.forEach(function(l){
+    h+='<tr><td>'+lvEsc(l.n)+'</td>'+
+      '<td><input class=&quot;fi&quot; style=&quot;padding:5px 7px;min-height:30px;font-size:12px;text-align:center&quot; type=&quot;number&quot; value=&quot;'+l.cant+'&quot; oninput=&quot;lvSetCant(\''+l.k+'\',this.value)&quot;></td>'+
+      '<td><input class=&quot;fi&quot; style=&quot;padding:5px 7px;min-height:30px;font-size:12px;text-align:right&quot; type=&quot;number&quot; value=&quot;'+l.precio+'&quot; oninput=&quot;lvSetPrecio(\''+l.k+'\',this.value)&quot;></td>'+
+      '<td class=&quot;n&quot;>'+lvCop(l.total)+'</td></tr>';
+  });
+  if(!p.lineas.length)h+='<tr><td colspan=&quot;4&quot; style=&quot;text-align:center;color:var(--t3);padding:20px&quot;>Llena el levantamiento y aquí aparecen las cantidades.</td></tr>';
+  h+='</tbody><tfoot>'+
+    '<tr><td colspan=&quot;3&quot; style=&quot;text-align:right;color:var(--t2)&quot;>Subtotal</td><td class=&quot;n&quot;>'+lvCop(p.subtotal)+'</td></tr>'+
+    '<tr><td colspan=&quot;3&quot; style=&quot;text-align:right;color:var(--t2)&quot;>IVA 19%</td><td class=&quot;n&quot;>'+lvCop(p.iva)+'</td></tr>'+
+    '<tr class=&quot;tot&quot;><td colspan=&quot;3&quot; style=&quot;text-align:right&quot;>TOTAL ESTIMADO</td><td class=&quot;n&quot;>'+lvCop(p.total)+'</td></tr>'+
+    '</tfoot></table></div>';
+  var op=LV.operacion||{};
+  var costoVig=lvNum(op.costo);
+  if(costoVig){
+    var meses=p.total/(costoVig*0.45||1);
+    h+='<div class=&quot;card&quot; style=&quot;border-left:3px solid var(--ok)&quot;>'+
+      '<div style=&quot;font-size:13px;font-weight:600;color:var(--ok);margin-bottom:8px&quot;>Comparativo con la operación actual</div>'+
+      '<div style=&quot;font-size:12px;color:var(--t2);line-height:1.8&quot;>'+
+      'Vigilancia actual: <b>'+lvCop(costoVig)+'/mes</b> · '+lvCop(costoVig*12)+' al año.<br>'+
+      'Si la portería virtual representa un ahorro del 45% mensual ('+lvCop(costoVig*0.45)+'), la inversión se recupera en <b>'+
+      Math.ceil(meses)+' meses</b>.<br>'+
+      '<span style=&quot;font-size:11px;color:var(--t3)&quot;>El porcentaje de ahorro real depende del esquema contratado; este cálculo es orientativo.</span>'+
+      '</div></div>';
+  }
+  h+='<button class=&quot;bs&quot; onclick=&quot;lvResetPresupuesto()&quot;>↻ Recalcular cantidades desde el levantamiento</button>';
+  return h;
+}
+
+// ── Vista de evaluación ─────────────────────────────────────
+function lvEvalHTML(){
+  var e=lvEvaluar();
+  function kpi(v,l,col,suf){
+    return'<div class=&quot;card&quot; style=&quot;text-align:center;border-top:3px solid '+col+'&quot;>'+
+      '<div style=&quot;font-size:32px;font-weight:700;font-family:var(--mono);color:'+col+';line-height:1&quot;>'+v+(suf||'')+'</div>'+
+      '<div style=&quot;font-size:11px;color:var(--t2);margin-top:6px&quot;>'+l+'</div></div>';
+  }
+  var h='<div class=&quot;g4&quot; style=&quot;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px&quot;>'+
+    kpi(e.pv100,'Portería Virtual 100%',e.color100)+
+    kpi(e.hibrida,'Portería Híbrida',e.colorHib)+
+    kpi(e.seguridad,'Seguridad actual',e.colorSeg)+
+    kpi(e.riesgo,'Riesgo de implementación',e.colorRiesgo)+
+    '</div>';
+  h+='<div class=&quot;card&quot; style=&quot;border-left:3px solid '+e.color100+'&quot;>'+
+    '<div style=&quot;font-size:10px;font-family:var(--mono);color:var(--t3);text-transform:uppercase;letter-spacing:1px&quot;>Recomendación</div>'+
+    '<div style=&quot;font-size:18px;font-weight:700;color:'+e.color100+';margin:6px 0&quot;>'+lvEsc(e.recomendacion)+'</div>'+
+    '<div style=&quot;font-size:12px;color:var(--t2);line-height:1.7&quot;>Inversión estimada: <b>'+lvCop(e.inversion)+'</b> ('+e.nivelInv+')'+
+    (e.penalizaciones.length?'<br>Factores en contra: '+lvEsc(e.penalizaciones.join(', ')):'')+'</div></div>';
+
+  h+='<div class=&quot;sect&quot;>Cómo se calculó la factibilidad</div><div class=&quot;card&quot;>';
+  e.razones.forEach(function(r){
+    var col=r.c==='ok'?'var(--ok)':r.c==='warn'?'var(--warn)':'var(--danger)';
+    h+='<div style=&quot;margin-bottom:10px&quot;>'+
+      '<div style=&quot;display:flex;justify-content:space-between;font-size:12px;color:var(--t2);margin-bottom:4px&quot;>'+
+      '<span>'+lvEsc(r.t)+'</span><span style=&quot;font-family:var(--mono);color:'+col+'&quot;>'+r.p+'/'+r.max+'</span></div>'+
+      '<div style=&quot;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden&quot;>'+
+      '<div style=&quot;height:100%;width:'+Math.round(r.p*100/r.max)+'%;background:'+col+'&quot;></div></div></div>';
+  });
+  h+='</div>';
+
+  h+='<div class=&quot;sect&quot;>Hallazgos y riesgos ('+e.hallazgos.length+')</div>';
+  if(!e.hallazgos.length)h+='<div class=&quot;card&quot; style=&quot;color:var(--t3);font-size:12px&quot;>Sin hallazgos: completa las secciones técnicas.</div>';
+  e.hallazgos.forEach(function(x){
+    var col=x.n==='alto'?'var(--danger)':x.n==='medio'?'var(--warn)':'var(--ok)';
+    h+='<div class=&quot;card&quot; style=&quot;border-left:3px solid '+col+';padding:11px 13px;margin-bottom:6px&quot;>'+
+      '<div style=&quot;font-size:12px;font-weight:600;margin-bottom:3px&quot;>'+
+      '<span style=&quot;color:'+col+';font-size:10px;font-family:var(--mono);text-transform:uppercase;margin-right:6px&quot;>'+x.n+'</span>'+
+      lvEsc(x.t)+'</div>'+
+      '<div style=&quot;font-size:11px;color:var(--t2);line-height:1.6&quot;>'+lvEsc(x.d)+'</div></div>';
+  });
+  return h;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INFORME PDF CORPORATIVO
+// ═══════════════════════════════════════════════════════════════
+function lvPDF(){
+  if(!LV){T('Abre un levantamiento','','⚠️');return;}
+  if(!window.jspdf){T('Cargando PDF…','Intenta de nuevo en un segundo','⏳');return;}
+  var jsPDF=window.jspdf.jsPDF;
+  var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+  var W=210,H=297,M=15,y=0,pag=0;   // la portada no cuenta
+  var g=LV.general||{}, e=lvEvaluar(), pres=lvPresupuesto();
+  // Paleta corporativa: azul profundo, cian de acento y apoyos legibles en papel
+  var AZ=[0,150,214], CIAN=[0,196,255], OSC=[11,26,45], TINTA=[24,38,58],
+      GRIS=[108,124,148], SUAVE=[238,244,250], BORDE=[206,218,232],
+      VERDE=[0,150,94], AMBAR=[214,148,0], ROJO=[200,50,60];
+
+  function encabezado(t){
+    pag++;
+    doc.setFillColor(OSC[0],OSC[1],OSC[2]);doc.rect(0,0,W,19,'F');
+    doc.setFillColor(AZ[0],AZ[1],AZ[2]);doc.rect(0,19,W*0.42,1.6,'F');
+    doc.setFillColor(CIAN[0],CIAN[1],CIAN[2]);doc.rect(W*0.42,19,W*0.58,1.6,'F');
+    doc.setFillColor(CIAN[0],CIAN[1],CIAN[2]);doc.roundedRect(M,5.5,9,9,2,2,'F');
+    doc.setTextColor(6,22,38);doc.setFont('helvetica','bold');doc.setFontSize(6.5);
+    doc.text('EM',M+4.5,11.2,{align:'center'});
+    doc.setTextColor(CIAN[0],CIAN[1],CIAN[2]);doc.setFont('helvetica','bold');doc.setFontSize(10);
+    doc.text('EM SEGURIDAD ELECTRÓNICA',M+12,11.8);
+    doc.setTextColor(150,172,200);doc.setFont('helvetica','normal');doc.setFontSize(7.5);
+    doc.text(String(t).slice(0,46),W-M,11.8,{align:'right'});
+    y=31;
+  }
+  function pie(){
+    doc.setDrawColor(BORDE[0],BORDE[1],BORDE[2]);doc.line(M,H-14,W-M,H-14);
+    doc.setFillColor(CIAN[0],CIAN[1],CIAN[2]);doc.rect(M,H-14.6,14,1.2,'F');
+    doc.setFontSize(7);doc.setTextColor(GRIS[0],GRIS[1],GRIS[2]);
+    doc.text('EM Suite PRO · Ing. Edisson Macías Quevedo · '+new Date().toLocaleDateString('es-CO'),M,H-9);
+    doc.text('Página '+pag,W-M,H-9,{align:'right'});
+  }
+  function salto(alto){ if(y+(alto||10)>H-22){pie();doc.addPage();encabezado(g.nombre||'Levantamiento');} }
+  function titulo(t){
+    salto(18);
+    doc.setFillColor(SUAVE[0],SUAVE[1],SUAVE[2]);
+    doc.roundedRect(M,y-5.5,W-2*M,10,1.5,1.5,'F');
+    doc.setFillColor(AZ[0],AZ[1],AZ[2]);doc.rect(M,y-5.5,2.2,10,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(TINTA[0],TINTA[1],TINTA[2]);
+    doc.text(t,M+6,y+1.2);
+    y+=11;
+  }
+  function parrafo(t,size){
+    doc.setFont('helvetica','normal');doc.setFontSize(size||9.5);doc.setTextColor(62,76,96);
+    var ls=doc.splitTextToSize(String(t||''),W-2*M);
+    ls.forEach(function(l){salto(6);doc.text(l,M,y);y+=4.8;});
+    y+=2;
+  }
+  var _fila=0;
+  function filaDato(k,v){
+    if(!String(v||'').trim())return;
+    salto(8);
+    var ls=doc.splitTextToSize(String(v),W-2*M-54);
+    var alto=4.8+(ls.length-1)*4.4;
+    if(_fila++%2===0){doc.setFillColor(248,250,253);doc.rect(M,y-4.2,W-2*M,alto+2.4,'F');}
+    doc.setFillColor(AZ[0],AZ[1],AZ[2]);doc.circle(M+2,y-1.4,1,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(8.8);doc.setTextColor(74,92,118);
+    doc.text(String(k),M+5.5,y);
+    doc.setFont('helvetica','normal');doc.setTextColor(TINTA[0],TINTA[1],TINTA[2]);
+    doc.text(ls[0],M+54,y);
+    for(var i=1;i<ls.length;i++){y+=4.4;salto(6);doc.text(ls[i],M+54,y);}
+    y+=alto+1.6;
+    doc.setDrawColor(BORDE[0],BORDE[1],BORDE[2]);doc.setLineWidth(.15);
+    doc.line(M,y-2.6,W-M,y-2.6);doc.setLineWidth(.2);
+  }
+
+  // ── PORTADA ──
+  doc.setFillColor(OSC[0],OSC[1],OSC[2]);doc.rect(0,0,W,H,'F');
+  // franja diagonal de acento
+  for(var _i=0;_i<26;_i++){
+    var _t=_i/25;
+    doc.setFillColor(Math.round(11+_t*10),Math.round(26+_t*40),Math.round(45+_t*70));
+    doc.rect(0,H-90+_i*3.5,W,3.6,'F');
+  }
+  doc.setFillColor(CIAN[0],CIAN[1],CIAN[2]);doc.rect(0,0,W,2.5,'F');
+  doc.setFillColor(AZ[0],AZ[1],AZ[2]);doc.roundedRect(M,38,26,26,5,5,'F');
+  doc.setTextColor(0,20,35);doc.setFont('helvetica','bold');doc.setFontSize(15);
+  doc.text('EM',M+13,55,{align:'center'});
+  doc.setTextColor(0,212,255);doc.setFontSize(10);
+  doc.text('EM SEGURIDAD ELECTRÓNICA',M+32,50);
+  doc.setTextColor(140,160,190);doc.setFont('helvetica','normal');doc.setFontSize(8);
+  doc.text('Seguridad electrónica y portería virtual',M+32,56);
+
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(26);
+  doc.text(doc.splitTextToSize('Estudio de factibilidad',W-2*M),M,100);
+  doc.setTextColor(0,212,255);doc.setFontSize(17);
+  doc.text('Portería Virtual',M,113);
+  doc.setDrawColor(AZ[0],AZ[1],AZ[2]);doc.setLineWidth(1);doc.line(M,120,M+40,120);
+
+  doc.setTextColor(230,240,255);doc.setFont('helvetica','bold');doc.setFontSize(15);
+  doc.text(doc.splitTextToSize(g.nombre||'Edificio',W-2*M),M,138);
+  doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(140,160,190);
+  var sub=[g.direccion,g.ciudad].filter(Boolean).join(' · ');
+  doc.text(sub,M,148);
+  if(g.apartamentos)doc.text(g.apartamentos+' apartamentos'+(g.torres?' · '+g.torres+' torres':''),M,155);
+
+  // tarjetas de resultado en la portada
+  var bx=M, by=175;
+  [['PV 100%',e.pv100,e.color100],['Híbrida',e.hibrida,e.colorHib],['Seguridad',e.seguridad,e.colorSeg]].forEach(function(k,i){
+    var x=bx+i*((W-2*M)/3);
+    doc.setFillColor(18,34,56);doc.roundedRect(x,by,(W-2*M)/3-4,26,3,3,'F');
+    var _c=k[2].replace('#','');
+    doc.setFillColor(parseInt(_c.slice(0,2),16),parseInt(_c.slice(2,4),16),parseInt(_c.slice(4,6),16));
+    doc.rect(x,by,(W-2*M)/3-4,1.6,'F');
+    var c=k[2].replace('#','');
+    doc.setTextColor(parseInt(c.slice(0,2),16),parseInt(c.slice(2,4),16),parseInt(c.slice(4,6),16));
+    doc.setFont('helvetica','bold');doc.setFontSize(18);
+    doc.text(String(k[1]),x+((W-2*M)/3-4)/2,by+13,{align:'center'});
+    doc.setTextColor(140,160,190);doc.setFont('helvetica','normal');doc.setFontSize(7.5);
+    doc.text(k[0],x+((W-2*M)/3-4)/2,by+20,{align:'center'});
+  });
+  doc.setFillColor(0,64,96);doc.roundedRect(M,by+32,W-2*M,20,3,3,'F');
+  doc.setFillColor(CIAN[0],CIAN[1],CIAN[2]);doc.rect(M,by+32,2.6,20,'F');
+  doc.setTextColor(0,212,255);doc.setFont('helvetica','bold');doc.setFontSize(11);
+  doc.text(e.recomendacion,W/2,by+45,{align:'center'});
+
+  doc.setTextColor(110,130,160);doc.setFont('helvetica','normal');doc.setFontSize(8);
+  doc.text('Elaborado por: '+((LV.comercial&amp;&amp;LV.comercial.consultor)||'Ing. Edisson Macías Quevedo'),M,H-28);
+  doc.text('Fecha de visita: '+((LV.comercial&amp;&amp;LV.comercial.fechaVisita)||LV.creado||''),M,H-22);
+  doc.text('Documento confidencial — uso exclusivo del cliente',M,H-16);
+
+  // ── FICHA ── (la portada no lleva pie ni número)
+  doc.addPage();encabezado(g.nombre||'Levantamiento');
+  titulo('1. Información general');
+  filaDato('Edificio',g.nombre);filaDato('NIT',g.nit);filaDato('Dirección',g.direccion);
+  filaDato('Ciudad',g.ciudad);filaDato('Estrato',g.estrato);filaDato('Año construcción',g.anio);
+  filaDato('Administración',g.administracion);filaDato('Contacto',g.contacto);
+  filaDato('Correo',g.correo);filaDato('Teléfono',g.telefono);
+  filaDato('Composición',[g.torres&amp;&amp;g.torres+' torres',g.pisos&amp;&amp;g.pisos+' pisos',
+    g.apartamentos&amp;&amp;g.apartamentos+' apartamentos',g.locales&amp;&amp;g.locales+' locales',
+    g.residentes&amp;&amp;g.residentes+' residentes'].filter(Boolean).join(' · '));
+  var pf=LV.perfil||{};
+  filaDato('Población',String(pf.poblacion||'').split('|').join(', '));
+  filaDato('Rotación',pf.rotacion);
+  y+=3;
+  titulo('2. Diagnóstico ejecutivo');
+  parrafo('El presente documento evalúa la viabilidad técnica y operativa de implementar portería virtual en '+
+    (g.nombre||'la copropiedad')+', a partir de la visita técnica realizada'+
+    (LV.comercial&amp;&amp;LV.comercial.fechaVisita?' el '+LV.comercial.fechaVisita:'')+
+    '. La evaluación considera infraestructura de accesos, CCTV, comunicaciones, respaldo eléctrico, '+
+    'operación actual y restricciones de implementación.');
+  parrafo('Resultado: '+e.recomendacion+'. La copropiedad obtiene '+e.pv100+' sobre 100 en factibilidad de portería virtual 100% y '+
+    e.hibrida+' sobre 100 en modalidad híbrida. El nivel de seguridad actual se califica en '+e.seguridad+' sobre 100, '+
+    'con un riesgo de implementación de '+e.riesgo+' sobre 100 y una inversión preliminar estimada de '+lvCop(e.inversion)+' ('+e.nivelInv.toLowerCase()+').');
+  if(pf.problemas)parrafo('Problemática reportada por la administración: '+pf.problemas);
+
+  titulo('3. Sustento de la calificación');
+  e.razones.forEach(function(r){
+    salto(12);
+    var c=r.c==='ok'?VERDE:r.c==='warn'?AMBAR:ROJO;
+    doc.setFont('helvetica','normal');doc.setFontSize(8.8);doc.setTextColor(58,72,94);
+    doc.text(doc.splitTextToSize(r.t,W-2*M-34)[0],M,y);
+    doc.setFont('helvetica','bold');doc.setTextColor(c[0],c[1],c[2]);doc.setFontSize(8.5);
+    doc.text(r.p+' / '+r.max,W-M,y,{align:'right'});
+    y+=2.2;
+    doc.setFillColor(232,238,246);doc.roundedRect(M,y,W-2*M,2.6,1.3,1.3,'F');
+    var an=Math.max(2,(W-2*M)*r.p/r.max);
+    doc.setFillColor(c[0],c[1],c[2]);doc.roundedRect(M,y,an,2.6,1.3,1.3,'F');
+    y+=7.5;
+  });
+  if(e.penalizaciones.length){y+=2;parrafo('Factores que restan viabilidad: '+e.penalizaciones.join(', ')+'.');}
+
+  // ── SITUACIÓN ACTUAL ──
+  titulo('4. Situación actual por sistema');
+  var cc=LV.cctv||{},rd=LV.redes||{},el=LV.electrico||{},as=LV.ascensores||{},es=LV.esclusa||{},so=LV.sotanos||{},op=LV.operacion||{};
+  filaDato('CCTV',(cc.total||0)+' cámaras · '+(cc.tecnologia||'sin dato')+' · '+(cc.resolucion||'')+
+    ' · grabador '+(cc.grabMarca||'no registrado')+' · '+(cc.grabDias||0)+' días');
+  filaDato('Internet',(rd.proveedor||'sin dato')+' · '+(rd.bajada||0)+'/'+(rd.subida||0)+' Mbps'+(lvSi(rd.fibra)?' · fibra':'')+
+    ' · respaldo: '+(rd.respaldo||'no'));
+  filaDato('Eléctrico',(lvSi(el.planta)?'Planta '+(el.cobertura||''):'Sin planta')+(lvSi(el.ups)?' · UPS '+(el.autonomia||'?')+' min':' · sin UPS')+
+    (lvSi(el.transferencia)?' · transferencia automática':''));
+  filaDato('Esclusa',lvSi(es.existe)?('Existente · '+(es.material||'')+' · '+(es.estado||'')+(lvSi(es.reutilizable)?' · reutilizable':' · no reutilizable')):'No existe');
+  filaDato('Sótanos',(so.cantidad||0)+' · '+(so.escaleras||0)+' accesos a escaleras · '+(so.ascensores||0)+' a ascensores'+
+    (lvSi(so.control)?' · requiere control':''));
+  filaDato('Ascensores',(as.cantidad||0)+' '+(as.marca||'')+' · citofonía '+(as.tipoCitofonia||'no registrada')+
+    ' · integrable: '+(as.integrable||'por verificar'));
+  filaDato('Operación',(op.empresa||'sin dato')+' · '+(op.vigilantes||0)+' vigilantes · '+(op.cobertura||'')+
+    (op.costo?' · '+lvCop(lvNum(op.costo))+'/mes':''));
+  var vi=LV.visitantes||{};
+  filaDato('Visitantes',(vi.autorizacion||'sin dato')+' · registro '+(vi.registro||'')+' · domicilios: '+(vi.domicilios||''));
+
+  // ── HALLAZGOS ──
+  titulo('5. Hallazgos y riesgos detectados');
+  e.hallazgos.slice(0,22).forEach(function(x){
+    var c=x.n==='alto'?ROJO:x.n==='medio'?AMBAR:VERDE;
+    var tint=x.n==='alto'?[253,242,243]:x.n==='medio'?[255,250,236]:[240,250,245];
+    doc.setFont('helvetica','normal');doc.setFontSize(8.5);
+    var ls=doc.splitTextToSize(x.d,W-2*M-12);
+    var alto=9+ls.length*4.2;
+    salto(alto+4);
+    doc.setFillColor(tint[0],tint[1],tint[2]);
+    doc.roundedRect(M,y-4.5,W-2*M,alto,1.5,1.5,'F');
+    doc.setFillColor(c[0],c[1],c[2]);doc.rect(M,y-4.5,2,alto,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(6.5);doc.setTextColor(c[0],c[1],c[2]);
+    doc.text(x.n.toUpperCase(),W-M-3,y-0.5,{align:'right'});
+    doc.setFont('helvetica','bold');doc.setFontSize(9.3);doc.setTextColor(TINTA[0],TINTA[1],TINTA[2]);
+    doc.text(doc.splitTextToSize(x.t,W-2*M-26)[0],M+5.5,y);
+    doc.setFont('helvetica','normal');doc.setFontSize(8.4);doc.setTextColor(96,112,136);
+    y+=4.6;
+    ls.forEach(function(l){doc.text(l,M+5.5,y);y+=4.2;});
+    y+=5;
+  });
+
+  // ── RECOMENDACIONES ──
+  titulo('6. Recomendaciones');
+  var recs=[];
+  if(e.pv100>=70)recs.push('Implementar portería virtual 100%: la infraestructura soporta la operación remota con las adecuaciones listadas.');
+  else if(e.hibrida>=65)recs.push('Implementar portería virtual híbrida: un conserje presencial en horario diurno y centro remoto 24/7, migrando a 100% cuando se ejecuten las adecuaciones.');
+  else recs.push('Ejecutar primero la modernización tecnológica (accesos, CCTV y comunicaciones) y reevaluar la migración a portería virtual en una segunda fase.');
+  if(lvNum(rd.subida)<10)recs.push('Contratar un canal dedicado con mínimo 20 Mbps de subida y un canal de respaldo LTE.');
+  if(!lvSi(es.existe))recs.push('Construir esclusa de seguridad en el acceso peatonal principal: es el control que impide el ingreso detrás de un residente.');
+  if(!lvSi(el.planta))recs.push('Garantizar respaldo eléctrico para accesos, cámaras y comunicaciones, con transferencia automática.');
+  if(!lvSi(cc.grabUsuario))recs.push('Habilitar usuario de acceso remoto al grabador para el centro de monitoreo.');
+  if(lvNum(so.cantidad)>0&amp;&amp;!lvSi(so.control))recs.push('Instalar control de acceso en las puertas de escaleras y ascensores de sótanos.');
+  if(String(as.tipoCitofonia||'')==='Analógica')recs.push('Migrar la citofonía a IP o instalar gateway de integración para que el centro remoto atienda las llamadas.');
+  recs.push('Socializar el proyecto con los residentes antes de la implementación: la resistencia al cambio es el principal riesgo operativo.');
+  recs.forEach(function(r,i){
+    salto(10);
+    doc.setFillColor(AZ[0],AZ[1],AZ[2]);doc.circle(M+2,y-1.4,2.2,'F');
+    doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(7);
+    doc.text(String(i+1),M+2,y-0.3,{align:'center'});
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(55,65,85);
+    var ls=doc.splitTextToSize(r,W-2*M-8);
+    ls.forEach(function(l,j){if(j)salto(6);doc.text(l,M+7,y);y+=4.6;});
+    y+=2.5;
+  });
+
+  // ── PRESUPUESTO ──
+  titulo('7. Presupuesto preliminar');
+  parrafo('Valores de referencia para dimensionar la inversión. No constituyen cotización en firme; requieren visita de ingeniería de detalle.',8.5);
+  salto(12);
+  doc.setFillColor(AZ[0],AZ[1],AZ[2]);doc.roundedRect(M,y-4.5,W-2*M,8,1.5,1.5,'F');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(8);
+  doc.text('ÍTEM',M+2,y);doc.text('CANT',W-M-56,y,{align:'right'});
+  doc.text('UNITARIO',W-M-30,y,{align:'right'});doc.text('TOTAL',W-M-2,y,{align:'right'});
+  y+=7;
+  pres.lineas.forEach(function(l,i){
+    salto(7);
+    if(i%2)doc.setFillColor(SUAVE[0],SUAVE[1],SUAVE[2]),doc.rect(M,y-4,W-2*M,6,'F');
+    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(56,70,92);
+    doc.text(doc.splitTextToSize(l.n,W-2*M-62)[0],M+2,y);
+    doc.text(String(l.cant),W-M-56,y,{align:'right'});
+    doc.text(lvCop(l.precio),W-M-30,y,{align:'right'});
+    doc.setFont('helvetica','bold');doc.text(lvCop(l.total),W-M-2,y,{align:'right'});
+    y+=6;
+  });
+  y+=2;salto(20);
+  doc.setDrawColor(200,208,220);doc.line(W-M-70,y-3,W-M,y-3);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(80,95,120);
+  doc.text('Subtotal',W-M-40,y,{align:'right'});doc.text(lvCop(pres.subtotal),W-M-2,y,{align:'right'});y+=5.5;
+  doc.text('IVA 19%',W-M-40,y,{align:'right'});doc.text(lvCop(pres.iva),W-M-2,y,{align:'right'});y+=7;
+  doc.setFillColor(OSC[0],OSC[1],OSC[2]);doc.roundedRect(W-M-72,y-5.5,72,10,1.5,1.5,'F');
+  doc.setFillColor(CIAN[0],CIAN[1],CIAN[2]);doc.rect(W-M-72,y-5.5,2.4,10,'F');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(10);
+  doc.text('TOTAL',W-M-66,y);doc.text(lvCop(pres.total),W-M-2,y,{align:'right'});
+  y+=12;
+  if(lvNum(op.costo)){
+    parrafo('La vigilancia actual cuesta '+lvCop(lvNum(op.costo))+' mensuales ('+lvCop(lvNum(op.costo)*12)+' al año). '+
+      'Con un ahorro estimado del 45%, la inversión se recupera en aproximadamente '+
+      Math.ceil(pres.total/(lvNum(op.costo)*0.45))+' meses.');
+  }
+
+  // ── FOTOS ──
+  var cats=LV_FOTOS.filter(function(c){return (LV.fotos[c]||[]).length;});
+  if(cats.length){
+    pie();doc.addPage();encabezado(g.nombre||'Levantamiento');
+    titulo('8. Registro fotográfico');
+    var col=0,fw=(W-2*M-6)/2,fh=fw*0.72;
+    cats.forEach(function(cat){
+      salto(10);
+      if(col){y+=fh+9;col=0;}
+      doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(AZ[0],AZ[1],AZ[2]);
+      doc.text(cat,M,y);y+=4;
+      (LV.fotos[cat]||[]).forEach(function(f){
+        if(col===0)salto(fh+10);
+        var x=M+col*(fw+6);
+        try{doc.addImage(f,'JPEG',x,y,fw,fh,undefined,'FAST');}catch(err){}
+        doc.setDrawColor(215,222,232);doc.rect(x,y,fw,fh);
+        col++;
+        if(col===2){col=0;y+=fh+5;}
+      });
+      if(col){col=0;y+=fh+5;}
+      y+=3;
+    });
+  }
+
+  // ── CONCLUSIONES ──
+  salto(60);
+  titulo('9. Conclusiones');
+  parrafo(e.recomendacion+'. '+
+    (e.pv100>=70?'La copropiedad está en condiciones de operar con portería virtual 100% una vez ejecutadas las adecuaciones descritas, con una inversión estimada de '+lvCop(e.inversion)+'.'
+     :e.hibrida>=65?'Se recomienda iniciar en modalidad híbrida y migrar a 100% una vez se ejecuten las adecuaciones críticas, con una inversión estimada de '+lvCop(e.inversion)+'.'
+     :'Antes de migrar a portería virtual se requiere modernizar la infraestructura descrita, con una inversión estimada de '+lvCop(e.inversion)+'.'));
+  var altos=e.hallazgos.filter(function(x){return x.n==='alto';}).length;
+  parrafo('Se identificaron '+e.hallazgos.length+' hallazgos, de los cuales '+altos+' son críticos y deben resolverse antes de la puesta en marcha. '+
+    'El riesgo de implementación se califica en '+e.riesgo+' sobre 100'+(e.penalizaciones.length?', principalmente por '+e.penalizaciones.join(', '):'')+'.');
+  y+=12;salto(30);
+  doc.setDrawColor(150,165,185);
+  doc.line(M,y,M+62,y);doc.line(W-M-62,y,W-M,y);
+  y+=5;
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(80,95,120);
+  doc.text((LV.comercial&amp;&amp;LV.comercial.consultor)||'Ing. Edisson Macías Quevedo',M,y);
+  doc.text('Administración — '+(g.nombre||''),W-M-62,y);
+  y+=4.5;
+  doc.setFontSize(7);doc.setTextColor(130,145,165);
+  doc.text('Consultor EM Seguridad Electrónica',M,y);
+  doc.text('Recibido',W-M-62,y);
+  pie();
+
+  var nom='Factibilidad-Porteria-Virtual-'+String(g.nombre||'edificio').replace(/[^a-z0-9]+/gi,'-').toLowerCase()+'-'+nnHoy()+'.pdf';
+  doc.save(nom);
+  T('Informe generado',nom.slice(0,42),'📄');
+  if(LV.comercial&amp;&amp;LV.comercial.estado==='Prospecto'){
+    LV.comercial.estado='Diagnóstico entregado';nnSave();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXPORTAR, ENVIAR Y ENLAZAR CON PROYECTOS
+// ═══════════════════════════════════════════════════════════════
+function lvExportarJSON(){
+  if(!LV)return;
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(LV,null,2)],{type:'application/json'}));
+  a.download='levantamiento-'+String((LV.general&amp;&amp;LV.general.nombre)||'edificio').replace(/[^a-z0-9]+/gi,'-').toLowerCase()+'.json';
+  a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+  T('Levantamiento exportado','Archivo JSON descargado','⬇');
+}
+function lvImportarJSON(){
+  var inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=function(e){
+    var f=e.target.files[0];if(!f)return;
+    var r=new FileReader();
+    r.onload=function(ev){
+      try{
+        var d=JSON.parse(ev.target.result);
+        if(!d.general){T('Archivo inválido','No parece un levantamiento','⚠️');return;}
+        d.id='lev_'+Date.now();
+        LVS.unshift(d);nnSave();LV=d;lvRender();
+        T('Levantamiento importado',(d.general.nombre||''),'⬆');
+      }catch(err){T('Error',err.message,'⚠️');}
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+// Manda el resumen por correo (vía el robot) y por Telegram
+function lvEnviar(){
+  if(!LV)return;
+  var e=lvEvaluar(),g=LV.general||{},pres=lvPresupuesto();
+  var m='🏢 '+nnB('Levantamiento — Portería Virtual')+'\n━━━━━━━━━━━━━━━\n';
+  m+='📌 '+nnB(g.nombre||'Edificio')+'\n';
+  if(g.direccion)m+='📍 '+nnEsc(g.direccion)+(g.ciudad?', '+nnEsc(g.ciudad):'')+'\n';
+  if(g.apartamentos)m+='🏠 '+nnEsc(g.apartamentos)+' apartamentos\n';
+  m+='\n'+nnB('Factibilidad')+'\n';
+  m+='• Portería virtual 100%: '+nnB(e.pv100+'/100')+'\n';
+  m+='• Híbrida: '+nnB(e.hibrida+'/100')+'\n';
+  m+='• Seguridad actual: '+e.seguridad+'/100\n';
+  m+='• Riesgo: '+e.riesgo+'/100\n';
+  m+='\n✅ '+nnB(e.recomendacion)+'\n';
+  m+='💰 Inversión estimada: '+nnB(lvCop(pres.total))+' ('+e.nivelInv+')\n';
+  var altos=e.hallazgos.filter(function(x){return x.n==='alto';});
+  if(altos.length){
+    m+='\n🚨 '+nnB('Críticos ('+altos.length+')')+'\n';
+    altos.slice(0,6).forEach(function(x){m+='• '+nnEsc(x.t)+'\n';});
+  }
+  m+='\n👤 '+nnEsc((LV.comercial&amp;&amp;LV.comercial.consultor)||'')+' · '+nnEsc((LV.comercial&amp;&amp;LV.comercial.estado)||'')+'\n';
+  m+='<i>EM Suite PRO</i>';
+  nnTg(m);
+
+  // correo con el detalle, usando el robot 24/7
+  var url=(EMCFG_NN&amp;&amp;EMCFG_NN.gasUrl)||'';
+  if(url){
+    var fotos=[];
+    LV_FOTOS.forEach(function(c){(LV.fotos[c]||[]).slice(0,1).forEach(function(f){if(fotos.length<4)fotos.push(f);});});
+    var payload={tipo:'reporte',id:LV.id,fecha:new Date().toLocaleString('es-CO'),
+      tecnico:(LV.comercial&amp;&amp;LV.comercial.consultor)||'',cliente:g.nombre||'',
+      direccion:[g.direccion,g.ciudad].filter(Boolean).join(', '),
+      proyecto:'Levantamiento portería virtual',tipoTrabajo:'Estudio de factibilidad',
+      estado:e.recomendacion,horaIni:'',horaFin:'',
+      materiales:pres.lineas.map(function(l){return l.cant+' × '+l.n;}).join('; '),
+      observaciones:'Factibilidad PV 100%: '+e.pv100+'/100 · Híbrida: '+e.hibrida+'/100 · Seguridad actual: '+
+        e.seguridad+'/100 · Riesgo: '+e.riesgo+'/100 · Inversión estimada: '+lvCop(pres.total),
+      pendientes:e.hallazgos.filter(function(x){return x.n==='alto';}).map(function(x){return x.t;}).join('; '),
+      checklist:e.razones.map(function(r){return{n:r.t+' ('+r.p+'/'+r.max+')',ok:r.c==='ok'};}),
+      fotos:fotos,firma:null,correos:(EMCFG_NN&amp;&amp;EMCFG_NN.correos)||[]};
+    var cuerpo=JSON.stringify(payload);
+    fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:cuerpo})
+      .then(function(r){return r.json();})
+      .then(function(){T('Enviado','Correo y Telegram despachados','📨');})
+      .catch(function(){
+        fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:cuerpo})
+          .then(function(){T('Enviado','Confirma en Telegram','📨');})
+          .catch(function(){T('Solo Telegram','Falta la URL del robot para el correo','⚠️');});
+      });
+  }else{
+    T('Enviado a Telegram','Configura la URL del robot para el correo','📨');
+  }
+}
+
+// Crea el proyecto en el tablero a partir del levantamiento
+function lvCrearProyecto(){
+  if(!LV){T('Abre un levantamiento','','⚠️');return;}
+  var g=LV.general||{},e=lvEvaluar();
+  if(LV.projId&amp;&amp;projFind(LV.projId)){
+    V('kanban');renderProjects();
+    T('Ya tiene proyecto',projFind(LV.projId).name,'📂');
+    return;
+  }
+  var hoy=new Date(),fin=new Date(Date.now()+45*86400000);
+  var p={id:'p'+Date.now(),name:g.nombre||'Portería virtual',client:g.administracion||g.contacto||'',
+    type:'Integral',start:nnHoy(),deadline:nnISO(fin),
+    notes:'Portería virtual · '+e.recomendacion+' · Inversión estimada '+lvCop(e.inversion),
+    status:'Activo',auto:{fases:true,avance:true},created:nnHoy()};
+  PROJECTS.unshift(p);
+  LV.projId=p.id;
+
+  var creadas=[],dias=45;
+  (PROJ_TPL['Integral']||[]).forEach(function(f,i){
+    var d=new Date(hoy.getTime()+Math.round(f.p*dias)*86400000);
+    var iso=nnISO(d),hora=PROJ_HORA[f.t]||'09:00';
+    var task={id:Date.now()+i,t:f.n,p:f.pr||'Normal',proj:'Integral',projId:p.id,projName:p.name,
+      tags:['Portería virtual',p.name.slice(0,18)],date:iso,time:hora,due:nnCorto(iso),fase:i+1,evType:f.t};
+    KB['Pendiente']=KB['Pendiente']||[];KB['Pendiente'].push(task);
+    creadas.push(task);
+    nnEvent({id:'nn_task_'+task.id,title:f.n+' — '+p.name,type:f.t==='visita'?'visita':f.t,
+      prio:(f.pr==='Urgente'||f.pr==='Alta')?'alta':'media',date:iso,time:hora,
+      project:p.name,projId:p.id,notes:'',link:'',recur:'',recurEnd:'',sent:'',done:false},false);
+  });
+  nnEvent({id:'nn_proj_'+p.id,title:'Entrega: '+p.name,type:'proj',prio:'alta',
+    date:p.deadline,time:'17:00',project:p.name,projId:p.id,notes:p.notes,link:'',
+    recur:'',recurEnd:'',sent:'',done:false},false);
+
+  var m='📂 '+nnB('Proyecto creado desde el levantamiento')+'\n━━━━━━━━━━━━━━━\n';
+  m+='📌 '+nnB(p.name)+'\n';
+  if(p.client)m+='👤 '+nnEsc(p.client)+'\n';
+  m+='✅ '+nnEsc(e.recomendacion)+'\n💰 '+nnEsc(lvCop(e.inversion))+'\n';
+  m+='📆 Entrega estimada: '+nnEsc(nnFechaLarga(p.deadline))+'\n';
+  m+='🗂 '+creadas.length+' fases agendadas\n<i>EM Suite PRO</i>';
+  nnTg(m);
+
+  nnSave();projFillSelect();renderProjects();renderKB();renderDash();
+  T('Proyecto creado',creadas.length+' fases agendadas','📂');
+  V('kanban');
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// SINCRONIZACIÓN ENTRE DISPOSITIVOS
+// Hasta ahora NeuroNotes vivía solo en el navegador de cada equipo:
+// creabas el proyecto en el PC y en la tablet no aparecían las fases
+// porque el kanban nunca viajaba. Ahora el estado completo (proyectos,
+// tareas, reuniones, metas, finanzas, levantamientos y técnicos) se
+// guarda en Firebase y se fusiona por identificador, sin pisar lo que
+// se haya creado en el otro equipo.
+//
+// Las fotos NO viajan: pesan demasiado para un documento de Firestore
+// (límite de 1 MB). Quedan en el equipo donde se tomaron y se exportan
+// con el informe o el respaldo.
+// ═══════════════════════════════════════════════════════════════
+
+var NN_SYNC_TS=0;              // marca de tiempo del estado local
+var NN_SYNC_ON=false;          // evita empujar mientras se está trayendo
+var NN_SYNC_T=null;
+var NN_DEV=(function(){
+  try{
+    var d=localStorage.getItem('nn_dev_id');
+    if(!d){d=(navigator.userAgent.indexOf('Android')>=0?'tablet':'pc')+'-'+Math.random().toString(36).slice(2,7);
+      localStorage.setItem('nn_dev_id',d);}
+    return d;
+  }catch(e){return 'dev';}
+})();
+
+function nnCloudUrl(){
+  var c=EMCFG_NN||{};
+  var proj=c.fbProject||'em-suite-pro', key=c.fbKey||'';
+  if(!key)return '';
+  return 'https://firestore.googleapis.com/v1/projects/'+proj+
+         '/databases/(default)/documents/appdata/neuronotes?key='+key;
+}
+
+// Lo que viaja (sin fotos)
+function nnEstado(){
+  var levs=(LVS||[]).map(function(l){
+    var c={};for(var k in l)if(k!=='fotos')c[k]=l[k];
+    c.fotosCount={};
+    Object.keys(l.fotos||{}).forEach(function(cat){c.fotosCount[cat]=(l.fotos[cat]||[]).length;});
+    return c;
+  });
+  return {NOTES:NOTES,KB:KB,MEETS:MEETS,GOALS:GOALS,COURSES:COURSES,TRIPS:TRIPS,
+    TRANSACTIONS:TRANSACTIONS,DEBTS:DEBTS,BUDGET_CATS:BUDGET_CATS,
+    HOME_FIXED:HOME_FIXED,HOME_TASKS:HOME_TASKS,PROJECTS:PROJECTS,
+    LVS:levs,TECNICOS:TECNICOS,ts:NN_SYNC_TS,dev:NN_DEV};
+}
+
+// Fusiona dos listas por id: se quedan todos, y ante el mismo id manda
+// el lado más reciente.
+function nnMergeLista(local,remoto,remotoNuevo){
+  var out=[],vistos={};
+  (remotoNuevo?remoto:local).forEach(function(x){if(x&amp;&amp;x.id!=null){vistos[x.id]=1;}out.push(x);});
+  (remotoNuevo?local:remoto).forEach(function(x){
+    if(!x||x.id==null){return;}
+    if(!vistos[x.id]){vistos[x.id]=1;out.push(x);}
+  });
+  return out;
+}
+function nnMergeKB(local,remoto,remotoNuevo){
+  var cols=KB_COLS.slice();
+  Object.keys(local||{}).concat(Object.keys(remoto||{})).forEach(function(c){if(cols.indexOf(c)<0)cols.push(c);});
+  // dónde está cada tarea en cada lado
+  var pos={},out={};
+  cols.forEach(function(c){out[c]=[];});
+  function indexar(obj,lado){
+    Object.keys(obj||{}).forEach(function(c){
+      (obj[c]||[]).forEach(function(t){
+        if(!t||t.id==null)return;
+        pos[t.id]=pos[t.id]||{};
+        pos[t.id][lado]={col:c,t:t};
+      });
+    });
+  }
+  indexar(local,'l');indexar(remoto,'r');
+  Object.keys(pos).forEach(function(id){
+    var p=pos[id];
+    var elegido = (remotoNuevo&amp;&amp;p.r)?p.r : (p.l||p.r);
+    if(!elegido)return;
+    if(!out[elegido.col])out[elegido.col]=[];
+    out[elegido.col].push(elegido.t);
+  });
+  return out;
+}
+
+function nnAplicarRemoto(r,remotoNuevo){
+  NOTES        = nnMergeLista(NOTES||[],r.NOTES||[],remotoNuevo);
+  MEETS        = nnMergeLista(MEETS||[],r.MEETS||[],remotoNuevo);
+  GOALS        = nnMergeLista(GOALS||[],r.GOALS||[],remotoNuevo);
+  COURSES      = nnMergeLista(COURSES||[],r.COURSES||[],remotoNuevo);
+  TRIPS        = nnMergeLista(TRIPS||[],r.TRIPS||[],remotoNuevo);
+  DEBTS        = nnMergeLista(DEBTS||[],r.DEBTS||[],remotoNuevo);
+  PROJECTS     = nnMergeLista(PROJECTS||[],r.PROJECTS||[],remotoNuevo);
+  TECNICOS     = nnMergeLista(TECNICOS||[],r.TECNICOS||[],remotoNuevo);
+  KB           = nnMergeKB(KB||{},r.KB||{},remotoNuevo);
+  if(remotoNuevo){
+    if(r.TRANSACTIONS)TRANSACTIONS=r.TRANSACTIONS;
+    if(r.BUDGET_CATS)BUDGET_CATS=r.BUDGET_CATS;
+    if(r.HOME_FIXED)HOME_FIXED=r.HOME_FIXED;
+    if(r.HOME_TASKS)HOME_TASKS=r.HOME_TASKS;
+  }
+  // Levantamientos: se fusionan por id y se conservan las fotos locales
+  var fotosLocales={};
+  (LVS||[]).forEach(function(l){fotosLocales[l.id]=l.fotos||{};});
+  LVS=nnMergeLista(LVS||[],r.LVS||[],remotoNuevo).map(function(l){
+    if(!l.fotos)l.fotos=fotosLocales[l.id]||{};
+    return l;
+  });
+}
+
+function nnSyncEstado(txt,color){
+  var e=document.getElementById('nn-sync-txt');
+  if(e){e.textContent=txt;e.style.color=color||'var(--t3)';}
+}
+
+// ── Traer de la nube ──
+function nnCloudPull(silencioso){
+  var url=nnCloudUrl();
+  if(!url){nnSyncEstado('Sin configurar');return Promise.resolve(false);}
+  nnSyncEstado('Sincronizando…','var(--warn)');
+  return fetch(url)
+    .then(function(r){
+      if(r.status===404)return null;            // todavía no hay nada en la nube
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      return r.json();
+    })
+    .then(function(j){
+      if(!j||!j.fields||!j.fields.json){nnSyncEstado('Nube vacía');return false;}
+      var r=JSON.parse(j.fields.json.stringValue||'{}');
+      var rts=+(j.fields.ts&amp;&amp;(j.fields.ts.integerValue||j.fields.ts.stringValue))||0;
+      var mismoDev=(j.fields.dev&amp;&amp;j.fields.dev.stringValue)===NN_DEV;
+      if(rts===NN_SYNC_TS){nnSyncEstado('Al día · '+new Date().toLocaleTimeString('es-CO'),'var(--ok)');return false;}
+      NN_SYNC_ON=true;
+      nnAplicarRemoto(r,rts>NN_SYNC_TS);
+      NN_SYNC_TS=Math.max(rts,NN_SYNC_TS);
+      NN_SYNC_ON=false;
+      nnSave(true);
+      try{
+        projFillSelect();calFillProjects();renderProjects();renderKB();renderDash();
+        if(document.getElementById('v-lev')&amp;&amp;document.getElementById('v-lev').classList.contains('on'))lvRender();
+      }catch(e){}
+      nnSyncEstado('Actualizado desde '+((r.dev&amp;&amp;!mismoDev)?r.dev:'la nube')+' · '+new Date().toLocaleTimeString('es-CO'),'var(--ok)');
+      if(!silencioso)T('Sincronizado',(PROJECTS.length)+' proyectos · '+Object.values(KB).flat().length+' tareas','☁️');
+      return true;
+    })
+    .catch(function(e){
+      nnSyncEstado('Sin conexión con la nube','var(--danger)');
+      return false;
+    });
+}
+
+// ── Subir a la nube ──
+function nnCloudPush(forzar){
+  var url=nnCloudUrl();
+  if(!url)return Promise.resolve(false);
+  NN_SYNC_TS=Date.now();
+  var estado=nnEstado();
+  var txt=JSON.stringify(estado);
+  if(txt.length>950000){
+    // Documento de Firestore: 1 MB. Se recorta lo más pesado y se avisa.
+    estado.LVS=(estado.LVS||[]).slice(0,10);
+    estado.NOTES=(estado.NOTES||[]).slice(0,60);
+    txt=JSON.stringify(estado);
+    nnSyncEstado('Datos muy grandes: se sincronizó lo más reciente','var(--warn)');
+  }
+  nnSyncEstado('Subiendo…','var(--warn)');
+  return fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:{
+        json:{stringValue:txt},
+        ts:{integerValue:String(NN_SYNC_TS)},
+        dev:{stringValue:NN_DEV}
+      }})})
+    .then(function(r){
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      nnSyncEstado('Guardado en la nube · '+new Date().toLocaleTimeString('es-CO'),'var(--ok)');
+      return true;
+    })
+    .catch(function(e){
+      nnSyncEstado('No se pudo subir: '+e.message,'var(--danger)');
+      return false;
+    });
+}
+
+function nnSyncAhora(){
+  nnCloudPull(true).then(function(){return nnCloudPush(true);})
+    .then(function(ok){
+      if(ok)T('Sincronizado','Proyectos, fases y levantamientos al día','☁️');
+      else T('Sin sincronizar','Revisa la conexión o la configuración de Firebase','⚠️');
+    });
+}
+function nnSyncProgramar(){
+  if(NN_SYNC_ON)return;
+  clearTimeout(NN_SYNC_T);
+  NN_SYNC_T=setTimeout(function(){nnCloudPush(false);},2500);
+}
+
+// Arranque: primero traer, luego subir lo que haya de este equipo
+function nnSyncInit(){
+  setTimeout(function(){
+    nnCloudPull(true).then(function(){nnCloudPush(false);});
+  },1500);
+  setInterval(function(){if(!document.hidden)nnCloudPull(true);},60000);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)nnCloudPull(true);});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TÉCNICOS Y ASIGNACIÓN
+// Cada técnico tiene su correo corporativo. Al asignarle una tarea
+// o una visita se le manda: el correo con invitación de calendario
+// (queda en su Outlook y por tanto en el calendario de Teams), el
+// chat de Teams abierto con el mensaje listo, y el aviso a Telegram.
+// ═══════════════════════════════════════════════════════════════
+var TECNICOS=[];
+var _asignando=null;
+
+function tecFind(id){return TECNICOS.filter(function(t){return String(t.id)===String(id);})[0]||null;}
+function tecPorCorreo(c){return TECNICOS.filter(function(t){return (t.correo||'').toLowerCase()===String(c||'').toLowerCase();})[0]||null;}
+
+function tecAbrir(){ tecRender(); openModal('mo-tec'); }
+function tecRender(){
+  var box=document.getElementById('tec-lista'); if(!box)return;
+  box.innerHTML=TECNICOS.length? TECNICOS.map(function(t){
+    return'<div class=&quot;card&quot; style=&quot;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px&quot;>'+
+      '<div style=&quot;width:34px;height:34px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;'+
+      'justify-content:center;font-size:12px;font-weight:700;color:var(--ac);flex-shrink:0&quot;>'+
+      nnEsc((t.nombre||'?').split(' ').map(function(x){return x[0];}).slice(0,2).join('').toUpperCase())+'</div>'+
+      '<div style=&quot;flex:1;min-width:0&quot;>'+
+        '<div style=&quot;font-size:12px;font-weight:600&quot;>'+nnEsc(t.nombre)+(t.rol?' <span style=&quot;color:var(--t3);font-weight:400&quot;>· '+nnEsc(t.rol)+'</span>':'')+'</div>'+
+        '<div style=&quot;font-size:10px;color:var(--t3);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis&quot;>'+nnEsc(t.correo||'sin correo')+(t.telefono?' · '+nnEsc(t.telefono):'')+'</div>'+
+      '</div>'+
+      '<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 8px;color:#6264A7&quot; onclick=&quot;tecChat(\''+t.id+'\')&quot; title=&quot;Abrir chat de Teams&quot;>Teams</button>'+
+      '<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 8px;color:var(--danger)&quot; onclick=&quot;tecBorrar(\''+t.id+'\')&quot;>🗑</button>'+
+      '</div>';
+  }).join('') : '<div style=&quot;font-size:12px;color:var(--t3);text-align:center;padding:18px&quot;>Sin técnicos. Agrega el primero abajo.</div>';
+}
+function tecGuardar(){
+  var g=function(id){var e=document.getElementById(id);return e?e.value.trim():'';};
+  var n=g('tec-nombre'), c=g('tec-correo');
+  if(!n){T('Falta el nombre','','⚠️');return;}
+  if(c&amp;&amp;!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c)){T('Correo inválido',c,'⚠️');return;}
+  TECNICOS.push({id:'t'+Date.now(),nombre:n,correo:c,telefono:g('tec-tel'),rol:g('tec-rol')});
+  ['tec-nombre','tec-correo','tec-tel','tec-rol'].forEach(function(i){var e=document.getElementById(i);if(e)e.value='';});
+  nnSave();tecRender();tecLlenarSelects();
+  T('Técnico agregado',n,'👷');
+}
+function tecBorrar(id){
+  var t=tecFind(id); if(!t)return;
+  if(!confirm('¿Eliminar a '+t.nombre+' del directorio?'))return;
+  TECNICOS=TECNICOS.filter(function(x){return String(x.id)!==String(id);});
+  nnSave();tecRender();tecLlenarSelects();
+}
+function tecLlenarSelects(){
+  ['ct-tec-sel','new-tec','asig-tec'].forEach(function(id){
+    var s=document.getElementById(id); if(!s)return;
+    var cur=s.value;
+    s.innerHTML='<option value=&quot;&quot;>— Sin asignar —</option>'+
+      TECNICOS.map(function(t){return'<option value=&quot;'+t.id+'&quot;>'+nnEsc(t.nombre)+(t.correo?' · '+nnEsc(t.correo):'')+'</option>';}).join('');
+    s.value=cur;
+  });
+}
+// Chat de Teams con ese técnico, por correo — es la forma de &quot;buscarlo en Teams&quot;
+function tecChat(id,mensaje){
+  var t=tecFind(id); if(!t)return;
+  if(!t.correo){T('Sin correo','Ese técnico no tiene correo registrado','⚠️');return;}
+  var url='https://teams.microsoft.com/l/chat/0/0?users='+encodeURIComponent(t.correo);
+  if(mensaje)url+='&amp;message='+encodeURIComponent(mensaje);
+  window.open(url,'_blank');
+}
+
+// ── Asignar una tarea del tablero ───────────────────────────
+function asignarAbrir(col,taskId){
+  var t=(KB[col]||[]).filter(function(x){return x.id===taskId;})[0];
+  if(!t)return;
+  _asignando={col:col,task:t};
+  tecLlenarSelects();
+  var s=document.getElementById('asig-tec');
+  if(s&amp;&amp;t.asignado)s.value=t.asignado.id||'';
+  var inf=document.getElementById('asig-info');
+  if(inf)inf.innerHTML='<b>'+nnEsc(t.t)+'</b><br><span style=&quot;color:var(--t3)&quot;>'+
+    nnEsc(t.projName||t.proj||'')+(t.date?' · '+nnEsc(nnFechaLarga(t.date)):'')+(t.time?' · '+nnEsc(t.time):'')+'</span>';
+  var m=document.getElementById('asig-msg');
+  if(m)m.value='Te asigné: '+t.t+(t.date?' para el '+nnCorto(t.date):'')+(t.time?' a las '+t.time:'');
+  openModal('mo-asig');
+}
+function asignarConfirm(){
+  if(!_asignando)return;
+  var sel=document.getElementById('asig-tec');
+  var tec=sel?tecFind(sel.value):null;
+  if(!tec){T('Elige un técnico','','⚠️');return;}
+  var t=_asignando.task;
+  t.asignado={id:tec.id,nombre:tec.nombre,correo:tec.correo||''};
+  var msg=(document.getElementById('asig-msg')||{}).value||'';
+  var porTeams=(document.getElementById('asig-teams')||{}).checked;
+  var porCorreo=(document.getElementById('asig-correo')||{}).checked;
+  nnSave();renderKB();renderProjects();
+  closeModal('mo-asig');
+
+  // el evento de la agenda queda con el nombre del técnico
+  if(t.date){
+    nnEvent({id:'nn_task_'+t.id,title:t.t+' — '+tec.nombre,type:t.evType||'task',
+      prio:(t.p==='Urgente'||t.p==='Alta')?'alta':(t.p==='Baja'?'baja':'media'),
+      date:t.date,time:t.time||'',project:t.projName||t.proj||'',projId:t.projId||'',
+      notes:'Asignado a '+tec.nombre+(tec.correo?' ('+tec.correo+')':''),link:'',
+      recur:'',recurEnd:'',sent:'',done:false},false);
+  }
+
+  // Telegram para el coordinador
+  var m='👷 '+nnB('Tarea asignada')+'\n━━━━━━━━━━━━━━━\n';
+  m+='📌 '+nnB(t.t)+'\n🧑‍🔧 '+nnEsc(tec.nombre)+(tec.correo?' · '+nnEsc(tec.correo):'')+'\n';
+  if(t.projName||t.proj)m+='📂 '+nnEsc(t.projName||t.proj)+'\n';
+  if(t.date)m+='📆 '+nnEsc(nnFechaLarga(t.date))+(t.time?' · '+nnEsc(t.time):'')+'\n';
+  if(msg)m+='📝 '+nnEsc(msg)+'\n';
+  m+='<i>EM Suite PRO</i>';
+  nnTg(m);
+
+  // Correo con invitación de calendario (llega a su Outlook y a Teams)
+  if(porCorreo&amp;&amp;tec.correo)asignarCorreo(t,tec,msg);
+  // Chat de Teams con el mensaje listo
+  if(porTeams&amp;&amp;tec.correo)tecChat(tec.id,msg);
+
+  T('Asignado a '+tec.nombre,(porCorreo?'Correo enviado':'')+(porTeams?' · Teams abierto':''),'👷');
+  _asignando=null;
+}
+function asignarCorreo(t,tec,msg){
+  var url=(EMCFG_NN&amp;&amp;EMCFG_NN.gasUrl)||'';
+  if(!url){T('Falta la URL del robot','Sin ella no sale el correo','⚠️');return;}
+  var payload={tipo:'asignacion',id:'asg_'+t.id,
+    fecha:new Date().toLocaleString('es-CO'),
+    tecnico:tec.nombre, correoTecnico:tec.correo,
+    titulo:t.t, proyecto:t.projName||t.proj||'',
+    fechaTarea:t.date||'', horaTarea:t.time||'',
+    prioridad:t.p||'Normal', mensaje:msg||'',
+    cliente:(function(){var p=t.projId?projFind(t.projId):null;return p?(p.client||''):'';})(),
+    correos:(EMCFG_NN&amp;&amp;EMCFG_NN.correos)||[]};
+  var cuerpo=JSON.stringify(payload);
+  fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:cuerpo})
+    .then(function(r){return r.json();}).catch(function(){
+      return fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:cuerpo});
+    });
+}
+
+// ── Cuentas vinculadas (Teams, Google, Drive) ───────────────
+function cuentas(){return (EMCFG_NN&amp;&amp;EMCFG_NN.cuentas)||{};}
+function cuentaGuardar(cual,valor){
+  var c=cuentas(); c[cual]=valor;
+  emPost({type:'EM_CFG_SET',cfg:{cuentas:c}});
+  if(EMCFG_NN)EMCFG_NN.cuentas=c;
+  openIntegra(cual==='teams'?'teams':cual==='google'?'gcal':'drive');
+  T(valor?'Cuenta vinculada':'Cuenta desvinculada',valor||'','🔗');
+}
+function cuentaVincular(cual){
+  var id=cual==='teams'?'cta-teams':cual==='google'?'cta-google':'cta-drive';
+  var e=document.getElementById(id);
+  var v=e?e.value.trim():'';
+  if(v&amp;&amp;!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)){T('Correo inválido',v,'⚠️');return;}
+  cuentaGuardar(cual,v);
+}
+function cuentaDesvincular(cual){
+  if(!confirm('¿Desvincular esta cuenta? Solo se borra de la app; no cierra tu sesión de Microsoft ni de Google.'))return;
+  cuentaGuardar(cual,'');
+}
+function cuentaHTML(cual,etiqueta){
+  var v=cuentas()[cual]||'';
+  if(v){
+    return'<div style=&quot;display:flex;align-items:center;gap:9px;padding:10px 12px;background:rgba(0,255,136,.07);'+
+      'border:1px solid rgba(0,255,136,.25);border-radius:var(--r);margin:8px 0&quot;>'+
+      '<span style=&quot;font-size:15px&quot;>✅</span>'+
+      '<div style=&quot;flex:1;min-width:0&quot;><div style=&quot;font-size:10px;color:var(--t3);font-family:var(--mono);text-transform:uppercase&quot;>'+etiqueta+' vinculada</div>'+
+      '<div style=&quot;font-size:12px;color:var(--ok);overflow:hidden;text-overflow:ellipsis&quot;>'+nnEsc(v)+'</div></div>'+
+      '<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 9px;color:var(--danger)&quot; onclick=&quot;cuentaDesvincular(\''+cual+'\')&quot;>Desvincular</button></div>';
+  }
+  var id=cual==='teams'?'cta-teams':cual==='google'?'cta-google':'cta-drive';
+  return'<div style=&quot;padding:10px 12px;background:var(--bg4);border-radius:var(--r);margin:8px 0&quot;>'+
+    '<div style=&quot;font-size:10px;color:var(--t3);font-family:var(--mono);text-transform:uppercase;margin-bottom:6px&quot;>Vincular '+etiqueta+'</div>'+
+    '<div style=&quot;display:flex;gap:6px&quot;>'+
+    '<input class=&quot;fi&quot; id=&quot;'+id+'&quot; placeholder=&quot;tu.correo@empresa.com&quot; style=&quot;flex:1&quot;>'+
+    '<button class=&quot;bs&quot; onclick=&quot;cuentaVincular(\''+cual+'\')&quot;>Vincular</button></div>'+
+    '<div style=&quot;font-size:10px;color:var(--t3);margin-top:6px;line-height:1.5&quot;>Se guarda en este equipo para abrir los enlaces con tu cuenta. No pide contraseña ni accede a tus datos.</div></div>';
 }
 
 // Planos avisa cuántos equipos lleva cada proyecto
@@ -6930,6 +8929,7 @@ function _renderAlertas(evs){
   }).join('');
 }
 </script>
+<script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js&quot;></script>
 </body>
 </html>
 "></iframe>
@@ -8024,6 +10024,7 @@ function toast(msg,type){
         <div><label>API key de Firebase</label><input id="cfg-fb-key" type="text"/></div>
       </div>
       <div class="fg"><label>URL del Apps Script (robot 24/7)</label><input id="cfg-gas" type="url" placeholder="https://script.google.com/macros/s/.../exec"/></div>
+      <div class="fg"><label>Correos que reciben los reportes t&eacute;cnicos</label><input id="cfg-correos" type="text" placeholder="uno@correo.com, dos@correo.com"/></div>
       <div class="fg2">
         <div><label>Avisos antes del evento (minutos)</label><input id="cfg-remind" type="text" placeholder="1440,60,15,0"/></div>
         <div><label>Hora del resumen diario</label><input id="cfg-digest" type="time"/></div>
@@ -8477,6 +10478,7 @@ var EM_DEFAULTS={
   fbProject:'em-suite-pro',
   fbKey:'AIzaSyCr4pZxUEU8BftysPDOZuVClamqXMIGooQ',
   gasUrl:'',
+  correos:['edissonm60@gmail.com','academiatecnicadelhogar@gmail.com'],
   remind:[1440,60,15,0],   // minutos antes: 1 día, 1 hora, 15 min, a la hora
   digest:'07:00',          // resumen diario
   autoTeams:false,         // abrir Teams al agendar una reunión
@@ -8493,7 +10495,16 @@ var EMC=(function(){
 })();
 function emCfgSave(){
   try{localStorage.setItem(EM_CFG_KEY,JSON.stringify(EMC));}catch(e){}
+  // avisar a los módulos: antes solo recibían la configuración al cargar,
+  // así que un cambio (URL del robot, correos, cuentas) no les llegaba
+  // hasta recargar la página.
   try{window.postMessage({type:'EM_CFG',cfg:EMC},'*');}catch(e){}
+  ['f1','f2','f3'].forEach(function(id){
+    try{
+      var f=document.getElementById(id);
+      if(f&&f.contentWindow)f.contentWindow.postMessage({type:'EM_CFG',cfg:EMC},'*');
+    }catch(e){}
+  });
 }
 var _AT=EMC.tgToken, _AC=EMC.tgChat;
 var _FB_PROJECT=EMC.fbProject, _FB_API_KEY=EMC.fbKey;
@@ -9429,6 +11440,7 @@ window._apFbWrite=fbWrite;
 window._apRender=apRender;
 window._apEventsList=function(){return _events.slice();};
 window._apCfg=function(){return EMC;};
+window._apCfgSave=function(){emCfgSave();};
 window._emLinks={teams:emTeamsLink,outlook:emOutlookLink,google:emGoogleLink,ics:emDownloadIcs};
 
 // ═══════════════════════════════════════════════════════════════
@@ -9444,6 +11456,7 @@ function apToggleCfg(){
     v('cfg-tg-token',EMC.tgToken);v('cfg-tg-chat',EMC.tgChat);
     v('cfg-fb-proj',EMC.fbProject);v('cfg-fb-key',EMC.fbKey);
     v('cfg-gas',EMC.gasUrl);v('cfg-digest',EMC.digest);
+    v('cfg-correos',(EMC.correos||[]).join(', '));
     v('cfg-remind',(EMC.remind||[]).join(','));
     var t=document.getElementById('cfg-teams'); if(t)t.checked=!!EMC.autoTeams;
   }
@@ -9455,6 +11468,7 @@ function apSaveCfg(){
   EMC.fbProject=g('cfg-fb-proj')||EM_DEFAULTS.fbProject;
   EMC.fbKey=g('cfg-fb-key')||EM_DEFAULTS.fbKey;
   EMC.gasUrl=g('cfg-gas');
+  EMC.correos=g('cfg-correos').split(',').map(function(x){return x.trim();}).filter(Boolean);
   EMC.digest=g('cfg-digest')||'07:00';
   EMC.remind=g('cfg-remind').split(',').map(function(x){return parseInt(x.trim(),10);})
               .filter(function(x){return !isNaN(x)&&x>=0;});
@@ -9585,6 +11599,18 @@ window.addEventListener("message",function(e){
     return;
   }
   // ── Un módulo pide la configuración (URL del robot, etc.) ──
+  // ── Un módulo cambia parte de la configuración (cuentas vinculadas) ──
+  if(e.data.type==="EM_CFG_SET"&&e.data.cfg){
+    try{
+      var c=(typeof window._apCfg==="function")?window._apCfg():null;
+      if(c){
+        for(var k in e.data.cfg)c[k]=e.data.cfg[k];
+        if(typeof window._apCfgSave==="function")window._apCfgSave();
+        if(e.source)e.source.postMessage({type:"EM_CFG",cfg:c},"*");
+      }
+    }catch(_){}
+    return;
+  }
   if(e.data.type==="EM_CFG_REQ"){
     try{
       var cfg=(typeof window._apCfg==="function")?window._apCfg():null;
@@ -9672,6 +11698,64 @@ window.addEventListener("message",function(e){
 
 // Limpiar badge al arrancar
 setBadge(0);
+
+// ── App instalable (PWA): service worker, botón de instalar y atajos ──
+if("serviceWorker" in navigator){
+  window.addEventListener("load",function(){
+    navigator.serviceWorker.register("sw.js").then(function(reg){
+      // Pedirle que guarde también las librerías de PDF, 3D e íconos:
+      // sin ellas la app abre sin señal pero no genera el informe.
+      var pedir=function(){
+        if(navigator.serviceWorker.controller)
+          navigator.serviceWorker.controller.postMessage({type:"EM_PRECACHE"});
+      };
+      pedir(); setTimeout(pedir,4000);
+    }).catch(function(e){console.warn("SW",e);});
+    navigator.serviceWorker.addEventListener("message",function(ev){
+      if(ev.data&&ev.data.type==="EM_PRECACHE_OK")console.log("[EM] Listo para trabajar sin señal");
+    });
+  });
+}
+// Aviso cuando se pierde la conexión: lo que hagas queda en cola
+window.addEventListener("offline",function(){
+  var v=document.querySelector(".ver");
+  if(v){v.dataset.antes=v.dataset.antes||v.innerHTML;
+    v.innerHTML="&#128246; Sin conexi&oacute;n — se guarda y se env&iacute;a al volver";
+    v.style.color="#f59e0b";v.style.borderColor="#f59e0b";}
+});
+window.addEventListener("online",function(){
+  var v=document.querySelector(".ver");
+  if(v&&v.dataset.antes){v.innerHTML=v.dataset.antes;v.style.color="";v.style.borderColor="";}
+  try{emFlushOutbox();fbRefresh(true);}catch(e){}
+});
+// ?tab=4 abre directo en Alertas (lo usan los accesos directos del ícono)
+try{
+  var _t=new URLSearchParams(location.search).get("tab");
+  if(_t&&/^[1-4]$/.test(_t))sw(+_t);
+}catch(e){}
+
+var _deferredInstall=null;
+window.addEventListener("beforeinstallprompt",function(e){
+  e.preventDefault();_deferredInstall=e;
+  var b=document.getElementById("btn-install");
+  if(b)b.style.display="inline-flex";
+});
+function instalarApp(){
+  if(!_deferredInstall){
+    alert("Para instalarla: en Chrome toca el menú (⋮) → 'Instalar aplicación' o 'Agregar a pantalla de inicio'.");
+    return;
+  }
+  _deferredInstall.prompt();
+  _deferredInstall.userChoice.then(function(){
+    _deferredInstall=null;
+    var b=document.getElementById("btn-install");
+    if(b)b.style.display="none";
+  });
+}
+window.addEventListener("appinstalled",function(){
+  var b=document.getElementById("btn-install");
+  if(b)b.style.display="none";
+});
 </script>
 </body>
 </html>
