@@ -4567,7 +4567,7 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
     <div class=&quot;tbb&quot;><i class=&quot;fa fa-home&quot; style=&quot;font-size:11px&quot;></i><i class=&quot;fa fa-chevron-right&quot; style=&quot;font-size:9px&quot;></i><span class=&quot;cur&quot; id=&quot;bc&quot;>Dashboard</span></div>
     <div class=&quot;tba&quot;>
       <div class=&quot;online&quot;></div>
-      <span style=&quot;font-size:10px;color:var(--t3)&quot; id=&quot;nn-sync-txt&quot;>Sincronización lista</span>
+      <span style=&quot;font-size:10px;color:var(--t3);cursor:pointer&quot; id=&quot;nn-sync-txt&quot; onclick=&quot;nnSyncAyuda()&quot; title=&quot;Toca para ver el detalle&quot;>Sincronización lista</span>
       <button class=&quot;bi&quot; onclick=&quot;nnSyncAhora()&quot; title=&quot;Sincronizar ahora con los demás equipos&quot;><i class=&quot;fa fa-sync-alt&quot;></i></button>
       <button class=&quot;bi&quot; onclick=&quot;openModal('mo-new')&quot;><i class=&quot;fa fa-plus&quot;></i></button>
       <button class=&quot;bi&quot; onclick=&quot;toggleAI()&quot;><i class=&quot;fa fa-robot&quot;></i></button>
@@ -4587,7 +4587,7 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
       </div>
       <div class=&quot;g2&quot; style=&quot;margin-bottom:22px&quot;>
         <div>
-          <div class=&quot;sect&quot;>Finanzas mayo 2026</div>
+          <div class=&quot;sect&quot; id=&quot;dash-fin-sect&quot;>Finanzas</div>
           <div class=&quot;card&quot; style=&quot;margin-bottom:12px&quot;>
             <div style=&quot;display:flex;gap:12px;margin-bottom:14px&quot;>
               <div style=&quot;flex:1;text-align:center;background:var(--bg4);border-radius:var(--rs);padding:10px;cursor:pointer&quot; onclick=&quot;goFinance('ingresos')&quot;>
@@ -4625,7 +4625,7 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
 
     <!-- ══ FINANCE ══ -->
     <div class=&quot;view&quot; id=&quot;v-finance&quot;>
-      <div class=&quot;pg&quot;><h1 class=&quot;pgh1&quot;>Finanzas <em>personales</em></h1><p class=&quot;pgp&quot;>Control total de ingresos, egresos, presupuesto y deudas — Mayo 2026</p></div>
+      <div class=&quot;pg&quot;><h1 class=&quot;pgh1&quot;>Finanzas <em>personales</em></h1><p class=&quot;pgp&quot;>Control total de ingresos, egresos, presupuesto y deudas — <span id=&quot;fin-mes&quot;></span></p></div>
       <!-- Sub-tabs Finanzas -->
       <div style=&quot;display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap&quot; id=&quot;fin-tabs&quot;>
         <button class=&quot;bd2b on&quot; onclick=&quot;setFinTab('all',this)&quot;>Todas</button>
@@ -4633,14 +4633,36 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
         <button class=&quot;bd2b&quot; onclick=&quot;setFinTab('egresos',this)&quot;>Egresos</button>
         <button class=&quot;bd2b&quot; onclick=&quot;setFinTab('deudas',this)&quot;>Deudas</button>
         <button class=&quot;bd2b&quot; onclick=&quot;setFinTab('presupuesto',this)&quot;>Presupuesto</button>
-        <button class=&quot;bp&quot; style=&quot;margin-left:auto;font-size:11px&quot; onclick=&quot;openModal('mo-trans')&quot;><i class=&quot;fa fa-plus&quot; style=&quot;margin-right:5px&quot;></i>Nueva transacción</button>
+        <button class=&quot;bs&quot; style=&quot;margin-left:auto;font-size:11px&quot; onclick=&quot;finBloquear()&quot;><i class=&quot;fa fa-lock&quot; style=&quot;margin-right:5px&quot;></i>Bloquear</button><button class=&quot;bp&quot; style=&quot;font-size:11px&quot; onclick=&quot;openModal('mo-trans')&quot;><i class=&quot;fa fa-plus&quot; style=&quot;margin-right:5px&quot;></i>Nueva transacción</button>
       </div>
-      <div class=&quot;g4&quot; style=&quot;margin-bottom:22px&quot;>
+      <div class=&quot;g4&quot; style=&quot;margin-bottom:22px&quot; id=&quot;fin-g4&quot;>
         <div class=&quot;sc&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(0,255,136,.1)&quot;><i class=&quot;fa fa-arrow-up&quot; style=&quot;color:var(--ok)&quot;></i></div><div class=&quot;scn&quot; style=&quot;color:var(--ok)&quot; id=&quot;fin-ing&quot;>$0</div><div class=&quot;scl&quot;>Ingresos del mes</div></div>
         <div class=&quot;sc&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(255,68,68,.1)&quot;><i class=&quot;fa fa-arrow-down&quot; style=&quot;color:var(--danger)&quot;></i></div><div class=&quot;scn&quot; style=&quot;color:var(--danger)&quot; id=&quot;fin-egr&quot;>$0</div><div class=&quot;scl&quot;>Egresos del mes</div></div>
         <div class=&quot;sc&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(0,212,255,.1)&quot;><i class=&quot;fa fa-piggy-bank&quot; style=&quot;color:var(--ac)&quot;></i></div><div class=&quot;scn&quot; id=&quot;fin-bal&quot;>$0</div><div class=&quot;scl&quot;>Balance neto</div></div>
         <div class=&quot;sc&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(255,184,0,.1)&quot;><i class=&quot;fa fa-credit-card&quot; style=&quot;color:var(--warn)&quot;></i></div><div class=&quot;scn&quot; style=&quot;color:var(--warn)&quot; id=&quot;fin-dbt&quot;>$0</div><div class=&quot;scl&quot;>Deuda total</div></div>
       </div>
+      <!-- ══ DEUDAS — pantalla completa ══ -->
+      <div id=&quot;fin-sec-deudas&quot; style=&quot;display:none&quot;>
+        <div class=&quot;g4&quot; style=&quot;margin-bottom:18px&quot; id=&quot;deudas-res&quot;></div>
+        <div style=&quot;display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center&quot;>
+          <button class=&quot;bp&quot; onclick=&quot;deudaAbrir()&quot;><i class=&quot;fa fa-plus&quot; style=&quot;margin-right:6px&quot;></i>Registrar deuda</button>
+          <button class=&quot;bs&quot; onclick=&quot;deudaAgendarTodas()&quot;><i class=&quot;fa fa-bell&quot; style=&quot;margin-right:6px&quot;></i>Agendar todos los cortes</button>
+          <button class=&quot;bs&quot; onclick=&quot;deudaResumenTg()&quot;><i class=&quot;fa fa-paper-plane&quot; style=&quot;margin-right:6px&quot;></i>Enviar plan a Telegram</button>
+          <button class=&quot;bs&quot; onclick=&quot;deudaPDF()&quot;><i class=&quot;fa fa-file-pdf&quot; style=&quot;margin-right:6px&quot;></i>Exportar plan</button>
+        </div>
+        <div class=&quot;g2&quot; style=&quot;align-items:start&quot;>
+          <div>
+            <div class=&quot;sect&quot;>Mis deudas</div>
+            <div id=&quot;deudas-panel&quot;></div>
+          </div>
+          <div>
+            <div class=&quot;sect&quot;>Plan de salida</div>
+            <div id=&quot;deudas-plan&quot;></div>
+          </div>
+        </div>
+      </div>
+
+      <div id=&quot;fin-sec-general&quot;>
       <div class=&quot;g2&quot; style=&quot;margin-bottom:22px&quot;>
         <div>
           <div class=&quot;sect&quot;>Presupuesto mensual</div>
@@ -4662,12 +4684,13 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
         <div>
           <div class=&quot;sect&quot;>Deudas activas</div>
           <div id=&quot;debt-panel&quot;></div>
-          <button class=&quot;bp&quot; style=&quot;margin-top:10px;font-size:11px&quot; onclick=&quot;openModal('mo-debt')&quot;><i class=&quot;fa fa-plus&quot; style=&quot;margin-right:5px&quot;></i>Registrar deuda</button>
+          <button class=&quot;bp&quot; style=&quot;margin-top:10px;font-size:11px&quot; onclick=&quot;setFinTab('deudas')&quot;><i class=&quot;fa fa-arrow-right&quot; style=&quot;margin-right:5px&quot;></i>Ver plan de deudas</button>
         </div>
       </div>
       <div style=&quot;display:flex;gap:10px;margin-bottom:16px&quot;>
         <button class=&quot;bs&quot; onclick=&quot;T('Exportando','Generando reporte Excel...','📊')&quot;><i class=&quot;fa fa-file-excel&quot; style=&quot;margin-right:6px&quot;></i>Exportar reporte</button>
-        <button class=&quot;bp&quot; onclick=&quot;openModal('mo-debt')&quot;><i class=&quot;fa fa-credit-card&quot; style=&quot;margin-right:6px&quot;></i>Registrar deuda</button>
+        <button class=&quot;bp&quot; onclick=&quot;deudaAbrir()&quot;><i class=&quot;fa fa-credit-card&quot; style=&quot;margin-right:6px&quot;></i>Registrar deuda</button>
+      </div>
       </div>
     </div>
 
@@ -5156,19 +5179,47 @@ Usa Markdown: **negrita**, *cursiva*, `código`&quot; oninput=&quot;markUns()&qu
 
 <div class=&quot;mo&quot; id=&quot;mo-debt&quot;>
   <div class=&quot;md&quot;>
-    <div class=&quot;mdh&quot;><i class=&quot;fa fa-credit-card&quot; style=&quot;color:var(--danger)&quot;></i><h3>Registrar deuda</h3><button class=&quot;xb&quot; onclick=&quot;closeModal('mo-debt')&quot;><i class=&quot;fa fa-times&quot;></i></button></div>
+    <div class=&quot;mdh&quot;><i class=&quot;fa fa-credit-card&quot; style=&quot;color:var(--danger)&quot;></i><h3 id=&quot;d-modal-ttl&quot;>Registrar deuda</h3><button class=&quot;xb&quot; onclick=&quot;closeModal('mo-debt')&quot;><i class=&quot;fa fa-times&quot;></i></button></div>
     <div class=&quot;mdc&quot;>
-      <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Nombre / Entidad</label><input class=&quot;fi&quot; id=&quot;d-name&quot; placeholder=&quot;Ej: Tarjeta Visa Bancolombia&quot;></div>
+      <input type=&quot;hidden&quot; id=&quot;d-id&quot;>
       <div class=&quot;fg2&quot;>
-        <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Monto total (COP)</label><input class=&quot;fi&quot; type=&quot;number&quot; id=&quot;d-total&quot; placeholder=&quot;0&quot;></div>
-        <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Cuota mensual (COP)</label><input class=&quot;fi&quot; type=&quot;number&quot; id=&quot;d-quota&quot; placeholder=&quot;0&quot;></div>
+        <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Entidad / nombre</label><input class=&quot;fi&quot; id=&quot;d-name&quot; placeholder=&quot;Ej: Visa Bancolombia&quot;></div>
+        <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Tipo</label><select class=&quot;fi&quot; id=&quot;d-tipo&quot; onchange=&quot;deudaTipoCambio()&quot;>
+          <option value=&quot;tarjeta&quot;>💳 Tarjeta de crédito</option>
+          <option value=&quot;libre&quot;>💵 Crédito de libre inversión</option>
+          <option value=&quot;vehiculo&quot;>🚗 Crédito de vehículo</option>
+          <option value=&quot;hipoteca&quot;>🏠 Crédito hipotecario</option>
+          <option value=&quot;otro&quot;>📄 Otro</option>
+        </select></div>
       </div>
       <div class=&quot;fg2&quot;>
-        <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Tasa de interés %</label><input class=&quot;fi&quot; type=&quot;number&quot; id=&quot;d-rate&quot; placeholder=&quot;2.5&quot; step=&quot;0.1&quot;></div>
-        <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Fecha vencimiento</label><input class=&quot;fi&quot; type=&quot;date&quot; id=&quot;d-due&quot;></div>
+        <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Saldo que debes hoy (COP)</label><input class=&quot;fi&quot; type=&quot;number&quot; id=&quot;d-total&quot; placeholder=&quot;0&quot;></div>
+        <div class=&quot;fg&quot; id=&quot;d-wrap-cupo&quot;><label class=&quot;fl&quot;>Cupo total (COP)</label><input class=&quot;fi&quot; type=&quot;number&quot; id=&quot;d-cupo&quot; placeholder=&quot;0&quot;></div>
+      </div>
+      <div class=&quot;fg2&quot;>
+        <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Tasa de interés</label><input class=&quot;fi&quot; type=&quot;number&quot; id=&quot;d-rate&quot; placeholder=&quot;2.2&quot; step=&quot;0.01&quot;></div>
+        <div class=&quot;fg&quot;><label class=&quot;fl&quot;>¿Cómo te la dan?</label><select class=&quot;fi&quot; id=&quot;d-ratetipo&quot;>
+          <option value=&quot;mv&quot;>% mensual (M.V.)</option>
+          <option value=&quot;ea&quot;>% anual (E.A.)</option>
+        </select></div>
+      </div>
+      <div style=&quot;font-size:11px;color:var(--t3);line-height:1.6;background:var(--bg4);border-radius:var(--rs);padding:9px 11px;margin-bottom:12px&quot;>
+        💡 La tasa viene en el extracto, junto al cupo. Si dice <b>&quot;E.A.&quot;</b> o <b>&quot;efectivo anual&quot;</b> (ej. 26,8%) elige la segunda opción;
+        si dice <b>&quot;M.V.&quot;</b> o <b>&quot;mes vencido&quot;</b> (ej. 2,0%) deja la primera. No son lo mismo y cambia toda la cuenta.
+      </div>
+      <div class=&quot;fg2&quot;>
+        <div class=&quot;fg&quot; id=&quot;d-wrap-corte&quot;><label class=&quot;fl&quot;>Día de corte</label><input class=&quot;fi&quot; type=&quot;number&quot; id=&quot;d-corte&quot; min=&quot;1&quot; max=&quot;31&quot; placeholder=&quot;Ej: 5&quot;></div>
+        <div class=&quot;fg&quot;><label class=&quot;fl&quot; id=&quot;d-lbl-pago&quot;>Día límite de pago</label><input class=&quot;fi&quot; type=&quot;number&quot; id=&quot;d-pago&quot; min=&quot;1&quot; max=&quot;31&quot; placeholder=&quot;Ej: 25&quot;></div>
+      </div>
+      <div class=&quot;fg2&quot;>
+        <div class=&quot;fg&quot;><label class=&quot;fl&quot; id=&quot;d-lbl-quota&quot;>Pago mínimo / cuota (COP)</label><input class=&quot;fi&quot; type=&quot;number&quot; id=&quot;d-quota&quot; placeholder=&quot;0&quot;></div>
+        <div class=&quot;fg&quot; id=&quot;d-wrap-cuotas&quot;><label class=&quot;fl&quot;>Cuotas pendientes</label><input class=&quot;fi&quot; type=&quot;number&quot; id=&quot;d-cuotas&quot; placeholder=&quot;Ej: 36&quot;></div>
+      </div>
+      <div style=&quot;font-size:11px;color:var(--t3);line-height:1.6&quot;>
+        Al guardar se crean solos dos recordatorios mensuales: uno antes del corte y otro antes de la fecha límite.
       </div>
     </div>
-    <div class=&quot;mdf&quot;><button class=&quot;bs&quot; onclick=&quot;closeModal('mo-debt')&quot;>Cancelar</button><button class=&quot;bp&quot; onclick=&quot;addDebt()&quot;>Registrar</button></div>
+    <div class=&quot;mdf&quot;><button class=&quot;bs&quot; onclick=&quot;closeModal('mo-debt')&quot;>Cancelar</button><button class=&quot;bp&quot; onclick=&quot;deudaGuardar()&quot;>Guardar</button></div>
   </div>
 </div>
 
@@ -5233,7 +5284,8 @@ function nnSave(sinSubir) {
   try {
     const data = {
       NOTES, KB, MEETS, GOALS, COURSES, TRIPS,
-      TRANSACTIONS, DEBTS, BUDGET_CATS, HOME_FIXED, HOME_TASKS, PROJECTS, LVS, TECNICOS
+      TRANSACTIONS, DEBTS, BUDGET_CATS, HOME_FIXED, HOME_TASKS, PROJECTS, LVS, TECNICOS,
+      FIN_PIN_H
     };
     const serialized = JSON.stringify(data);
     localStorage.setItem(NN_KEY, serialized);
@@ -5281,6 +5333,7 @@ let COURSES      = _saved ? (_saved.COURSES      || []) : [];
 let TRIPS        = _saved ? (_saved.TRIPS        || []) : [];
 let TRANSACTIONS = _saved ? (_saved.TRANSACTIONS || []) : [];
 let DEBTS        = _saved ? (_saved.DEBTS        || []) : [];
+let FIN_PIN_H    = _saved ? (_saved.FIN_PIN_H    || '') : '';   // clave de Finanzas (hash)
 let BUDGET_CATS  = _saved ? (_saved.BUDGET_CATS  || DEFAULT_BUDGET_CATS.map(c=>({...c}))) : DEFAULT_BUDGET_CATS.map(c=>({...c}));
 let HOME_FIXED   = _saved ? (_saved.HOME_FIXED   || []) : [];
 let HOME_TASKS   = _saved ? (_saved.HOME_TASKS   || []) : [];
@@ -5296,6 +5349,8 @@ const VIEW_NAMES = {dash:'Dashboard',finance:'Finanzas',calendar:'Calendario',me
   goals:'Metas &amp; Cursos',travel:'Viajes',kanban:'Proyectos',lev:'Portería virtual',control:'Control técnico',notes:'Notas Técnicas',tools:'Herramientas',home:'Hogar'};
 
 function V(name) {
+  // Finanzas va con clave: si no está abierta, se pide y no se cambia de vista
+  if(name==='finance' &amp;&amp; typeof finPedir==='function' &amp;&amp; !finPedir(FIN_DESTINO)) return;
   document.querySelectorAll('.view,.view-full').forEach(v => v.classList.remove('on'));
   const el = document.getElementById('v-'+name);
   if(el) el.classList.add('on');
@@ -5322,8 +5377,9 @@ function V(name) {
 
 // Navegar a Finance con sub-pestaña específica
 function goFinance(tab) {
-  finTab = tab;
+  if(typeof finPedir==='function' &amp;&amp; !finPedir(tab)) return;   // pide la clave y recuerda a dónde iba
   V('finance');
+  setFinTab(tab);   // deja la sub-pestaña marcada y muestra la sección que toca
 }
 
 // ══ CALENDAR ══
@@ -5418,6 +5474,9 @@ function renderDash() {
       dt.innerHTML = '<div class=&quot;card&quot; style=&quot;text-align:center;padding:30px;color:var(--t3)&quot;><i class=&quot;fa fa-plane&quot; style=&quot;font-size:28px;display:block;margin-bottom:10px;opacity:.3&quot;></i><p style=&quot;font-size:12px&quot;>Sin viajes — agrega tu próximo destino ✈️</p></div>';
     }
   }
+
+  // al repintar el dashboard hay que volver a tapar las cifras
+  try{ if(typeof finTapar==='function') finTapar(); }catch(e){}
 }
 
 // ══ MEETINGS ══
@@ -5487,8 +5546,18 @@ function renderTrips() {
 // ══ FINANCE — con sub-pestañas funcionales ══
 function setFinTab(tab, btn) {
   finTab = tab;
-  document.querySelectorAll('#fin-tabs .bd2b').forEach(b=>b.classList.remove('on'));
-  if(btn) btn.classList.add('on');
+  const tabs=[...document.querySelectorAll('#fin-tabs .bd2b')];
+  tabs.forEach(b=>b.classList.remove('on'));
+  // si llega sin botón (desde otro lado de la app) se busca el que toca
+  const b2 = btn || tabs.filter(b=>(b.getAttribute('onclick')||'').indexOf(&quot;'&quot;+tab+&quot;'&quot;)>=0)[0];
+  if(b2) b2.classList.add('on');
+  const esDeuda = (tab==='deudas');
+  const sd=document.getElementById('fin-sec-deudas');
+  const sg=document.getElementById('fin-sec-general');
+  if(sd) sd.style.display = esDeuda?'':'none';
+  if(sg) sg.style.display = esDeuda?'none':'';
+  const g4=document.getElementById('fin-g4');
+  if(g4) g4.style.display = esDeuda?'none':'';
   renderFinance();
 }
 
@@ -5504,6 +5573,9 @@ function renderFinance() {
   setEl('fin-egr', fmt(egr), 'var(--danger)');
   setEl('fin-bal', fmt(bal), bal>=0?'var(--ok)':'var(--danger)');
   setEl('fin-dbt', fmt(dbt), 'var(--warn)');
+  const _fm=document.getElementById('fin-mes');
+  if(_fm){const _m=new Date().toLocaleDateString('es-CO',{month:'long',year:'numeric'});
+    _fm.textContent=_m.charAt(0).toUpperCase()+_m.slice(1);}
 
   // ── Presupuesto ──
   const bp = document.getElementById('budget-panel');
@@ -5551,13 +5623,20 @@ function renderFinance() {
       : `<div style=&quot;overflow:hidden&quot;>${filtered.slice(0,20).map((tr,ti)=>`<div class=&quot;finrow&quot;><div class=&quot;finrow-ico&quot; style=&quot;background:${tr.type==='ingreso'?'rgba(0,255,136,.1)':'rgba(255,68,68,.1)'}&quot;><i class=&quot;fa ${tr.type==='ingreso'?'fa-arrow-up':'fa-arrow-down'}&quot; style=&quot;color:${tr.type==='ingreso'?'var(--ok)':'var(--danger)'}&quot;></i></div><div class=&quot;finrow-info&quot;><h5>${tr.t}</h5><p>${tr.cat} • ${tr.date}</p></div><div class=&quot;finrow-amt ${tr.type==='ingreso'?'ingreso':'egreso'}&quot; style=&quot;margin-right:6px&quot;>${tr.type==='ingreso'?'+':'-'}$${(tr.amt/1000).toFixed(0)}K</div><button onclick=&quot;deleteTrans(${TRANSACTIONS.indexOf(tr)})&quot; style=&quot;background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px;flex-shrink:0&quot; onmouseover=&quot;this.style.color='#FF4444'&quot; onmouseout=&quot;this.style.color='var(--t3)'&quot;><i class=&quot;fa fa-trash&quot;></i></button></div>`).join('')}</div>`;
   }
 
-  // ── Deudas — desde array DEBTS real ──
+  // ── Resumen corto de deudas en la vista general ──
   const dp = document.getElementById('debt-panel');
   if(dp) {
-    dp.innerHTML = DEBTS.length===0
+    const act = DEBTS.filter(d=>dSaldo(d)>0);
+    dp.innerHTML = act.length===0
       ? '<div style=&quot;text-align:center;padding:30px;color:var(--t3)&quot;><i class=&quot;fa fa-credit-card&quot; style=&quot;font-size:28px;display:block;margin-bottom:10px;opacity:.3&quot;></i><p style=&quot;font-size:12px&quot;>Sin deudas registradas — ¡excelente! 🎉<br><span style=&quot;font-size:11px;color:var(--t3)&quot;>O pulsa &quot;Registrar deuda&quot; para agregar</span></p></div>'
-      : DEBTS.map((d,di)=>`<div class=&quot;debt-card&quot; style=&quot;margin-bottom:10px&quot;><div class=&quot;debt-h&quot;><i class=&quot;fa fa-credit-card&quot; style=&quot;color:var(--danger)&quot;></i><h4>${d.n}</h4><span class=&quot;chip cr&quot; style=&quot;font-size:9px&quot;>Tasa ${d.rate}%</span><button onclick=&quot;deleteDebt(${di})&quot; style=&quot;margin-left:auto;background:none;border:none;color:var(--t3);cursor:pointer;font-size:12px&quot; onmouseover=&quot;this.style.color='#FF4444'&quot; onmouseout=&quot;this.style.color='var(--t3)'&quot;><i class=&quot;fa fa-trash&quot;></i></button></div><div class=&quot;debt-total&quot;>-$${(d.total/1000).toFixed(0)}K</div><div class=&quot;debt-pct&quot;>Cuota: $${(d.quota/1000).toFixed(0)}K/mes • Vence ${d.due}</div><div class=&quot;pb&quot;><div class=&quot;pf&quot; style=&quot;width:${d.pct||0}%;background:var(--danger)&quot;></div></div><div style=&quot;font-size:10px;color:var(--t3);margin-top:4px&quot;>${d.pct||0}% pagado</div></div>`).join('');
+      : act.sort((a,b)=>dInteresMes(b)-dInteresMes(a)).map(d=>{
+          const fp=d.pago?dFaltan(d.pago):null;
+          return `<div class=&quot;debt-card&quot; style=&quot;margin-bottom:10px&quot;><div class=&quot;debt-h&quot;><i class=&quot;fa fa-credit-card&quot; style=&quot;color:var(--danger)&quot;></i><h4>${nnEsc(d.n)}</h4><span class=&quot;chip cr&quot; style=&quot;font-size:9px&quot;>${dEA(d).toFixed(1)}% E.A.</span><button onclick=&quot;deudaAbrir('${d.id}')&quot; style=&quot;margin-left:auto;background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px&quot; title=&quot;Editar&quot;><i class=&quot;fa fa-pen&quot;></i></button></div><div class=&quot;debt-total&quot;>-${dFmt(dSaldo(d))}</div><div class=&quot;debt-pct&quot;>${d.quota?'Cuota '+dFmt(d.quota)+' • ':''}${fp!==null?(fp===0?'⚠️ paga HOY':'paga en '+fp+'d'):'sin fecha'} • ${dFmt(dInteresMes(d))}/mes de interés</div><div class=&quot;pb&quot;><div class=&quot;pf&quot; style=&quot;width:${d.pct||0}%;background:var(--danger)&quot;></div></div><div style=&quot;font-size:10px;color:var(--t3);margin-top:4px&quot;>${d.pct||0}% pagado</div></div>`;
+        }).join('');
   }
+
+  // ── Pantalla completa de deudas ──
+  if(finTab==='deudas') renderDeudas();
 }
 
 // ══ HOME ══
@@ -6166,25 +6245,8 @@ function addTrip(){
   renderDash();
 }
 
-function addDebt(){
-  const n=document.getElementById('d-name').value.trim();
-  if(!n){T('Error','Escribe el nombre de la deuda','⚠️');return;}
-  const total=+document.getElementById('d-total').value||0;
-  const quota=+document.getElementById('d-quota').value||0;
-  const rate=+document.getElementById('d-rate').value||0;
-  const dueRaw=document.getElementById('d-due').value;
-  const due=dueRaw?new Date(dueRaw+'T12:00').toLocaleDateString('es-CO').slice(0,8):'';
-  DEBTS.push({n,total,quota,rate,due,pct:0});
-  document.getElementById('d-name').value='';
-  document.getElementById('d-total').value='';
-  document.getElementById('d-quota').value='';
-  document.getElementById('d-rate').value='';
-  closeModal('mo-debt');
-  nnSave();
-  T('Deuda registrada',n.substring(0,40),'💳');
-  if(document.getElementById('v-finance').classList.contains('on'))renderFinance();
-  renderDash();
-}
+// addDebt/deleteDebt los reemplaza el modulo de deudas (deudaGuardar/deudaBorrar)
+function addDebt(){deudaGuardar();}
 
 function addHomeExpense(){
   const n=document.getElementById('h-name').value.trim();
@@ -6255,7 +6317,7 @@ function deleteCourse(i){if(!confirm('¿Eliminar este curso?'))return;COURSES.sp
 function deleteTrip(i){if(!confirm('¿Eliminar este viaje?'))return;TRIPS.splice(i,1);nnSave();renderTrips();renderDash();T('Viaje eliminado','','🗑️');}
 function changeTripStatus(i,status){TRIPS[i].status=status;nnSave();renderTrips();T('Estado actualizado',TRIPS[i].dest+' → '+status,'✈️');}
 function deleteTrans(i){TRANSACTIONS.splice(i,1);nnSave();renderFinance();renderDash();T('Transacción eliminada','','🗑️');}
-function deleteDebt(i){if(!confirm('¿Eliminar esta deuda?'))return;DEBTS.splice(i,1);nnSave();renderFinance();renderDash();T('Deuda eliminada','','🗑️');}
+function deleteDebt(i){var d=DEBTS[i];if(d)deudaBorrar(d.id);}
 function deleteHomeFixed(i){HOME_FIXED.splice(i,1);nnSave();renderHome();T('Gasto fijo eliminado','','🗑️');}
 function deleteHomeTask(i){HOME_TASKS.splice(i,1);nnSave();renderHome();T('Tarea eliminada','','🗑️');}
 function toggleHomeTask(i){HOME_TASKS[i].done=!HOME_TASKS[i].done;nnSave();renderHome();}
@@ -6289,6 +6351,7 @@ try{
   LVS=_LVS_INIT||[];
   TECNICOS=_TEC_INIT||[];
   tecLlenarSelects();
+  deudaMigrarFormato();
   nnSyncInit();
   projFillSelect(); calFillProjects(); renderProjects();
   var _cd=document.getElementById('cal-new-date'); if(_cd)_cd.value=nnHoy();
@@ -8582,7 +8645,7 @@ function nnEstado(){
   return {NOTES:NOTES,KB:KB,MEETS:MEETS,GOALS:GOALS,COURSES:COURSES,TRIPS:TRIPS,
     TRANSACTIONS:TRANSACTIONS,DEBTS:DEBTS,BUDGET_CATS:BUDGET_CATS,
     HOME_FIXED:HOME_FIXED,HOME_TASKS:HOME_TASKS,PROJECTS:PROJECTS,
-    LVS:levs,TECNICOS:TECNICOS,ts:NN_SYNC_TS,dev:NN_DEV};
+    LVS:levs,TECNICOS:TECNICOS,FIN_PIN_H:FIN_PIN_H,ts:NN_SYNC_TS,dev:NN_DEV};
 }
 
 // Fusiona dos listas por id: se quedan todos, y ante el mismo id manda
@@ -8633,6 +8696,7 @@ function nnAplicarRemoto(r,remotoNuevo){
   TECNICOS     = nnMergeLista(TECNICOS||[],r.TECNICOS||[],remotoNuevo);
   KB           = nnMergeKB(KB||{},r.KB||{},remotoNuevo);
   if(remotoNuevo){
+    if(r.FIN_PIN_H)FIN_PIN_H=r.FIN_PIN_H;
     if(r.TRANSACTIONS)TRANSACTIONS=r.TRANSACTIONS;
     if(r.BUDGET_CATS)BUDGET_CATS=r.BUDGET_CATS;
     if(r.HOME_FIXED)HOME_FIXED=r.HOME_FIXED;
@@ -8648,6 +8712,7 @@ function nnAplicarRemoto(r,remotoNuevo){
 }
 
 function nnSyncEstado(txt,color){
+  if(color==='var(--ok)')NN_SYNC_ERR='';
   var e=document.getElementById('nn-sync-txt');
   if(e){e.textContent=txt;e.style.color=color||'var(--t3)';}
 }
@@ -8683,9 +8748,80 @@ function nnCloudPull(silencioso){
       return true;
     })
     .catch(function(e){
-      nnSyncEstado('Sin conexión con la nube','var(--danger)');
+      nnSyncFallo(e);
       return false;
     });
+}
+
+// Dice QUÉ pasó, no solo que algo pasó. Un 403 no es falta de señal:
+// es que a Firebase le falta la regla de la colección &quot;appdata&quot;.
+function nnSyncFallo(e){
+  var m=String((e&amp;&amp;e.message)||e||'');
+  if(m.indexOf('403')>=0||/PERMISSION/i.test(m)){
+    NN_SYNC_ERR='permiso';
+    nnSyncEstado('🔒 Falta el permiso de Firebase — toca aquí','var(--danger)');
+  }else if(m.indexOf('400')>=0||m.indexOf('401')>=0){
+    NN_SYNC_ERR='clave';
+    nnSyncEstado('🔑 API key de Firebase inválida — toca aquí','var(--danger)');
+  }else{
+    NN_SYNC_ERR='red';
+    nnSyncEstado('📴 Sin señal — guardado en este equipo','var(--warn)');
+  }
+}
+var NN_SYNC_ERR='';
+function nnSyncAyuda(){
+  if(!NN_SYNC_ERR)return;
+  var c=EMCFG_NN||{}, proj=c.fbProject||'em-suite-pro';
+  var cuerpo;
+  if(NN_SYNC_ERR==='permiso'){
+    cuerpo='<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:10px&quot;>'+
+      'Firebase está respondiendo, pero no deja leer ni escribir la colección <b>appdata</b>, '+
+      'que es donde viajan los proyectos, las fases y los levantamientos entre el PC y la tablet. '+
+      'Es la misma regla que ya pusiste para <b>events</b> y <b>meta</b>, pero faltó esta.</p>'+
+      '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:8px&quot;><b>Cómo se arregla</b> (2 minutos):</p>'+
+      '<ol style=&quot;font-size:12px;color:var(--t2);line-height:1.9;padding-left:18px;margin-bottom:10px&quot;>'+
+      '<li>Entra a <b>console.firebase.google.com</b> → proyecto <b>'+nnEsc(proj)+'</b></li>'+
+      '<li>Menú izquierdo: <b>Firestore Database</b> → pestaña <b>Reglas</b></li>'+
+      '<li>Pega el bloque de abajo y pulsa <b>Publicar</b></li></ol>'+
+      '<pre style=&quot;background:var(--bg1);border:1px solid var(--bd);border-radius:var(--rs);padding:12px;'+
+      'font-size:11px;font-family:var(--mono);color:var(--ac);overflow-x:auto;line-height:1.6;white-space:pre&quot;>'+
+      nnEsc('rules_version = &quot;2&quot;;\nservice cloud.firestore {\n  match /databases/{database}/documents {\n'+
+      '    match /events/{doc}   { allow read, write: if true; }\n'+
+      '    match /meta/{doc}     { allow read, write: if true; }\n'+
+      '    match /reportes/{doc} { allow read, write: if true; }\n'+
+      '    match /appdata/{doc}  { allow read, write: if true; }\n  }\n}')+'</pre>'+
+      '<p style=&quot;font-size:11px;color:var(--t3);line-height:1.6&quot;>Al publicar, espera un minuto y pulsa el botón '+
+      '🔄 de arriba. El aviso debe pasar a verde.</p>';
+  }else if(NN_SYNC_ERR==='clave'){
+    cuerpo='<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7&quot;>La API key de Firebase no es válida o '+
+      'no corresponde al proyecto <b>'+nnEsc(proj)+'</b>.</p>'+
+      '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7;margin-top:8px&quot;>Sácala de '+
+      '<b>console.firebase.google.com</b> → ⚙ <b>Configuración del proyecto</b> → <b>General</b> → '+
+      'sección <i>Tus apps</i> → campo <b>apiKey</b>. Luego pégala en la pestaña 🔔 Alertas → ⚙ Configuración.</p>';
+  }else{
+    cuerpo='<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7&quot;>No hay salida a internet en este momento. '+
+      '<b>No se perdió nada</b>: todo quedó guardado en este equipo y sube solo en cuanto vuelva la señal.</p>'+
+      '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7;margin-top:8px&quot;>Si estás en obra sin datos, '+
+      'puedes seguir trabajando normal. Lo único que no viaja al otro equipo hasta que haya señal son los '+
+      'cambios nuevos.</p>';
+  }
+  var t={permiso:'🔒 Falta un permiso en Firebase',clave:'🔑 API key inválida',red:'📴 Sin señal'}[NN_SYNC_ERR];
+  nnModalInfo(t,cuerpo);
+}
+function nnModalInfo(titulo,html){
+  var d=document.getElementById('mo-info');
+  if(!d){
+    d=document.createElement('div');d.className='mo';d.id='mo-info';
+    d.innerHTML='<div class=&quot;md&quot; style=&quot;max-width:560px&quot;><div class=&quot;mdh&quot;>'+
+      '<i class=&quot;fa fa-circle-info&quot; style=&quot;color:var(--ac)&quot;></i><h3 id=&quot;mo-info-t&quot;></h3>'+
+      '<button class=&quot;xb&quot; onclick=&quot;closeModal(\'mo-info\')&quot;><i class=&quot;fa fa-times&quot;></i></button></div>'+
+      '<div class=&quot;mdc&quot; id=&quot;mo-info-b&quot; style=&quot;max-height:60vh;overflow-y:auto&quot;></div></div>';
+    document.body.appendChild(d);
+    d.addEventListener('click',function(ev){if(ev.target===this)this.classList.remove('op');});
+  }
+  document.getElementById('mo-info-t').textContent=titulo;
+  document.getElementById('mo-info-b').innerHTML=html;
+  openModal('mo-info');
 }
 
 // ── Subir a la nube ──
@@ -8715,7 +8851,7 @@ function nnCloudPush(forzar){
       return true;
     })
     .catch(function(e){
-      nnSyncEstado('No se pudo subir: '+e.message,'var(--danger)');
+      nnSyncFallo(e);
       return false;
     });
 }
@@ -8741,6 +8877,972 @@ function nnSyncInit(){
   setInterval(function(){if(!document.hidden)nnCloudPull(true);},60000);
   document.addEventListener('visibilitychange',function(){if(!document.hidden)nnCloudPull(true);});
 }
+
+// ═══════════════════════════════════════════════════════════════
+// DEUDAS Y TARJETAS DE CRÉDITO
+//
+// Cada deuda se registra con lo que de verdad importa para decidir:
+// el saldo, la tasa, la fecha de corte y la fecha límite de pago.
+// Con eso la app calcula lo que hoy no se ve: cuánto cuesta la deuda
+// cada mes solo en intereses, en qué orden conviene atacarla, y si
+// vale la pena migrarla a una tasa menor (compra de cartera).
+//
+// Las fechas de corte y de pago se agendan solas como recordatorios
+// mensuales, así que el robot 24/7 avisa por Telegram aunque la app
+// esté cerrada. Pagar un día tarde una tarjeta cuesta más que
+// cualquier cálculo de esta pantalla.
+//
+// Nota: esto es una calculadora, no asesoría financiera. Las tasas
+// las pone el usuario porque cada banco y cada cupo tienen la suya.
+// ═══════════════════════════════════════════════════════════════
+
+var DEUDA_EXTRA=0;          // abono extra mensual que el usuario simula
+var DEUDA_METODO='avalancha';
+var DEUDA_TASA_OBJ=1.5;     // tasa M.V. de la compra de cartera a evaluar
+var DEUDA_PLAZO=36;         // plazo en meses que ofrece el banco
+
+// ── Conversión de tasas ──
+// Los bancos cotizan E.A. (efectivo anual) y M.V. (mes vencido).
+// No son lo mismo y confundirlas cambia la cuenta por completo.
+function eaAmv(ea){return Math.pow(1+(ea/100),1/12)-1;}
+function mvAea(mv){return (Math.pow(1+mv,12)-1)*100;}
+
+// Tasa mensual efectiva de una deuda, venga como venga
+function dMV(d){
+  if(!d)return 0;
+  var r=+d.rate||0;
+  return (d.rateTipo==='ea')?eaAmv(r):(r/100);
+}
+function dEA(d){return mvAea(dMV(d));}
+function dSaldo(d){return Math.max(0,+d.total||0);}
+function dInteresMes(d){return dSaldo(d)*dMV(d);}
+function dUso(d){ // % del cupo usado — arriba del 30% ya pesa en el score
+  var c=+d.cupo||0; if(!c)return null;
+  return Math.min(999,Math.round(dSaldo(d)/c*100));
+}
+// ¿La cuota alcanza siquiera para el interés? Si no, el saldo crece.
+function dAhoga(d){var q=+d.quota||0;return q>0&amp;&amp;q<=dInteresMes(d);}
+
+function dFmt(v){
+  v=Math.round(v||0);
+  return '$'+v.toLocaleString('es-CO');
+}
+function dFmtK(v){
+  v=Math.round(v||0);
+  if(Math.abs(v)>=1000000)return '$'+(v/1000000).toFixed(1)+'M';
+  if(Math.abs(v)>=1000)return '$'+Math.round(v/1000)+'K';
+  return '$'+v;
+}
+
+// ── Próxima ocurrencia de un día del mes ──
+// Si hoy es 22 y el corte es 5, el próximo corte es el 5 del mes que viene.
+// Si el mes no tiene ese día (31 en febrero), se toma el último.
+function dProxDia(dia){
+  dia=+dia||0; if(dia<1||dia>31)return '';
+  var h=new Date(), y=h.getFullYear(), m=h.getMonth(), d=h.getDate();
+  if(dia<d){m++; if(m>11){m=0;y++;}}
+  var ult=new Date(y,m+1,0).getDate();
+  var real=Math.min(dia,ult);
+  return y+'-'+String(m+1).padStart(2,'0')+'-'+String(real).padStart(2,'0');
+}
+// Días que faltan para ese día del mes
+function dFaltan(dia){
+  var f=dProxDia(dia); if(!f)return null;
+  return Math.round((new Date(f+'T12:00')-new Date(nnHoy()+'T12:00'))/86400000);
+}
+
+// ── Totales ──
+function dTotales(){
+  var act=(DEBTS||[]).filter(function(d){return dSaldo(d)>0;});
+  return {
+    n:act.length,
+    saldo:act.reduce(function(s,d){return s+dSaldo(d);},0),
+    cuotas:act.reduce(function(s,d){return s+(+d.quota||0);},0),
+    interes:act.reduce(function(s,d){return s+dInteresMes(d);},0),
+    cupo:act.reduce(function(s,d){return s+(+d.cupo||0);},0),
+    ahogadas:act.filter(dAhoga).length
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SIMULACIÓN MES A MES
+// Cada mes: se causan los intereses, se paga la cuota de cada deuda
+// y todo lo que sobre se le tira a UNA sola — la de mayor tasa
+// (avalancha) o la de menor saldo (bola de nieve). Cuando una se
+// libera, su cuota se suma al ataque de la siguiente: eso es lo que
+// hace que el plan se acelere solo.
+// ═══════════════════════════════════════════════════════════════
+function deudaSimular(metodo,extra){
+  var lista=(DEBTS||[]).filter(function(d){return dSaldo(d)>0;}).map(function(d){
+    return {id:d.id,n:d.n,saldo:dSaldo(d),mv:dMV(d),quota:+d.quota||0,libreMes:0};
+  });
+  if(!lista.length)return null;
+  var presupuesto=lista.reduce(function(s,x){return s+x.quota;},0)+(+extra||0);
+  var mes=0,intereses=0,pagado=0,TOPE=600;
+  while(lista.some(function(x){return x.saldo>0.5;})&amp;&amp;mes<TOPE){
+    mes++;
+    var disp=presupuesto;
+    // 1. intereses del mes
+    lista.forEach(function(x){
+      if(x.saldo>0.5){var i=x.saldo*x.mv;x.saldo+=i;intereses+=i;}
+    });
+    // 2. la cuota de cada una
+    lista.forEach(function(x){
+      if(x.saldo<=0.5||disp<=0)return;
+      var p=Math.min(x.quota,x.saldo,disp);
+      x.saldo-=p;disp-=p;pagado+=p;
+    });
+    // 3. el sobrante, todo a la objetivo
+    var orden=lista.filter(function(x){return x.saldo>0.5;}).sort(
+      metodo==='nieve'?function(a,b){return a.saldo-b.saldo;}
+                      :function(a,b){return b.mv-a.mv;});
+    for(var k=0;k<orden.length&amp;&amp;disp>0.5;k++){
+      var p2=Math.min(orden[k].saldo,disp);
+      orden[k].saldo-=p2;disp-=p2;pagado+=p2;
+    }
+    // 4. quién quedó libre
+    lista.forEach(function(x){if(x.saldo<=0.5&amp;&amp;!x.libreMes)x.libreMes=mes;});
+  }
+  var alcanza=mes<TOPE;
+  return {meses:mes,intereses:Math.round(intereses),pagado:Math.round(pagado),
+    presupuesto:Math.round(presupuesto),alcanza:alcanza,
+    libres:lista.filter(function(x){return x.libreMes;})
+      .sort(function(a,b){return a.libreMes-b.libreMes;})
+      .map(function(x){return {n:x.n,mes:x.libreMes};})};
+}
+
+// Lo que pagarías por UNA deuda si solo le abonas su cuota actual
+function dSolaCuota(d){
+  var s=dSaldo(d),mv=dMV(d),q=+d.quota||0,t=0,m=0;
+  if(s<=0)return {total:0,meses:0,ok:true};
+  if(q<=s*mv)return {total:0,meses:0,ok:false};   // nunca se acaba
+  while(s>0.5&amp;&amp;m<600){m++;s+=s*mv;var p=Math.min(q,s);s-=p;t+=p;}
+  return {total:Math.round(t),meses:m,ok:true};
+}
+
+// Cuota de un crédito nuevo: P·i / (1-(1+i)^-n)
+function dCuotaCredito(P,mv,n){
+  if(mv<=0)return P/n;
+  return P*mv/(1-Math.pow(1+mv,-n));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPRA DE CARTERA
+// Migrar las deudas caras a un crédito más barato. Solo tiene
+// sentido con las que están POR ENCIMA de la tasa objetivo, y solo
+// si el total a pagar baja de verdad — no si solo baja la cuota
+// alargando el plazo, que es el truco que hace que uno pague más.
+// ═══════════════════════════════════════════════════════════════
+function deudaMigrar(tasaObjMV,plazo){
+  var caras=(DEBTS||[]).filter(function(d){return dSaldo(d)>0&amp;&amp;dMV(d)>tasaObjMV+0.0001;});
+  if(!caras.length)return null;
+  var monto=caras.reduce(function(s,d){return s+dSaldo(d);},0);
+  var sinMigrar=0,indefinidas=0,mesesMax=0;
+  caras.forEach(function(d){
+    var r=dSolaCuota(d);
+    if(!r.ok){indefinidas++;sinMigrar+=dSaldo(d)*3;}   // referencia prudente
+    else{sinMigrar+=r.total;mesesMax=Math.max(mesesMax,r.meses);}
+  });
+  var cuotaNueva=dCuotaCredito(monto,tasaObjMV,plazo);
+  var totalNuevo=cuotaNueva*plazo;
+  return {
+    deudas:caras.map(function(d){return {n:d.n,saldo:dSaldo(d),ea:dEA(d)};}),
+    monto:Math.round(monto),
+    cuotaHoy:Math.round(caras.reduce(function(s,d){return s+(+d.quota||0);},0)),
+    cuotaNueva:Math.round(cuotaNueva),
+    totalHoy:Math.round(sinMigrar),
+    totalNuevo:Math.round(totalNuevo),
+    ahorro:Math.round(sinMigrar-totalNuevo),
+    plazo:plazo, mesesHoy:mesesMax, indefinidas:indefinidas,
+    tasaObjEA:mvAea(tasaObjMV)
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AGENDA: corte y pago de cada tarjeta, todos los meses
+// ═══════════════════════════════════════════════════════════════
+function deudaAgendar(id,callado){
+  var d=(DEBTS||[]).filter(function(x){return String(x.id)===String(id);})[0];
+  if(!d)return;
+  var n=0;
+  if(d.corte){
+    var fc=dProxDia(d.corte);
+    if(fc){
+      nnEvent({id:'nn_deuda_corte_'+d.id,title:'✂️ Corte '+d.n,type:'deadline',prio:'media',
+        date:fc,time:'08:00',project:'Finanzas',projId:'',
+        notes:'Después de esta fecha lo que compres se va a la factura del mes siguiente.',
+        link:'',recur:'monthly',recurEnd:'',sent:'',done:false},false);
+      n++;
+    }
+  }
+  if(d.pago){
+    var fp=dProxDia(d.pago);
+    if(fp){
+      nnEvent({id:'nn_deuda_pago_'+d.id,title:'💳 Pagar '+d.n+(d.quota?' — '+dFmt(d.quota):''),
+        type:'deadline',prio:'alta',date:fp,time:'09:00',project:'Finanzas',projId:'',
+        notes:'Fecha LÍMITE de pago. Un día tarde cuesta mora + reporte a centrales.',
+        link:'',recur:'monthly',recurEnd:'',sent:'',done:false},false);
+      n++;
+    }
+  }
+  d.agendado=n>0;
+  nnSave();
+  if(!callado)T(n?'Agendado':'Sin fechas',n?(n+' recordatorios mensuales de '+d.n):'Ponle día de corte y de pago','📆');
+  return n;
+}
+function deudaAgendarTodas(){
+  var n=0;
+  (DEBTS||[]).forEach(function(d){n+=deudaAgendar(d.id,true)||0;});
+  renderDeudas();
+  T(n?'Agenda lista':'Nada que agendar',n?(n+' recordatorios mensuales creados'):'Ninguna deuda tiene día de corte o de pago','📆');
+}
+function deudaDesagendar(id){
+  try{nnEventDel('nn_deuda_corte_'+id);nnEventDel('nn_deuda_pago_'+id);}catch(e){}
+  var d=(DEBTS||[]).filter(function(x){return String(x.id)===String(id);})[0];
+  if(d)d.agendado=false;
+  nnSave();renderDeudas();
+  T('Recordatorios quitados','','🗑️');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ALTA Y BAJA
+// ═══════════════════════════════════════════════════════════════
+function deudaAbrir(id){
+  var d=id?(DEBTS||[]).filter(function(x){return String(x.id)===String(id);})[0]:null;
+  var v=function(el,val){var e=document.getElementById(el);if(e)e.value=(val===undefined||val===null)?'':val;};
+  v('d-id',d?d.id:'');
+  v('d-name',d?d.n:'');
+  v('d-tipo',d?(d.tipo||'tarjeta'):'tarjeta');
+  v('d-total',d?d.total:'');
+  v('d-cupo',d?d.cupo:'');
+  v('d-rate',d?d.rate:'');
+  v('d-ratetipo',d?(d.rateTipo||'mv'):'mv');
+  v('d-corte',d?d.corte:'');
+  v('d-pago',d?d.pago:'');
+  v('d-quota',d?d.quota:'');
+  v('d-cuotas',d?d.cuotas:'');
+  var t=document.getElementById('d-modal-ttl');
+  if(t)t.textContent=d?'Editar deuda':'Registrar deuda';
+  deudaTipoCambio();
+  openModal('mo-debt');
+}
+// Una tarjeta tiene cupo, corte y fecha límite. Un crédito de libre
+// inversión no: tiene cuota fija y un número de cuotas. Se muestra
+// solo lo que aplica para no pedir datos que no existen.
+function deudaTipoCambio(){
+  var t=(document.getElementById('d-tipo')||{}).value||'tarjeta';
+  var esTar=(t==='tarjeta');
+  var mostrar=function(id,si){var e=document.getElementById(id);if(e)e.style.display=si?'':'none';};
+  mostrar('d-wrap-cupo',esTar);
+  mostrar('d-wrap-corte',esTar);
+  mostrar('d-wrap-cuotas',!esTar);
+  var lq=document.getElementById('d-lbl-quota');
+  if(lq)lq.textContent=esTar?'Pago mínimo / cuota (COP)':'Cuota mensual (COP)';
+  var lp=document.getElementById('d-lbl-pago');
+  if(lp)lp.textContent=esTar?'Día límite de pago':'Día de pago';
+}
+function deudaGuardar(){
+  var g=function(id){var e=document.getElementById(id);return e?e.value.trim():'';};
+  var num=function(id){return +g(id)||0;};
+  var n=g('d-name');
+  if(!n){T('Falta el nombre','Ej: Visa Bancolombia','⚠️');return;}
+  var total=num('d-total');
+  if(total<=0){T('Falta el saldo','¿Cuánto debes hoy en esa deuda?','⚠️');return;}
+  var rate=num('d-rate');
+  if(rate<=0){T('Falta la tasa','Está en el extracto, junto al cupo','⚠️');return;}
+  var corte=num('d-corte'), pago=num('d-pago');
+  if(corte&amp;&amp;(corte<1||corte>31)){T('Día de corte inválido','Debe ser entre 1 y 31','⚠️');return;}
+  if(pago&amp;&amp;(pago<1||pago>31)){T('Día de pago inválido','Debe ser entre 1 y 31','⚠️');return;}
+  var id=g('d-id');
+  var obj={id:id||('dbt'+Date.now()),n:n,tipo:g('d-tipo')||'tarjeta',
+    total:total,cupo:num('d-cupo'),rate:rate,rateTipo:g('d-ratetipo')||'mv',
+    corte:corte,pago:pago,quota:num('d-quota'),cuotas:num('d-cuotas'),
+    due:pago?dProxDia(pago):'',pct:0,agendado:false};
+  if(id){
+    var i=DEBTS.findIndex(function(x){return String(x.id)===String(id);});
+    if(i>=0){obj.agendado=DEBTS[i].agendado;obj.pct=DEBTS[i].pct||0;DEBTS[i]=obj;}
+    else DEBTS.push(obj);
+  }else DEBTS.push(obj);
+  closeModal('mo-debt');
+  deudaAgendar(obj.id,true);
+  nnSave();renderDeudas();renderDash();
+  var av=dAhoga(obj)?' · ⚠️ la cuota no cubre ni el interés':'';
+  T(id?'Deuda actualizada':'Deuda registrada',n+av,'💳');
+}
+function deudaBorrar(id){
+  var d=(DEBTS||[]).filter(function(x){return String(x.id)===String(id);})[0];
+  if(!d)return;
+  if(!confirm('¿Eliminar &quot;'+d.n+'&quot;? También se quitan sus recordatorios de corte y pago.'))return;
+  try{nnEventDel('nn_deuda_corte_'+id);nnEventDel('nn_deuda_pago_'+id);}catch(e){}
+  DEBTS=DEBTS.filter(function(x){return String(x.id)!==String(id);});
+  nnSave();renderDeudas();renderDash();
+  T('Deuda eliminada',d.n,'🗑️');
+}
+// Registrar el pago del mes: baja el saldo y deja el rastro en las
+// transacciones, que es lo que después alimenta el balance.
+function deudaAbonar(id){
+  var d=(DEBTS||[]).filter(function(x){return String(x.id)===String(id);})[0];
+  if(!d)return;
+  var sug=(+d.quota||0)||Math.round(dSaldo(d)*0.1);
+  var v=prompt('¿Cuánto abonaste a &quot;'+d.n+'&quot;?\n\nSaldo actual: '+dFmt(dSaldo(d))+
+    '\nDe ese abono, '+dFmt(dInteresMes(d))+' se van solo en intereses.',String(sug));
+  if(v===null)return;
+  var m=+String(v).replace(/[^\d]/g,'')||0;
+  if(m<=0)return;
+  var antes=dSaldo(d);
+  d.total=Math.max(0,antes-m);
+  d.pct=antes>0?Math.min(100,Math.round((1-d.total/antes)*100+(d.pct||0))):100;
+  try{
+    TRANSACTIONS.unshift({id:Date.now(),t:'Abono '+d.n,c:'Deudas',a:-m,
+      d:new Date().toLocaleDateString('es-CO').slice(0,5),tipo:'egreso'});
+  }catch(e){}
+  nnSave();renderDeudas();renderDash();
+  try{if(document.getElementById('v-finance').classList.contains('on'))renderFinance();}catch(e){}
+  nnTg('💳 '+nnB('Abono registrado')+'\n━━━━━━━━━━━━━━━\n'+
+    '📌 '+nnEsc(d.n)+'\n💵 '+nnEsc(dFmt(m))+'\n📉 Saldo: '+nnEsc(dFmt(d.total))+
+    (d.total<=0?'\n🎉 <b>¡DEUDA LIQUIDADA!</b>':'')+'\n<i>EM Suite PRO</i>');
+  T(d.total<=0?'🎉 ¡Deuda liquidada!':'Abono registrado',d.n+' · saldo '+dFmt(d.total),'💳');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PANTALLA
+// ═══════════════════════════════════════════════════════════════
+function renderDeudas(){
+  var box=document.getElementById('deudas-panel'); if(!box)return;
+  var t=dTotales();
+
+  // ── Resumen de arriba ──
+  var res=document.getElementById('deudas-res');
+  if(res){
+    res.innerHTML=
+      '<div class=&quot;card&quot; style=&quot;text-align:center;padding:14px&quot;><div style=&quot;font-size:19px;font-weight:700;color:var(--danger)&quot;>'+
+        dFmtK(t.saldo)+'</div><div style=&quot;font-size:10px;color:var(--t3);margin-top:3px&quot;>Saldo total</div></div>'+
+      '<div class=&quot;card&quot; style=&quot;text-align:center;padding:14px&quot;><div style=&quot;font-size:19px;font-weight:700;color:var(--warn)&quot;>'+
+        dFmtK(t.interes)+'</div><div style=&quot;font-size:10px;color:var(--t3);margin-top:3px&quot;>Intereses al mes</div></div>'+
+      '<div class=&quot;card&quot; style=&quot;text-align:center;padding:14px&quot;><div style=&quot;font-size:19px;font-weight:700&quot;>'+
+        dFmtK(t.cuotas)+'</div><div style=&quot;font-size:10px;color:var(--t3);margin-top:3px&quot;>Cuotas al mes</div></div>'+
+      '<div class=&quot;card&quot; style=&quot;text-align:center;padding:14px&quot;><div style=&quot;font-size:19px;font-weight:700;color:var(--ac)&quot;>'+
+        t.n+'</div><div style=&quot;font-size:10px;color:var(--t3);margin-top:3px&quot;>Deudas activas</div></div>';
+  }
+
+  if(!t.n){
+    box.innerHTML='<div class=&quot;card&quot; style=&quot;text-align:center;padding:36px 20px;color:var(--t3)&quot;>'+
+      '<i class=&quot;fa fa-credit-card&quot; style=&quot;font-size:30px;display:block;margin-bottom:12px;opacity:.3&quot;></i>'+
+      '<p style=&quot;font-size:13px;margin-bottom:6px&quot;>Sin deudas registradas</p>'+
+      '<p style=&quot;font-size:11px;line-height:1.6&quot;>Registra cada tarjeta con su saldo, su tasa y sus dos fechas.<br>'+
+      'La app calcula sola el orden de pago y te avisa antes de cada corte.</p>'+
+      '<button class=&quot;bp&quot; style=&quot;margin-top:14px&quot; onclick=&quot;deudaAbrir()&quot;><i class=&quot;fa fa-plus&quot; style=&quot;margin-right:6px&quot;></i>Registrar la primera</button></div>';
+    var pl=document.getElementById('deudas-plan'); if(pl)pl.innerHTML='';
+    return;
+  }
+
+  // ── Tarjetas, ordenadas por lo que más cuesta ──
+  var orden=DEBTS.filter(function(d){return dSaldo(d)>0;})
+    .sort(function(a,b){return dInteresMes(b)-dInteresMes(a);});
+  var muertas=DEBTS.filter(function(d){return dSaldo(d)<=0;});
+
+  box.innerHTML=orden.map(function(d){
+    var uso=dUso(d), ahoga=dAhoga(d);
+    var fc=d.corte?dFaltan(d.corte):null, fp=d.pago?dFaltan(d.pago):null;
+    var urgente=(fp!==null&amp;&amp;fp<=3);
+    var icono=d.tipo==='vehiculo'?'fa-car':d.tipo==='hipoteca'?'fa-house':d.tipo==='libre'?'fa-hand-holding-dollar':'fa-credit-card';
+    return '<div class=&quot;card&quot; style=&quot;margin-bottom:10px;border-left:3px solid '+(ahoga?'var(--danger)':urgente?'var(--warn)':'var(--bd)')+'&quot;>'+
+      '<div style=&quot;display:flex;align-items:center;gap:8px;margin-bottom:8px&quot;>'+
+        '<i class=&quot;fa '+icono+'&quot; style=&quot;color:var(--danger);font-size:13px&quot;></i>'+
+        '<h4 style=&quot;font-size:13px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis&quot;>'+nnEsc(d.n)+'</h4>'+
+        '<span class=&quot;chip cr&quot; style=&quot;font-size:9px&quot;>'+dEA(d).toFixed(1)+'% E.A.</span>'+
+        '<button class=&quot;bi&quot; style=&quot;width:26px;height:26px;font-size:10px&quot; onclick=&quot;deudaAbrir(\''+d.id+'\')&quot; title=&quot;Editar&quot;><i class=&quot;fa fa-pen&quot;></i></button>'+
+        '<button class=&quot;bi&quot; style=&quot;width:26px;height:26px;font-size:10px;color:var(--danger)&quot; onclick=&quot;deudaBorrar(\''+d.id+'\')&quot; title=&quot;Eliminar&quot;><i class=&quot;fa fa-trash&quot;></i></button>'+
+      '</div>'+
+      '<div style=&quot;display:flex;align-items:baseline;gap:10px;margin-bottom:8px&quot;>'+
+        '<span style=&quot;font-size:20px;font-weight:700;color:var(--danger)&quot;>'+dFmt(dSaldo(d))+'</span>'+
+        '<span style=&quot;font-size:11px;color:var(--warn)&quot;>+'+dFmt(dInteresMes(d))+'/mes de interés</span>'+
+      '</div>'+
+      (uso!==null?'<div style=&quot;margin-bottom:8px&quot;>'+
+        '<div style=&quot;display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:3px&quot;>'+
+          '<span>Cupo usado</span><span style=&quot;color:'+(uso>50?'var(--danger)':uso>30?'var(--warn)':'var(--ok)')+'&quot;>'+uso+'% de '+dFmtK(d.cupo)+'</span></div>'+
+        '<div style=&quot;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden&quot;>'+
+          '<div style=&quot;height:100%;width:'+Math.min(100,uso)+'%;background:'+(uso>50?'var(--danger)':uso>30?'var(--warn)':'var(--ok)')+'&quot;></div></div></div>':'')+
+      '<div style=&quot;display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--t3);margin-bottom:8px&quot;>'+
+        (d.corte?'<span>✂️ Corte: día '+d.corte+(fc!==null?' <span style=&quot;color:var(--t2)&quot;>('+(fc===0?'hoy':'en '+fc+'d')+')</span>':'')+'</span>':'')+
+        (d.pago?'<span style=&quot;'+(urgente?'color:var(--warn);font-weight:600':'')+'&quot;>💳 Pago: día '+d.pago+(fp!==null?' ('+(fp===0?'¡HOY!':'en '+fp+'d')+')':'')+'</span>':'')+
+        (d.quota?'<span>💵 Cuota: '+dFmt(d.quota)+'</span>':'')+
+        (d.cuotas?'<span>📅 '+d.cuotas+' cuotas</span>':'')+
+      '</div>'+
+      (ahoga?'<div style=&quot;font-size:11px;color:var(--danger);background:rgba(255,68,68,.08);border:1px solid rgba(255,68,68,.25);'+
+        'border-radius:var(--rs);padding:8px 10px;margin-bottom:8px;line-height:1.5&quot;>⚠️ <b>La cuota no cubre el interés.</b> '+
+        'Pagando '+dFmt(d.quota)+' cuando el interés es '+dFmt(dInteresMes(d))+', el saldo <b>sube</b> cada mes. '+
+        'Esta es la que hay que atacar primero.</div>':'')+
+      '<div style=&quot;display:flex;gap:5px;flex-wrap:wrap&quot;>'+
+        '<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 9px;color:var(--ok)&quot; onclick=&quot;deudaAbonar(\''+d.id+'\')&quot;><i class=&quot;fa fa-arrow-down&quot;></i> Abonar</button>'+
+        (d.agendado
+          ?'<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 9px;color:var(--ac3)&quot; onclick=&quot;deudaDesagendar(\''+d.id+'\')&quot;><i class=&quot;fa fa-bell-slash&quot;></i> Quitar avisos</button>'
+          :'<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 9px&quot; onclick=&quot;deudaAgendar(\''+d.id+'\')&quot;><i class=&quot;fa fa-bell&quot;></i> Agendar corte y pago</button>')+
+      '</div></div>';
+  }).join('')+
+  (muertas.length?'<div class=&quot;card&quot; style=&quot;padding:12px 14px;border-left:3px solid var(--ok)&quot;>'+
+    '<div style=&quot;font-size:12px;color:var(--ok);font-weight:600;margin-bottom:6px&quot;>🎉 Liquidadas</div>'+
+    muertas.map(function(d){return '<div style=&quot;font-size:11px;color:var(--t3);display:flex;gap:8px;align-items:center;padding:3px 0&quot;>'+
+      '<span style=&quot;flex:1&quot;>'+nnEsc(d.n)+'</span>'+
+      '<button class=&quot;bi&quot; style=&quot;width:22px;height:22px;font-size:9px;color:var(--t3)&quot; onclick=&quot;deudaBorrar(\''+d.id+'\')&quot;><i class=&quot;fa fa-trash&quot;></i></button></div>';}).join('')+
+    '</div>':'');
+
+  renderPlan();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EL PLAN
+// ═══════════════════════════════════════════════════════════════
+function renderPlan(){
+  var box=document.getElementById('deudas-plan'); if(!box)return;
+  var t=dTotales();
+  if(!t.n){box.innerHTML='';return;}
+
+  var av=deudaSimular('avalancha',DEUDA_EXTRA);
+  var ni=deudaSimular('nieve',DEUDA_EXTRA);
+  if(!av){box.innerHTML='';return;}
+
+  var mejor=(av.intereses<=ni.intereses)?'avalancha':'nieve';
+  var sim=(DEUDA_METODO==='nieve')?ni:av;
+  var dif=Math.abs(av.intereses-ni.intereses);
+
+  // sin abono extra, para comparar
+  var base=deudaSimular(DEUDA_METODO,0);
+  var ganaMeses=base?(base.meses-sim.meses):0;
+  var ganaPlata=base?(base.intereses-sim.intereses):0;
+
+  var caraLista=DEBTS.filter(function(d){return dSaldo(d)>0;}).sort(function(a,b){return dMV(b)-dMV(a);});
+  var objetivo=(DEUDA_METODO==='nieve')
+    ? DEBTS.filter(function(d){return dSaldo(d)>0;}).sort(function(a,b){return dSaldo(a)-dSaldo(b);})[0]
+    : caraLista[0];
+
+  var mig=deudaMigrar(DEUDA_TASA_OBJ/100,DEUDA_PLAZO);
+
+  var h='';
+
+  // 1. El costo real
+  h+='<div class=&quot;card&quot; style=&quot;margin-bottom:12px;border-left:3px solid var(--warn)&quot;>'+
+    '<div style=&quot;font-size:12px;font-weight:600;margin-bottom:8px&quot;>📊 Lo que cuesta hoy</div>'+
+    '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7&quot;>Debes <b style=&quot;color:var(--danger)&quot;>'+dFmt(t.saldo)+'</b> '+
+    'y solo en intereses se van <b style=&quot;color:var(--warn)&quot;>'+dFmt(t.interes)+' al mes</b> — '+
+    dFmt(t.interes*12)+' al año sin bajar un peso del saldo. '+
+    'De la cuota de '+dFmt(t.cuotas)+' que pagas, <b>'+Math.round(t.interes/Math.max(1,t.cuotas)*100)+'%</b> es interés '+
+    'y solo el resto baja la deuda.</p>'+
+    (t.ahogadas?'<p style=&quot;font-size:12px;color:var(--danger);margin-top:8px;line-height:1.6&quot;>⚠️ '+t.ahogadas+
+      ' deuda(s) con cuota que <b>no cubre ni el interés</b>: ahí el saldo crece aunque pagues juiciosamente.</p>':'')+
+    '</div>';
+
+  // 2. El plan
+  h+='<div class=&quot;card&quot; style=&quot;margin-bottom:12px;border-left:3px solid var(--ac)&quot;>'+
+    '<div style=&quot;display:flex;align-items:center;gap:8px;margin-bottom:10px&quot;>'+
+      '<div style=&quot;font-size:12px;font-weight:600;flex:1&quot;>🎯 Plan de salida</div>'+
+      '<button class=&quot;bd2b'+(DEUDA_METODO==='avalancha'?' on':'')+'&quot; style=&quot;font-size:10px;padding:4px 9px&quot; onclick=&quot;setMetodo(\'avalancha\')&quot;>Avalancha</button>'+
+      '<button class=&quot;bd2b'+(DEUDA_METODO==='nieve'?' on':'')+'&quot; style=&quot;font-size:10px;padding:4px 9px&quot; onclick=&quot;setMetodo(\'nieve\')&quot;>Bola de nieve</button>'+
+    '</div>'+
+    '<div style=&quot;display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap&quot;>'+
+      '<label style=&quot;font-size:11px;color:var(--t3)&quot;>Abono extra al mes:</label>'+
+      '<input class=&quot;fi&quot; type=&quot;number&quot; id=&quot;d-extra&quot; value=&quot;'+DEUDA_EXTRA+'&quot; style=&quot;width:130px;font-size:12px&quot; '+
+        'oninput=&quot;DEUDA_EXTRA=+this.value||0;renderPlan()&quot; placeholder=&quot;0&quot;>'+
+      '<span style=&quot;font-size:11px;color:var(--t3)&quot;>→ presupuesto total '+dFmt(sim.presupuesto)+'/mes</span>'+
+    '</div>';
+
+  if(!sim.alcanza){
+    h+='<p style=&quot;font-size:12px;color:var(--danger);line-height:1.7&quot;>Con ese presupuesto la deuda <b>no se acaba</b>: '+
+      'los intereses crecen más rápido de lo que abonas. Necesitas subir el abono o migrar a una tasa menor '+
+      '(mira la compra de cartera abajo). Es la señal más clara de que hay que renegociar, no seguir pagando igual.</p>';
+  }else{
+    h+='<div style=&quot;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px&quot;>'+
+      '<div style=&quot;background:var(--bg4);border-radius:var(--rs);padding:10px;text-align:center&quot;>'+
+        '<div style=&quot;font-size:17px;font-weight:700;color:var(--ac)&quot;>'+sim.meses+'</div>'+
+        '<div style=&quot;font-size:10px;color:var(--t3)&quot;>meses para salir</div></div>'+
+      '<div style=&quot;background:var(--bg4);border-radius:var(--rs);padding:10px;text-align:center&quot;>'+
+        '<div style=&quot;font-size:17px;font-weight:700;color:var(--warn)&quot;>'+dFmtK(sim.intereses)+'</div>'+
+        '<div style=&quot;font-size:10px;color:var(--t3)&quot;>intereses en total</div></div>'+
+      '<div style=&quot;background:var(--bg4);border-radius:var(--rs);padding:10px;text-align:center&quot;>'+
+        '<div style=&quot;font-size:17px;font-weight:700&quot;>'+dFmtK(sim.pagado)+'</div>'+
+        '<div style=&quot;font-size:10px;color:var(--t3)&quot;>pagarías en total</div></div>'+
+      '<div style=&quot;background:var(--bg4);border-radius:var(--rs);padding:10px;text-align:center&quot;>'+
+        '<div style=&quot;font-size:17px;font-weight:700;color:var(--ok)&quot;>'+
+          (sim.meses>0?(new Date(new Date().setMonth(new Date().getMonth()+sim.meses))).toLocaleDateString('es-CO',{month:'short',year:'numeric'}):'—')+
+        '</div><div style=&quot;font-size:10px;color:var(--t3)&quot;>libre de deudas</div></div></div>';
+
+    if(DEUDA_EXTRA>0&amp;&amp;ganaMeses>0){
+      h+='<p style=&quot;font-size:12px;color:var(--ok);line-height:1.7;margin-bottom:10px&quot;>✅ Ese abono de '+dFmt(DEUDA_EXTRA)+
+        ' te ahorra <b>'+ganaMeses+' meses</b> y <b>'+dFmt(ganaPlata)+'</b> en intereses.</p>';
+    }
+
+    h+='<div style=&quot;font-size:11px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;font-family:var(--mono)&quot;>Orden de ataque</div>'+
+      '<div style=&quot;font-size:12px;color:var(--t2);line-height:1.9&quot;>'+
+      sim.libres.map(function(x,i){
+        return '<div style=&quot;display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--bd)&quot;>'+
+          '<span style=&quot;width:20px;height:20px;border-radius:50%;background:'+(i===0?'var(--ac)':'var(--bg4)')+';color:'+(i===0?'#000':'var(--t3)')+
+          ';font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0&quot;>'+(i+1)+'</span>'+
+          '<span style=&quot;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis&quot;>'+nnEsc(x.n)+'</span>'+
+          '<span style=&quot;font-size:11px;color:var(--t3);font-family:var(--mono)&quot;>mes '+x.mes+'</span></div>';
+      }).join('')+'</div>';
+
+    if(objetivo){
+      h+='<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7;margin-top:10px;background:var(--bg4);'+
+        'border-radius:var(--rs);padding:10px 12px&quot;><b>Este mes:</b> paga la cuota mínima de todas y tírale '+
+        'todo lo que te sobre a <b style=&quot;color:var(--ac)&quot;>'+nnEsc(objetivo.n)+'</b>'+
+        (DEUDA_METODO==='avalancha'?' — es la de tasa más alta ('+dEA(objetivo).toFixed(1)+'% E.A.), la que más te está costando.'
+                                    :' — es la de menor saldo ('+dFmt(dSaldo(objetivo))+'), la que se cae más rápido.')+
+        '</p>';
+    }
+
+    if(dif>1000){
+      h+='<p style=&quot;font-size:11px;color:var(--t3);line-height:1.6;margin-top:8px&quot;>'+
+        (mejor==='avalancha'
+          ?'En números, <b>avalancha</b> te ahorra '+dFmt(dif)+' frente a bola de nieve. Bola de nieve gana en ánimo: liquidas la primera antes y eso sostiene el hábito.'
+          :'Aquí <b>bola de nieve</b> sale igual o mejor, y además liquidas una deuda antes.')+
+        '</p>';
+    }
+  }
+  h+='</div>';
+
+  // 3. Compra de cartera
+  h+='<div class=&quot;card&quot; style=&quot;margin-bottom:12px;border-left:3px solid var(--ac3)&quot;>'+
+    '<div style=&quot;font-size:12px;font-weight:600;margin-bottom:8px&quot;>🔄 Migrar a una tasa menor (compra de cartera)</div>'+
+    '<div style=&quot;display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap&quot;>'+
+      '<label style=&quot;font-size:11px;color:var(--t3)&quot;>Tasa que te ofrecen:</label>'+
+      '<input class=&quot;fi&quot; type=&quot;number&quot; step=&quot;0.1&quot; id=&quot;d-tasaobj&quot; value=&quot;'+DEUDA_TASA_OBJ+'&quot; style=&quot;width:80px;font-size:12px&quot; '+
+        'oninput=&quot;DEUDA_TASA_OBJ=+this.value||0;renderPlan()&quot;>'+
+      '<span style=&quot;font-size:11px;color:var(--t3)&quot;>% mensual ('+mvAea(DEUDA_TASA_OBJ/100).toFixed(1)+'% E.A.)</span>'+'<label style=&quot;font-size:11px;color:var(--t3)&quot;>a</label>'+'<input class=&quot;fi&quot; type=&quot;number&quot; id=&quot;d-plazo&quot; value=&quot;'+DEUDA_PLAZO+'&quot; style=&quot;width:70px;font-size:12px&quot; oninput=&quot;DEUDA_PLAZO=Math.max(1,+this.value||1);renderPlan()&quot;>'+'<span style=&quot;font-size:11px;color:var(--t3)&quot;>meses</span>'+
+    '</div>';
+  if(!mig){
+    h+='<p style=&quot;font-size:12px;color:var(--ok);line-height:1.7&quot;>✅ Ninguna de tus deudas está por encima de esa tasa. '+
+      'Migrar no te serviría: ya estás mejor de lo que te ofrecen.</p>';
+  }else{
+    var conviene=mig.ahorro>0;
+    h+='<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:10px&quot;>'+
+      'Tienes <b>'+mig.deudas.length+'</b> deuda(s) más caras que esa tasa, por <b>'+dFmt(mig.monto)+'</b>: '+
+      mig.deudas.map(function(x){return nnEsc(x.n)+' ('+x.ea.toFixed(0)+'% E.A.)';}).join(', ')+'.</p>'+
+      '<div style=&quot;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px&quot;>'+
+        '<div style=&quot;background:var(--bg4);border-radius:var(--rs);padding:10px&quot;>'+
+          '<div style=&quot;font-size:10px;color:var(--t3);margin-bottom:4px&quot;>SIGUIENDO IGUAL</div>'+
+          '<div style=&quot;font-size:15px;font-weight:700;color:var(--danger)&quot;>'+dFmtK(mig.totalHoy)+'</div>'+
+          '<div style=&quot;font-size:10px;color:var(--t3)&quot;>cuota '+dFmtK(mig.cuotaHoy)+'/mes</div></div>'+
+        '<div style=&quot;background:var(--bg4);border-radius:var(--rs);padding:10px&quot;>'+
+          '<div style=&quot;font-size:10px;color:var(--t3);margin-bottom:4px&quot;>MIGRANDO A '+mig.plazo+' MESES</div>'+
+          '<div style=&quot;font-size:15px;font-weight:700;color:'+(conviene?'var(--ok)':'var(--warn)')+'&quot;>'+dFmtK(mig.totalNuevo)+'</div>'+
+          '<div style=&quot;font-size:10px;color:var(--t3)&quot;>cuota '+dFmtK(mig.cuotaNueva)+'/mes</div></div></div>'+
+      '<p style=&quot;font-size:12px;line-height:1.7;color:'+(conviene?'var(--ok)':'var(--warn)')+'&quot;>'+
+        (conviene?'✅ <b>Sí conviene:</b> te ahorras '+dFmt(mig.ahorro)+' en total.'
+                 :'⚠️ <b>Cuidado:</b> la cuota baja, pero pagarías '+dFmt(-mig.ahorro)+' MÁS en total por el plazo largo. '+
+                  'Si migras, negocia un plazo más corto.')+'</p>'+
+      '<p style=&quot;font-size:11px;color:var(--t3);line-height:1.6;margin-top:8px&quot;>'+
+        'Pide la compra de cartera en un banco distinto al que te tiene la deuda — el que la tiene rara vez mejora su propia tasa. '+
+        'Lleva los extractos. Y lo más importante: <b>al migrar, guarda las tarjetas</b>. '+
+        'Volver a usarlas es lo que convierte una compra de cartera en el doble de deuda.</p>';
+  }
+  h+='</div>';
+
+  // 4. Avisos
+  var sinAgenda=DEBTS.filter(function(d){return dSaldo(d)>0&amp;&amp;!d.agendado&amp;&amp;(d.corte||d.pago);}).length;
+  if(sinAgenda){
+    h+='<div class=&quot;card&quot; style=&quot;border-left:3px solid var(--warn);display:flex;align-items:center;gap:10px;flex-wrap:wrap&quot;>'+
+      '<div style=&quot;flex:1;min-width:180px&quot;><div style=&quot;font-size:12px;font-weight:600;margin-bottom:3px&quot;>🔔 '+sinAgenda+' deuda(s) sin recordatorio</div>'+
+      '<div style=&quot;font-size:11px;color:var(--t3);line-height:1.5&quot;>Los cortes y las fechas límite se agendan como aviso mensual y te llegan a Telegram aunque la app esté cerrada.</div></div>'+
+      '<button class=&quot;bp&quot; style=&quot;font-size:11px&quot; onclick=&quot;deudaAgendarTodas()&quot;>Agendar todas</button></div>';
+  }
+
+  box.innerHTML=h;
+}
+function setMetodo(m){DEUDA_METODO=m;renderPlan();}
+
+// ═══════════════════════════════════════════════════════════════
+// SALIDAS: Telegram y PDF
+// ═══════════════════════════════════════════════════════════════
+function deudaResumenTg(){
+  var t=dTotales();
+  if(!t.n){T('Sin deudas','Nada que enviar','💳');return;}
+  var sim=deudaSimular(DEUDA_METODO,DEUDA_EXTRA);
+  var obj=(DEUDA_METODO==='nieve')
+    ? DEBTS.filter(function(d){return dSaldo(d)>0;}).sort(function(a,b){return dSaldo(a)-dSaldo(b);})[0]
+    : DEBTS.filter(function(d){return dSaldo(d)>0;}).sort(function(a,b){return dMV(b)-dMV(a);})[0];
+  var m='💳 '+nnB('Plan de deudas')+'\n━━━━━━━━━━━━━━━\n';
+  m+='💰 Saldo total: '+nnB(dFmt(t.saldo))+'\n';
+  m+='🔥 Intereses al mes: '+nnEsc(dFmt(t.interes))+'\n';
+  m+='💵 Cuotas al mes: '+nnEsc(dFmt(t.cuotas))+'\n';
+  if(DEUDA_EXTRA)m+='➕ Abono extra: '+nnEsc(dFmt(DEUDA_EXTRA))+'\n';
+  m+='\n'+nnB('Método: '+(DEUDA_METODO==='nieve'?'bola de nieve':'avalancha'))+'\n';
+  if(sim&amp;&amp;sim.alcanza){
+    m+='📆 Libre en '+nnB(sim.meses+' meses')+'\n';
+    m+='💸 Intereses totales: '+nnEsc(dFmt(sim.intereses))+'\n';
+  }else{
+    m+='⚠️ Con el presupuesto actual la deuda no se acaba. Hay que subir el abono o migrar a menor tasa.\n';
+  }
+  if(obj)m+='\n🎯 Este mes ataca: '+nnB(obj.n)+'\n';
+  // próximos pagos
+  var prox=DEBTS.filter(function(d){return dSaldo(d)>0&amp;&amp;d.pago;})
+    .map(function(d){return {n:d.n,f:dFaltan(d.pago),q:d.quota};})
+    .sort(function(a,b){return a.f-b.f;}).slice(0,4);
+  if(prox.length){
+    m+='\n'+nnB('Próximos pagos')+'\n';
+    prox.forEach(function(p){
+      m+='• '+nnEsc(p.n)+': '+(p.f===0?'HOY':'en '+p.f+' días')+(p.q?' · '+nnEsc(dFmt(p.q)):'')+'\n';
+    });
+  }
+  m+='\n<i>EM Suite PRO</i>';
+  nnTg(m);
+  T('Enviado a Telegram','Plan de deudas','📲');
+}
+
+function deudaPDF(){
+  var t=dTotales();
+  if(!t.n){T('Sin deudas','Registra al menos una','💳');return;}
+  if(!window.jspdf||!window.jspdf.jsPDF){T('Falta la librería','Abre la app con internet una vez','⚠️');return;}
+  var sim=deudaSimular(DEUDA_METODO,DEUDA_EXTRA);
+  var mig=deudaMigrar(DEUDA_TASA_OBJ/100,DEUDA_PLAZO);
+  var doc=new window.jspdf.jsPDF({unit:'mm',format:'a4'});
+  var W=210,M=15,y=0;
+  var AZUL=[15,42,74], GRIS=[95,110,130], ROJO=[200,50,50], VERDE=[20,140,90];
+
+  // encabezado
+  doc.setFillColor(AZUL[0],AZUL[1],AZUL[2]);doc.rect(0,0,W,32,'F');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(17);
+  doc.text('Plan de salida de deudas',M,15);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);
+  doc.text(new Date().toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'}),M,22);
+  doc.setFontSize(8);doc.text('EM Suite PRO — Ing. Edisson Macias Quevedo',M,27.5);
+  y=42;
+
+  // resumen
+  var cajas=[['Saldo total',dFmt(t.saldo),ROJO],['Intereses/mes',dFmt(t.interes),[200,130,20]],
+             ['Cuotas/mes',dFmt(t.cuotas),AZUL],['Deudas',String(t.n),AZUL]];
+  var cw=(W-M*2-9)/4;
+  cajas.forEach(function(c,i){
+    var x=M+i*(cw+3);
+    doc.setFillColor(245,247,250);doc.roundedRect(x,y,cw,18,2,2,'F');
+    doc.setTextColor(c[2][0],c[2][1],c[2][2]);doc.setFont('helvetica','bold');doc.setFontSize(11);
+    doc.text(String(c[1]),x+cw/2,y+8,{align:'center'});
+    doc.setTextColor(GRIS[0],GRIS[1],GRIS[2]);doc.setFont('helvetica','normal');doc.setFontSize(7);
+    doc.text(c[0],x+cw/2,y+14,{align:'center'});
+  });
+  y+=26;
+
+  // tabla de deudas
+  doc.setTextColor(AZUL[0],AZUL[1],AZUL[2]);doc.setFont('helvetica','bold');doc.setFontSize(11);
+  doc.text('Detalle de las deudas',M,y);y+=6;
+  doc.setFillColor(AZUL[0],AZUL[1],AZUL[2]);doc.rect(M,y,W-M*2,7,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(8);
+  var cols=[M+2,M+62,M+90,M+115,M+140,M+165];
+  ['Entidad','Saldo','Tasa E.A.','Interes/mes','Cuota','Pago'].forEach(function(h,i){doc.text(h,cols[i],y+4.8);});
+  y+=7;
+  doc.setFont('helvetica','normal');
+  DEBTS.filter(function(d){return dSaldo(d)>0;})
+    .sort(function(a,b){return dInteresMes(b)-dInteresMes(a);})
+    .forEach(function(d,i){
+      if(y>265){doc.addPage();y=20;}
+      if(i%2){doc.setFillColor(248,249,251);doc.rect(M,y,W-M*2,7,'F');}
+      doc.setTextColor(40,45,55);doc.setFontSize(8);
+      doc.text(String(d.n).substring(0,28),cols[0],y+4.8);
+      doc.text(dFmtK(dSaldo(d)),cols[1],y+4.8);
+      doc.text(dEA(d).toFixed(1)+'%',cols[2],y+4.8);
+      doc.setTextColor(ROJO[0],ROJO[1],ROJO[2]);
+      doc.text(dFmtK(dInteresMes(d)),cols[3],y+4.8);
+      doc.setTextColor(40,45,55);
+      doc.text(d.quota?dFmtK(d.quota):'-',cols[4],y+4.8);
+      doc.text(d.pago?('dia '+d.pago):'-',cols[5],y+4.8);
+      y+=7;
+    });
+  y+=8;
+
+  // el plan
+  if(y>230){doc.addPage();y=20;}
+  doc.setTextColor(AZUL[0],AZUL[1],AZUL[2]);doc.setFont('helvetica','bold');doc.setFontSize(11);
+  doc.text('El plan',M,y);y+=7;
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(40,45,55);
+  var texto;
+  if(sim&amp;&amp;sim.alcanza){
+    texto='Metodo: '+(DEUDA_METODO==='nieve'?'bola de nieve (menor saldo primero)':'avalancha (mayor tasa primero)')+
+      '. Pagando '+dFmt(sim.presupuesto)+' al mes'+(DEUDA_EXTRA?' ('+dFmt(DEUDA_EXTRA)+' de abono extra)':'')+
+      ', la deuda queda liquidada en '+sim.meses+' meses y se pagan '+dFmt(sim.intereses)+' en intereses.';
+  }else{
+    texto='Con el presupuesto actual la deuda no se termina: los intereses crecen mas rapido que los abonos. '+
+      'Hay que subir el abono mensual o migrar las deudas caras a una tasa menor.';
+  }
+  doc.splitTextToSize(texto,W-M*2).forEach(function(l){doc.text(l,M,y);y+=5;});
+  y+=3;
+
+  if(sim&amp;&amp;sim.alcanza&amp;&amp;sim.libres.length){
+    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text('Orden de liquidacion',M,y);y+=6;
+    doc.setFont('helvetica','normal');doc.setFontSize(9);
+    sim.libres.forEach(function(x,i){
+      if(y>275){doc.addPage();y=20;}
+      doc.setTextColor(AZUL[0],AZUL[1],AZUL[2]);doc.text(String(i+1)+'.',M,y);
+      doc.setTextColor(40,45,55);doc.text(String(x.n).substring(0,50),M+7,y);
+      doc.setTextColor(GRIS[0],GRIS[1],GRIS[2]);doc.text('mes '+x.mes,W-M,y,{align:'right'});
+      y+=5.5;
+    });
+    y+=4;
+  }
+
+  // compra de cartera
+  if(mig){
+    if(y>235){doc.addPage();y=20;}
+    doc.setTextColor(AZUL[0],AZUL[1],AZUL[2]);doc.setFont('helvetica','bold');doc.setFontSize(11);
+    doc.text('Compra de cartera',M,y);y+=7;
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(40,45,55);
+    var tx='Migrando '+dFmt(mig.monto)+' de '+mig.deudas.length+' deuda(s) a una tasa de '+
+      DEUDA_TASA_OBJ.toFixed(2)+'% mensual ('+mig.tasaObjEA.toFixed(1)+'% E.A.) a '+mig.plazo+' meses: '+
+      'la cuota pasa de '+dFmt(mig.cuotaHoy)+' a '+dFmt(mig.cuotaNueva)+' y el total pagado '+
+      (mig.ahorro>0?('baja '+dFmt(mig.ahorro)+'. SI CONVIENE.'):('sube '+dFmt(-mig.ahorro)+'. NO conviene a ese plazo.'));
+    doc.splitTextToSize(tx,W-M*2).forEach(function(l){doc.text(l,M,y);y+=5;});
+    y+=2;
+    doc.setTextColor(GRIS[0],GRIS[1],GRIS[2]);doc.setFontSize(8);
+    doc.splitTextToSize('Al migrar, guardar las tarjetas. Volver a usarlas convierte la compra de cartera en el doble de deuda.',W-M*2)
+      .forEach(function(l){doc.text(l,M,y);y+=4.5;});
+  }
+
+  // pie
+  var pgs=doc.internal.getNumberOfPages();
+  for(var i=1;i<=pgs;i++){
+    doc.setPage(i);
+    doc.setDrawColor(220,225,232);doc.line(M,283,W-M,283);
+    doc.setTextColor(GRIS[0],GRIS[1],GRIS[2]);doc.setFontSize(7);doc.setFont('helvetica','normal');
+    doc.text('Calculadora de uso personal. No constituye asesoria financiera.',M,288);
+    doc.text(i+' / '+pgs,W-M,288,{align:'right'});
+  }
+  doc.save('Plan-deudas-'+nnHoy()+'.pdf');
+  T('PDF generado','Plan-deudas-'+nnHoy()+'.pdf','📄');
+}
+
+// ── Migración de las deudas viejas ──
+// El formato anterior guardaba {n,total,quota,rate,due} sin id ni
+// fechas. Se les pone id y se asumen tarjeta + tasa mensual, que es
+// lo que el campo &quot;rate&quot; significaba antes.
+function deudaMigrarFormato(){
+  var cambio=false;
+  (DEBTS||[]).forEach(function(d){
+    if(!d.id){d.id='dbt'+Math.random().toString(36).slice(2,9);cambio=true;}
+    if(!d.tipo){d.tipo='tarjeta';cambio=true;}
+    if(!d.rateTipo){d.rateTipo='mv';cambio=true;}
+    if(d.corte===undefined){d.corte=0;cambio=true;}
+    if(d.pago===undefined){
+      // si traía fecha de vencimiento, se saca el día
+      var m=String(d.due||'').match(/^(\d{1,2})/);
+      d.pago=m?+m[1]:0;cambio=true;
+    }
+  });
+  if(cambio){try{nnSave(true);}catch(e){}}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CLAVE DE FINANZAS
+//
+// Bloquea la pestaña de Finanzas (ingresos, egresos, deudas,
+// presupuesto) y tapa las cifras del dashboard hasta que se escriba
+// la clave. Sirve para que alguien que coja la tablet no vea de una
+// los saldos ni las tarjetas.
+//
+// Qué NO es: seguridad de verdad. Son 4 dígitos y la app es un
+// archivo HTML que cualquiera puede abrir con un editor. Protege de
+// una mirada de paso, no de alguien que se siente a buscar. Para
+// eso serviría el bloqueo del propio equipo.
+//
+// La clave se guarda con un hash y viaja entre equipos con la
+// sincronización, así que la cambias una vez y queda igual en el PC
+// y en la tablet.
+// ═══════════════════════════════════════════════════════════════
+
+var FIN_PIN_DEF='0816';      // la primera vez queda esta
+var FIN_OK=false;            // desbloqueado en esta sesión
+var FIN_BUF='';              // lo que se lleva tecleado
+var FIN_MODO='abrir';        // 'abrir' | 'cambiar-vieja' | 'cambiar-nueva' | 'cambiar-rep'
+var FIN_NUEVA='';
+var FIN_DESTINO='';          // sub-pestaña a la que iba
+
+// Hash sencillo: evita que la clave se lea de una en los datos
+// sincronizados. No pretende ser criptografía.
+function finHash(s){
+  s=String(s||'');
+  var h=5381;
+  for(var i=0;i<s.length;i++)h=((h*33)^s.charCodeAt(i))>>>0;
+  return 'h'+h.toString(36);
+}
+// La clave vive en FIN_PIN_H, que se guarda con el resto del estado
+// y viaja con la sincronización. Una sola fuente: si se guardara
+// aparte en este equipo, al cambiarla en el PC la tablet seguiría
+// pidiendo la vieja.
+function finPinGuardado(){
+  return (typeof FIN_PIN_H!=='undefined'&amp;&amp;FIN_PIN_H)?FIN_PIN_H:finHash(FIN_PIN_DEF);
+}
+function finPinSet(pin){
+  FIN_PIN_H=finHash(pin);
+  try{nnSave();}catch(e){}
+}
+function finPinOk(pin){return finHash(pin)===finPinGuardado();}
+
+// ── ¿Hay que pedirla? ──
+function finProtegido(){
+  try{return !!(EMCFG_NN?EMCFG_NN.finLock!==false:true);}catch(e){return true;}
+}
+function finPedir(destino){
+  FIN_DESTINO=destino||'';
+  if(FIN_OK||!finProtegido())return true;
+  FIN_MODO='abrir';FIN_BUF='';
+  finTeclado();
+  return false;
+}
+function finBloquear(){
+  FIN_OK=false;
+  finTapar();
+  try{if(document.getElementById('v-finance').classList.contains('on'))V('dash');}catch(e){}
+  T('Finanzas bloqueado','Pide la clave para volver a entrar','🔒');
+}
+
+// ── Teclado numérico ──
+// Numérico a propósito: en la tablet el teclado de texto tapa media
+// pantalla y en obra se escribe con el dedo.
+function finTeclado(){
+  var d=document.getElementById('mo-pin');
+  if(!d){
+    d=document.createElement('div');d.className='mo';d.id='mo-pin';
+    var teclas='';
+    ['1','2','3','4','5','6','7','8','9','borrar','0','ok'].forEach(function(k){
+      if(k==='borrar')teclas+='<button class=&quot;pin-k&quot; onclick=&quot;finTecla(\'del\')&quot; style=&quot;font-size:15px&quot;>⌫</button>';
+      else if(k==='ok')teclas+='<button class=&quot;pin-k&quot; onclick=&quot;finTecla(\'ok\')&quot; style=&quot;font-size:15px;color:var(--ok)&quot;>✓</button>';
+      else teclas+='<button class=&quot;pin-k&quot; onclick=&quot;finTecla(\''+k+'\')&quot;>'+k+'</button>';
+    });
+    d.innerHTML='<div class=&quot;md&quot; style=&quot;max-width:320px&quot;>'+
+      '<div class=&quot;mdh&quot;><i class=&quot;fa fa-lock&quot; style=&quot;color:var(--warn)&quot;></i>'+
+      '<h3 id=&quot;pin-ttl&quot;>Finanzas protegido</h3>'+
+      '<button class=&quot;xb&quot; onclick=&quot;finCerrar()&quot;><i class=&quot;fa fa-times&quot;></i></button></div>'+
+      '<div class=&quot;mdc&quot; style=&quot;text-align:center;padding:18px 20px 20px&quot;>'+
+        '<div id=&quot;pin-msg&quot; style=&quot;font-size:12px;color:var(--t3);margin-bottom:16px;line-height:1.6&quot;>Escribe tu clave de 4 dígitos</div>'+
+        '<div id=&quot;pin-dots&quot; style=&quot;display:flex;gap:12px;justify-content:center;margin-bottom:20px&quot;></div>'+
+        '<div style=&quot;display:grid;grid-template-columns:repeat(3,1fr);gap:9px;max-width:230px;margin:0 auto&quot;>'+teclas+'</div>'+
+        '<div id=&quot;pin-extra&quot; style=&quot;margin-top:16px&quot;></div>'+
+      '</div></div>';
+    document.body.appendChild(d);
+    var st=document.createElement('style');
+    st.textContent='.pin-k{height:52px;border:1px solid var(--bd);background:var(--bg4);color:var(--t1);'+
+      'border-radius:var(--rs);font-size:19px;font-family:var(--mono);cursor:pointer;transition:var(--tr)}'+
+      '.pin-k:hover{background:var(--bg5);border-color:var(--ac)}'+
+      '.pin-k:active{transform:scale(.94)}'+
+      '.pin-d{width:13px;height:13px;border-radius:50%;border:2px solid var(--bd);transition:var(--tr)}'+
+      '.pin-d.on{background:var(--ac);border-color:var(--ac)}'+
+      '.pin-shake{animation:pinsh .35s}'+
+      '@keyframes pinsh{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}';
+    document.head.appendChild(st);
+    // teclado físico del PC
+    d.addEventListener('keydown',function(e){
+      if(e.key>='0'&amp;&amp;e.key<='9')finTecla(e.key);
+      else if(e.key==='Backspace')finTecla('del');
+      else if(e.key==='Enter')finTecla('ok');
+      else if(e.key==='Escape')finCerrar();
+    });
+  }
+  finPintar();
+  openModal('mo-pin');
+  setTimeout(function(){try{document.getElementById('mo-pin').focus();}catch(e){}},60);
+}
+function finPintar(){
+  var ttl={abrir:'Finanzas protegido','cambiar-vieja':'Cambiar la clave',
+    'cambiar-nueva':'Clave nueva','cambiar-rep':'Confírmala'}[FIN_MODO];
+  var msg={abrir:'Escribe tu clave de 4 dígitos',
+    'cambiar-vieja':'Primero escribe la clave actual',
+    'cambiar-nueva':'Escribe la clave nueva de 4 dígitos',
+    'cambiar-rep':'Vuelve a escribirla para confirmar'}[FIN_MODO];
+  var t=document.getElementById('pin-ttl'); if(t)t.textContent=ttl;
+  var m=document.getElementById('pin-msg'); if(m)m.textContent=msg;
+  var dots=document.getElementById('pin-dots');
+  if(dots)dots.innerHTML=[0,1,2,3].map(function(i){
+    return '<div class=&quot;pin-d'+(i<FIN_BUF.length?' on':'')+'&quot;></div>';}).join('');
+  var ex=document.getElementById('pin-extra');
+  if(ex)ex.innerHTML=(FIN_MODO==='abrir')
+    ?'<button class=&quot;bs&quot; style=&quot;font-size:11px&quot; onclick=&quot;finCambiar()&quot;>Cambiar la clave</button>'
+    :'<button class=&quot;bs&quot; style=&quot;font-size:11px&quot; onclick=&quot;finCancelarCambio()&quot;>Cancelar</button>';
+  var d=document.getElementById('mo-pin');
+  if(d)d.setAttribute('tabindex','-1');
+}
+function finTecla(k){
+  if(k==='del'){FIN_BUF=FIN_BUF.slice(0,-1);finPintar();return;}
+  if(k==='ok'){finValidar();return;}
+  if(FIN_BUF.length>=4)return;
+  FIN_BUF+=k;
+  finPintar();
+  if(FIN_BUF.length===4)setTimeout(finValidar,140);
+}
+function finError(txt){
+  var c=document.querySelector('#mo-pin .md');
+  if(c){c.classList.add('pin-shake');setTimeout(function(){c.classList.remove('pin-shake');},400);}
+  var m=document.getElementById('pin-msg');
+  if(m){m.textContent=txt;m.style.color='var(--danger)';
+    setTimeout(function(){m.style.color='var(--t3)';finPintar();},1600);}
+  FIN_BUF='';
+  var dots=document.getElementById('pin-dots');
+  if(dots)dots.innerHTML=[0,1,2,3].map(function(){return '<div class=&quot;pin-d&quot;></div>';}).join('');
+}
+function finValidar(){
+  if(FIN_BUF.length<4){finError('Faltan dígitos');return;}
+  if(FIN_MODO==='abrir'){
+    if(finPinOk(FIN_BUF)){
+      FIN_OK=true;FIN_BUF='';
+      closeModal('mo-pin');
+      finTapar();
+      V('finance');
+      if(FIN_DESTINO)setFinTab(FIN_DESTINO);
+      FIN_DESTINO='';
+      T('Finanzas abierto','','🔓');
+    }else finError('Clave incorrecta');
+    return;
+  }
+  if(FIN_MODO==='cambiar-vieja'){
+    if(finPinOk(FIN_BUF)){FIN_MODO='cambiar-nueva';FIN_BUF='';finPintar();}
+    else finError('Esa no es la clave actual');
+    return;
+  }
+  if(FIN_MODO==='cambiar-nueva'){
+    FIN_NUEVA=FIN_BUF;FIN_MODO='cambiar-rep';FIN_BUF='';finPintar();return;
+  }
+  if(FIN_MODO==='cambiar-rep'){
+    if(FIN_BUF===FIN_NUEVA){
+      finPinSet(FIN_NUEVA);
+      FIN_NUEVA='';FIN_BUF='';FIN_OK=true;
+      closeModal('mo-pin');finTapar();
+      T('Clave cambiada','Queda igual en el PC y en la tablet','🔑');
+    }else{FIN_MODO='cambiar-nueva';FIN_NUEVA='';finError('No coinciden, empieza de nuevo');}
+  }
+}
+function finCambiar(){FIN_MODO='cambiar-vieja';FIN_BUF='';finPintar();}
+function finCancelarCambio(){FIN_MODO='abrir';FIN_BUF='';FIN_NUEVA='';finPintar();}
+function finCerrar(){
+  closeModal('mo-pin');
+  FIN_BUF='';FIN_MODO='abrir';
+  // si estaba entrando a Finanzas sin clave, se devuelve
+  try{if(!FIN_OK&amp;&amp;document.getElementById('v-finance').classList.contains('on'))V('dash');}catch(e){}
+}
+
+// Arranque del módulo. Va aquí abajo a propósito: si se llamara
+// desde el bloque de INIT (que corre antes), FIN_PIN_DEF todavía no
+// tendría valor y la clave por defecto quedaría siendo la del texto
+// vacío — que fue justo lo que pasó la primera vez.
+function finPinInit(){
+  if(typeof FIN_PIN_H==='undefined'||!FIN_PIN_H)FIN_PIN_H=finHash(FIN_PIN_DEF);
+  finTapar();
+}
+
+// ── Tapar las cifras del dashboard ──
+// Sin esto el candado sería de adorno: los saldos se verían igual
+// en la pantalla de inicio.
+function finTapar(){
+  var tapar=(!FIN_OK&amp;&amp;finProtegido());
+  ['ds-balance','ds-balance-sub','ds-ing-val','ds-egr-val','ds-dbt-val'].forEach(function(id){
+    var e=document.getElementById(id); if(!e)return;
+    e.style.filter=tapar?'blur(7px)':'';
+    e.style.userSelect=tapar?'none':'';
+  });
+  var barras=document.getElementById('dash-bars');
+  if(barras){barras.style.filter=tapar?'blur(6px)':'';}
+  var sec=document.getElementById('dash-fin-sect');
+  if(sec)sec.innerHTML=tapar
+    ?'Finanzas <span style=&quot;color:var(--warn);font-size:10px;cursor:pointer&quot; onclick=&quot;finPedir()&quot;>🔒 tocar para ver</span>'
+    :'Finanzas <span style=&quot;color:var(--t3);font-size:10px;cursor:pointer&quot; onclick=&quot;finBloquear()&quot;>🔓 bloquear</span>';
+}
+
+try{finPinInit();}catch(e){}
 
 // ═══════════════════════════════════════════════════════════════
 // TÉCNICOS Y ASIGNACIÓN
