@@ -4904,6 +4904,7 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
             <h3 style=&quot;font-size:13px;font-weight:600;flex:1&quot;>Notas Técnicas</h3>
             <button class=&quot;bi&quot; onclick=&quot;addNote()&quot;><i class=&quot;fa fa-plus&quot;></i></button>
           </div>
+          <div id=&quot;notes-projbar&quot; style=&quot;display:none;align-items:center;gap:8px;padding:8px 14px;background:var(--bg4);border-bottom:1px solid var(--bd)&quot;></div>
           <div id=&quot;notes-list&quot;></div>
         </div>
         <div style=&quot;display:flex;flex-direction:column&quot;>
@@ -5656,6 +5657,29 @@ function deleteTask(col,taskId){
 function fk(f,btn){kbFilter=f;document.querySelectorAll('#v-kanban .bd2b').forEach(b=>b.classList.remove('on'));if(btn)btn.classList.add('on');renderKB();}
 
 // ══ NOTES ══
+var NOTAS_PROJ='';          // filtro activo de notas por proyecto
+var CANVAS_CONTEO={};       // páginas de Notas &amp; Canvas por proyecto
+
+function notasDeProyecto(id){return (NOTES||[]).filter(function(n){return String(n.projId||'')===String(id);}).length;}
+function abrirNotasProyecto(id){
+  var p=projFind(id); if(!p)return;
+  NOTAS_PROJ=String(id);
+  V('notes');
+  var idx=NOTES.findIndex(function(n){return String(n.projId||'')===NOTAS_PROJ;});
+  if(idx<0){
+    NOTES.unshift({id:Date.now(),title:'Notas — '+p.name,body:'## '+p.name+'\n\n',
+      date:nnCorto(nnHoy()),tags:[],projId:String(id),projName:p.name});
+    curNote=0;nnSave();
+  }else curNote=idx;
+  renderNotes();
+  T('Notas del proyecto',p.name,'📝');
+}
+function notasVerTodas(){NOTAS_PROJ='';renderNotes();}
+function abrirCanvasProyecto(id){
+  var p=projFind(id); if(!p)return;
+  emPost({type:'EM_OPEN_CANVAS',proj:{id:p.id,name:p.name,client:p.client||''}});
+}
+
 function renderNotes(){
   const list=document.getElementById('notes-list'); if(!list)return;
   if(NOTES.length===0){
@@ -5664,11 +5688,34 @@ function renderNotes(){
     document.getElementById('note-body').value='';
     return;
   }
-  list.innerHTML=NOTES.map((n,i)=>`<div style=&quot;padding:12px 14px;border-bottom:1px solid var(--bd);cursor:pointer;transition:var(--tr);${i===curNote?'background:var(--bg5);border-left:3px solid var(--ac);':''}&quot; onclick=&quot;loadNote(${i})&quot;><div style=&quot;display:flex;align-items:flex-start;gap:6px&quot;><div style=&quot;flex:1&quot;><h4 style=&quot;font-size:12px;font-weight:500;margin-bottom:3px&quot;>${n.title}</h4><p style=&quot;font-size:11px;color:var(--t3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical&quot;>${n.body.replace(/#{1,3} /g,'')}</p></div><button onclick=&quot;event.stopPropagation();deleteNote(${i})&quot; style=&quot;background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px;padding:2px;flex-shrink:0&quot; title=&quot;Eliminar nota&quot; onmouseover=&quot;this.style.color='#FF4444'&quot; onmouseout=&quot;this.style.color='var(--t3)'&quot;><i class=&quot;fa fa-trash&quot;></i></button></div><div style=&quot;display:flex;gap:5px;margin-top:5px&quot;>${n.tags.map(t=>`<span class=&quot;tag&quot;>${t}</span>`).join('')}<span style=&quot;font-size:10px;color:var(--t3);margin-left:auto;font-family:var(--mono)&quot;>${n.date}</span></div></div>`).join('');
-  loadNote(Math.min(curNote,NOTES.length-1));
+  // barra del filtro por proyecto
+  const barra=document.getElementById('notes-projbar');
+  if(barra){
+    if(NOTAS_PROJ){
+      const p=projFind(NOTAS_PROJ);
+      barra.style.display='flex';
+      barra.innerHTML='<span style=&quot;flex:1;color:var(--ac3);font-size:11px;overflow:hidden;text-overflow:ellipsis&quot;>📂 '+
+        nnEsc(p?p.name:'Proyecto')+'</span>'+
+        '<span onclick=&quot;notasVerTodas()&quot; style=&quot;cursor:pointer;font-size:10px;color:var(--t3)&quot;>ver todas</span>';
+    }else barra.style.display='none';
+  }
+  const _vis=NOTAS_PROJ?NOTES.filter(n=>String(n.projId||'')===NOTAS_PROJ):NOTES;
+  if(!_vis.length){
+    list.innerHTML='<div style=&quot;text-align:center;padding:30px 16px;color:var(--t3);font-size:12px&quot;>Este proyecto aún no tiene notas.<br><span style=&quot;color:var(--ac);cursor:pointer&quot; onclick=&quot;addNote()&quot;>Crear la primera</span></div>';
+    return;
+  }
+  list.innerHTML=_vis.map(n=>{const i=NOTES.indexOf(n);return `<div style=&quot;padding:12px 14px;border-bottom:1px solid var(--bd);cursor:pointer;transition:var(--tr);${i===curNote?'background:var(--bg5);border-left:3px solid var(--ac);':''}&quot; onclick=&quot;loadNote(${i})&quot;><div style=&quot;display:flex;align-items:flex-start;gap:6px&quot;><div style=&quot;flex:1;min-width:0&quot;><h4 style=&quot;font-size:12px;font-weight:500;margin-bottom:3px&quot;>${nnEsc(n.title||'')}</h4><p style=&quot;font-size:11px;color:var(--t3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical&quot;>${nnEsc(String(n.body||'').replace(/#{1,3} /g,''))}</p></div><button onclick=&quot;event.stopPropagation();deleteNote(${i})&quot; style=&quot;background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px;padding:2px;flex-shrink:0&quot; title=&quot;Eliminar nota&quot; onmouseover=&quot;this.style.color='#FF4444'&quot; onmouseout=&quot;this.style.color='var(--t3)'&quot;><i class=&quot;fa fa-trash&quot;></i></button></div><div style=&quot;display:flex;gap:5px;margin-top:5px;align-items:center&quot;>${(n.tags||[]).map(t=>`<span class=&quot;tag&quot;>${nnEsc(t)}</span>`).join('')}${(!NOTAS_PROJ&amp;&amp;n.projName)?`<span style=&quot;font-size:10px;color:var(--ac3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px&quot;>📂 ${nnEsc(n.projName)}</span>`:''}<span style=&quot;font-size:10px;color:var(--t3);margin-left:auto;font-family:var(--mono)&quot;>${nnEsc(n.date||'')}</span></div></div>`;}).join('');
+  if(_vis.indexOf(NOTES[curNote])<0)curNote=NOTES.indexOf(_vis[0]);
+  loadNote(Math.max(0,Math.min(curNote,NOTES.length-1)));
 }
 function loadNote(i){curNote=i;const n=NOTES[i];document.getElementById('note-title').value=n.title;document.getElementById('note-body').value=n.body;document.getElementById('ns-status').textContent='Guardado ✓';document.getElementById('ns-status').style.color='var(--ok)';}
-function addNote(){NOTES.unshift({id:Date.now(),title:'Nueva nota técnica',body:'## Título\n\nEscribe aquí...',date:new Date().toLocaleDateString('es-CO').slice(0,5),tags:[]});curNote=0;nnSave();renderNotes();T('Nota creada','Lista para editar','📝');}
+function addNote(){
+  const _p=NOTAS_PROJ?projFind(NOTAS_PROJ):null;
+  NOTES.unshift({id:Date.now(),title:_p?('Nota — '+_p.name):'Nueva nota técnica',
+    body:'## Título\n\nEscribe aquí...',date:new Date().toLocaleDateString('es-CO').slice(0,5),tags:[],
+    projId:_p?String(_p.id):'',projName:_p?_p.name:''});
+  curNote=0;nnSave();renderNotes();T('Nota creada',_p?('En '+_p.name):'Lista para editar','📝');
+}
 function saveNote(){if(NOTES[curNote]){NOTES[curNote].title=document.getElementById('note-title').value;NOTES[curNote].body=document.getElementById('note-body').value;nnSave();document.getElementById('ns-status').textContent='Guardado ✓';document.getElementById('ns-status').style.color='var(--ok)';T('Guardado','Nota guardada correctamente','✅');}}
 function deleteNote(i){if(!confirm('¿Eliminar esta nota?'))return;NOTES.splice(i,1);curNote=Math.max(0,Math.min(curNote,NOTES.length-1));nnSave();renderNotes();T('Nota eliminada','','🗑️');}
 function markUns(){document.getElementById('ns-status').textContent='● Sin guardar';document.getElementById('ns-status').style.color='var(--warn)';}
@@ -6727,6 +6774,8 @@ function renderProjects(){
     var dias=p.deadline?Math.round((new Date(p.deadline+'T12:00')-new Date(hoy+'T12:00'))/86400000):null;
     var col=p.status==='Terminado'?'var(--ok)':venc?'var(--danger)':'var(--ac)';
     var st=PLANO_STATS[p.id];
+    var nt=notasDeProyecto(p.id);
+    var nc=CANVAS_CONTEO[p.id]||0;
     return'<div class=&quot;card&quot; style=&quot;border-left:3px solid '+col+'&quot;>'+
       '<div style=&quot;display:flex;align-items:center;gap:8px;margin-bottom:6px&quot;>'+
         '<h4 style=&quot;font-size:13px;font-weight:600;flex:1&quot;>'+nnEsc(p.name)+'</h4>'+
@@ -6744,6 +6793,8 @@ function renderProjects(){
       '<div style=&quot;display:flex;gap:5px;flex-wrap:wrap&quot;>'+
         '<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 8px&quot; onclick=&quot;projAddTask(\''+p.id+'\')&quot;><i class=&quot;fa fa-plus&quot;></i> Tarea</button>'+
         '<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 8px&quot; onclick=&quot;projPlano(\''+p.id+'\')&quot;><i class=&quot;fa fa-map&quot;></i> Plano</button>'+
+        '<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 8px&quot; onclick=&quot;abrirNotasProyecto(\''+p.id+'\')&quot;><i class=&quot;fa fa-file-alt&quot;></i> Notas'+(nt?' ('+nt+')':'')+'</button>'+
+        '<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 8px&quot; onclick=&quot;abrirCanvasProyecto(\''+p.id+'\')&quot;><i class=&quot;fa fa-pen-nib&quot;></i> Canvas'+(nc?' ('+nc+')':'')+'</button>'+
         '<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 8px;color:var(--ac3)&quot; onclick=&quot;lvAbrirProyecto(\''+p.id+'\')&quot;><i class=&quot;fa fa-building&quot;></i> '+(lvPorProyecto(p.id)?'Levantamiento ✓':'Levantamiento')+'</button>'+
         '<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 8px;color:#6264A7&quot; onclick=&quot;projTeams(\''+p.id+'\')&quot;><i class=&quot;fab fa-microsoft&quot;></i> Teams</button>'+
         '<button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 8px;color:var(--danger)&quot; onclick=&quot;projDelete(\''+p.id+'\')&quot;><i class=&quot;fa fa-trash&quot;></i></button>'+
@@ -8873,7 +8924,14 @@ window.addEventListener('message',function(e){
     PLANO_STATS[e.data.projId]={items:e.data.items||0,walls:e.data.walls||0,zones:e.data.zones||0};
     renderProjects();
   }
+  // Notas &amp; Canvas avisa cuántas páginas tiene cada proyecto
+  if(e.data.type==='EM_CANVAS_STATS'){
+    CANVAS_CONTEO=e.data.conteo||{};
+    try{renderProjects();}catch(err){}
+  }
 });
+// al abrir Proyectos se le pide el conteo a Notas &amp; Canvas
+setTimeout(function(){try{emPost({type:'EM_CANVAS_STATS_REQ'});}catch(e){}},2000);
 
 // BRIDGE: recibir eventos de Alertas y mostrar en dashboard
 window.addEventListener('message',function(e){
@@ -9236,6 +9294,13 @@ select.tb{font-family:var(--font);}
 <!-- LAYOUT -->
 <div id=&quot;layout&quot;>
   <div id=&quot;pages-panel&quot;>
+    <div id=&quot;proj-bar&quot; style=&quot;display:none;padding:7px 8px;border-bottom:1px solid var(--bd);font-size:11px;&quot;>
+      <div style=&quot;font-size:9px;font-family:monospace;text-transform:uppercase;letter-spacing:.5px;opacity:.55;margin-bottom:4px&quot;>Proyecto</div>
+      <div style=&quot;display:flex;align-items:center;gap:6px&quot;>
+        <span id=&quot;proj-name&quot; style=&quot;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#00D4FF&quot;></span>
+        <span onclick=&quot;canvasVerTodas()&quot; style=&quot;cursor:pointer;opacity:.6;font-size:10px&quot;>ver todas</span>
+      </div>
+    </div>
     <h3>📄 Páginas</h3>
     <div id=&quot;pages-list&quot;></div>
     <div id=&quot;btn-add-page&quot; onclick=&quot;addPage()&quot;>+ Nueva página</div>
@@ -9309,6 +9374,7 @@ window.addEventListener('load', function(){
   loadData();
   if(pages.length === 0) addPage();
   else switchPage(pages[0].id);
+  setTimeout(canvasStats,600);
   setupCanvas();
   setMode('draw');
   updateDate();
@@ -9342,16 +9408,63 @@ function loadData(){
 // ═══════════════════════════════════════════════════════
 function addPage(){
   var id = 'p'+Date.now();
-  pages.push({ id:id, title:'Página '+(pages.length+1), strokes:[], text:'', checklist:[], created:new Date().toISOString() });
-  saveData(); renderPagesList(); switchPage(id);
+  pages.push({ id:id, title:(CANVAS_PROJ?CANVAS_PROJ.name+' — ':'')+'Página '+(pages.length+1),
+    strokes:[], text:'', checklist:[],
+    projId:CANVAS_PROJ?CANVAS_PROJ.id:'', projName:CANVAS_PROJ?CANVAS_PROJ.name:'',
+    created:new Date().toISOString() });
+  saveData(); renderPagesList(); switchPage(id); canvasStats();
 }
+var CANVAS_PROJ=null;   // {id,name} cuando se abre desde un proyecto
+
+function canvasVerTodas(){
+  CANVAS_PROJ=null;
+  document.getElementById('proj-bar').style.display='none';
+  renderPagesList();
+}
+// El tablero se abre amarrado a un proyecto: se ven solo sus páginas
+// y las nuevas quedan con ese proyecto.
+function canvasAbrirProyecto(proj){
+  if(!proj||!proj.id)return;
+  CANVAS_PROJ={id:String(proj.id),name:proj.name||'Proyecto'};
+  var bar=document.getElementById('proj-bar');
+  bar.style.display='block';
+  document.getElementById('proj-name').textContent=CANVAS_PROJ.name;
+  var suyas=pages.filter(function(p){return String(p.projId||'')===CANVAS_PROJ.id;});
+  if(!suyas.length){
+    var id='p'+Date.now();
+    pages.push({id:id,title:CANVAS_PROJ.name,strokes:[],text:'',checklist:[],
+      projId:CANVAS_PROJ.id,projName:CANVAS_PROJ.name,created:new Date().toISOString()});
+    saveData();switchPage(id);
+    toast('Tablero creado para '+CANVAS_PROJ.name,'ok');
+  }else{
+    switchPage(suyas[0].id);
+  }
+  renderPagesList();canvasStats();
+}
+function canvasStats(){
+  try{
+    var c={};
+    pages.forEach(function(p){ if(p.projId)c[p.projId]=(c[p.projId]||0)+1; });
+    window.parent.postMessage({type:'EM_CANVAS_STATS',conteo:c},'*');
+  }catch(e){}
+}
+window.addEventListener('message',function(e){
+  if(!e.data)return;
+  if(e.data.type==='EM_OPEN_CANVAS'&amp;&amp;e.data.proj)canvasAbrirProyecto(e.data.proj);
+  if(e.data.type==='EM_CANVAS_STATS_REQ')canvasStats();
+});
+
 function renderPagesList(){
   var list = document.getElementById('pages-list');
   list.innerHTML = '';
-  pages.forEach(function(p){
+  var lista = CANVAS_PROJ
+    ? pages.filter(function(p){return String(p.projId||'')===CANVAS_PROJ.id;})
+    : pages;
+  lista.forEach(function(p){
     var el = document.createElement('div');
     el.className = 'page-item' + (p.id===curPageId?' active':'');
-    el.innerHTML = '<span class=&quot;page-name&quot;>'+escHtml(p.title||'Sin título')+'</span>'
+    el.innerHTML = '<span class=&quot;page-name&quot;>'+escHtml(p.title||'Sin título')+
+      (p.projName&amp;&amp;!CANVAS_PROJ?'<br><span style=&quot;font-size:9px;opacity:.55&quot;>📂 '+escHtml(p.projName)+'</span>':'')+'</span>'
       +'<span class=&quot;page-del&quot; onclick=&quot;delPage(event,\''+p.id+'\')&quot;>✕</span>';
     el.onclick = function(e){ if(!e.target.classList.contains('page-del')) switchPage(p.id); };
     list.appendChild(el);
@@ -9380,6 +9493,7 @@ function delPage(e,id){
   e.stopPropagation();
   if(pages.length===1){ toast('Necesitas al menos una página','err'); return; }
   pages = pages.filter(function(p){ return p.id!==id; });
+  canvasStats();
   if(curPageId===id){ curPageId=pages[0].id; switchPage(curPageId); }
   saveData(); renderPagesList();
 }
@@ -11638,6 +11752,28 @@ window.addEventListener("message",function(e){
   if(e.data.type==="EM_PLANO_STATS"){
     var f2s=document.getElementById("f2");
     if(f2s&&f2s.contentWindow)f2s.contentWindow.postMessage(e.data,"*");
+    return;
+  }
+  // ── NeuroNotes abre el lienzo de un proyecto ──
+  if(e.data.type==="EM_OPEN_CANVAS"){
+    sw(3);
+    var f3c=document.getElementById("f3");
+    var enviarC=function(){
+      try{f3c.contentWindow.postMessage({type:"EM_OPEN_CANVAS",proj:e.data.proj},"*");}catch(_){}
+    };
+    enviarC(); setTimeout(enviarC,600);
+    return;
+  }
+  // ── NeuroNotes pide el conteo de páginas por proyecto ──
+  if(e.data.type==="EM_CANVAS_STATS_REQ"){
+    var f3q=document.getElementById("f3");
+    if(f3q&&f3q.contentWindow)f3q.contentWindow.postMessage({type:"EM_CANVAS_STATS_REQ"},"*");
+    return;
+  }
+  // ── Notas & Canvas informa cuántas páginas tiene cada proyecto ──
+  if(e.data.type==="EM_CANVAS_STATS"){
+    var f2c=document.getElementById("f2");
+    if(f2c&&f2c.contentWindow)f2c.contentWindow.postMessage(e.data,"*");
     return;
   }
 
