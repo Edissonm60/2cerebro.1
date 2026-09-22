@@ -5468,10 +5468,25 @@ function moveTask(fromCol,taskId,toCol){
   if(!KB[toCol])KB[toCol]=[];
   KB[toCol].push(task);
   nnSave();  renderKB(); T('Estado cambiado',task.t.substring(0,35)+' → '+toCol,'🔄');
-  // avisa a la agenda y dispara la automatización del proyecto
+  // avisa a la agenda, reporta el cambio y dispara la automatización del proyecto
   try{
     const fin=(toCol==='Completado'||toCol==='Cancelado');
     if(task.date)nnEventDone('nn_task_'+task.id,fin);
+    // ¿el proyecto ya va a reportar esto? (para no mandar dos mensajes)
+    const pr=task.projId?projFind(task.projId):null;
+    const loReportaElProyecto=!!(pr&amp;&amp;pr.auto&amp;&amp;pr.auto.avance&amp;&amp;fin);
+    if(!loReportaElProyecto){
+      const ico=toCol==='Completado'?'✅':toCol==='Cancelado'?'🚫':'🔄';
+      let m=ico+' '+nnB(toCol==='Completado'?'Tarea completada':toCol==='Cancelado'?'Tarea cancelada':'Cambio de estado')+'\n';
+      m+='━━━━━━━━━━━━━━━\n';
+      m+='📌 '+nnB(task.t)+'\n';
+      m+='📋 '+nnEsc(fromCol)+' → '+nnB(toCol)+'\n';
+      if(task.projName||pr)m+='📂 '+nnEsc(task.projName||pr.name)+'\n';
+      if(task.date)m+='📆 '+nnEsc(nnFechaLarga(task.date))+(task.time?' · '+nnEsc(task.time):'')+'\n';
+      if(task.p&amp;&amp;task.p!=='Normal')m+='⚡ '+nnEsc(task.p)+'\n';
+      m+='<i>EM Suite PRO</i>';
+      nnTg(m);
+    }
     projOnTaskMoved(task,fromCol,toCol);
   }catch(e){console.warn('automatización:',e);}
 }
@@ -5525,10 +5540,192 @@ function openTool(id){
     bw:`<h3 style=&quot;font-size:14px;font-weight:600;color:var(--ok);margin-bottom:16px&quot;><i class=&quot;fa fa-wifi&quot; style=&quot;margin-right:7px&quot;></i>Calculadora Ancho de Banda</h3><div style=&quot;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px&quot;><div class=&quot;fg&quot;><label class=&quot;fl&quot;>Cámaras</label><input class=&quot;fi&quot; id=&quot;bc&quot; value=&quot;16&quot; type=&quot;number&quot;></div><div class=&quot;fg&quot;><label class=&quot;fl&quot;>Resolución</label><select class=&quot;fs&quot; id=&quot;br&quot;><option value=&quot;2&quot;>1080p — 4Mbps</option><option value=&quot;4&quot; selected>4MP — 6Mbps</option><option value=&quot;8&quot;>4K — 12Mbps</option></select></div><div class=&quot;fg&quot;><label class=&quot;fl&quot;>Compresión</label><select class=&quot;fs&quot; id=&quot;bcomp&quot;><option value=&quot;1&quot;>H.264</option><option value=&quot;0.6&quot; selected>H.265</option><option value=&quot;0.4&quot;>H.265+</option></select></div></div><button class=&quot;bp&quot; onclick=&quot;calcBW()&quot;>Calcular</button><div id=&quot;tr-b&quot; style=&quot;margin-top:14px&quot;></div>`,
     storage:`<h3 style=&quot;font-size:14px;font-weight:600;color:var(--ac3);margin-bottom:16px&quot;><i class=&quot;fa fa-hdd&quot; style=&quot;margin-right:7px&quot;></i>Almacenamiento NVR</h3><div style=&quot;display:grid;grid-template-columns:1fr 1fr;gap:12px&quot;><div class=&quot;fg&quot;><label class=&quot;fl&quot;>Cámaras</label><input class=&quot;fi&quot; id=&quot;sc&quot; value=&quot;16&quot; type=&quot;number&quot;></div><div class=&quot;fg&quot;><label class=&quot;fl&quot;>Días de retención</label><input class=&quot;fi&quot; id=&quot;sd&quot; value=&quot;30&quot; type=&quot;number&quot;></div><div class=&quot;fg&quot;><label class=&quot;fl&quot;>Bitrate por cámara (Mbps)</label><input class=&quot;fi&quot; id=&quot;sb2&quot; value=&quot;4&quot; type=&quot;number&quot; step=&quot;0.5&quot;></div><div class=&quot;fg&quot;><label class=&quot;fl&quot;>Horas de grabación/día</label><input class=&quot;fi&quot; id=&quot;sh&quot; value=&quot;24&quot; type=&quot;number&quot;></div></div><button class=&quot;bp&quot; onclick=&quot;calcStorage()&quot; style=&quot;margin-top:8px&quot;>Calcular</button><div id=&quot;tr-s&quot; style=&quot;margin-top:14px&quot;></div>`,
     poe:`<h3 style=&quot;font-size:14px;font-weight:600;color:var(--ac2);margin-bottom:16px&quot;><i class=&quot;fa fa-plug&quot; style=&quot;margin-right:7px&quot;></i>Presupuesto PoE</h3><div style=&quot;display:grid;grid-template-columns:1fr 1fr;gap:12px&quot;><div class=&quot;fg&quot;><label class=&quot;fl&quot;>Cámaras PoE</label><input class=&quot;fi&quot; id=&quot;pc&quot; value=&quot;8&quot; type=&quot;number&quot;></div><div class=&quot;fg&quot;><label class=&quot;fl&quot;>Watts por cámara</label><input class=&quot;fi&quot; id=&quot;pw&quot; value=&quot;12&quot; type=&quot;number&quot;></div><div class=&quot;fg&quot;><label class=&quot;fl&quot;>Otros dispositivos (W)</label><input class=&quot;fi&quot; id=&quot;po&quot; value=&quot;0&quot; type=&quot;number&quot;></div><div class=&quot;fg&quot;><label class=&quot;fl&quot;>Overhead switch (%)</label><input class=&quot;fi&quot; id=&quot;pov&quot; value=&quot;20&quot; type=&quot;number&quot;></div></div><button class=&quot;bp&quot; onclick=&quot;calcPoE()&quot; style=&quot;margin-top:8px&quot;>Calcular</button><div id=&quot;tr-p&quot; style=&quot;margin-top:14px&quot;></div>`,
+    lens:`<h3 style=&quot;font-size:14px;font-weight:600;color:var(--warn);margin-bottom:6px&quot;><i class=&quot;fa fa-camera&quot; style=&quot;margin-right:7px&quot;></i>Lente, campo visual y píxeles por metro</h3>
+      <p style=&quot;font-size:11px;color:var(--t3);line-height:1.6;margin-bottom:14px&quot;>Calcula qué abarca la cámara y hasta dónde sirve la imagen, según la norma EN 62676-4 (detectar, reconocer, identificar).</p>
+      <div style=&quot;display:grid;grid-template-columns:1fr 1fr;gap:12px&quot;>
+        <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Lente (mm)</label><input class=&quot;fi&quot; id=&quot;ln-f&quot; value=&quot;4&quot; type=&quot;number&quot; step=&quot;0.1&quot;></div>
+        <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Distancia al objetivo (m)</label><input class=&quot;fi&quot; id=&quot;ln-d&quot; value=&quot;10&quot; type=&quot;number&quot; step=&quot;0.5&quot;></div>
+        <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Sensor</label>
+          <select class=&quot;fs&quot; id=&quot;ln-s&quot;>
+            <option value=&quot;3.2&quot;>1/4&quot;</option>
+            <option value=&quot;4.8&quot;>1/3&quot;</option>
+            <option value=&quot;5.37&quot; selected>1/2.8&quot;</option>
+            <option value=&quot;5.76&quot;>1/2.5&quot;</option>
+            <option value=&quot;6.4&quot;>1/2&quot;</option>
+            <option value=&quot;7.2&quot;>1/1.8&quot;</option>
+          </select></div>
+        <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Resolución</label>
+          <select class=&quot;fs&quot; id=&quot;ln-r&quot;>
+            <option value=&quot;1920&quot;>2 MP — 1920 px</option>
+            <option value=&quot;2560&quot; selected>4 MP — 2560 px</option>
+            <option value=&quot;2880&quot;>5 MP — 2880 px</option>
+            <option value=&quot;3840&quot;>8 MP / 4K — 3840 px</option>
+          </select></div>
+      </div>
+      <button class=&quot;bp&quot; onclick=&quot;calcLens()&quot; style=&quot;margin-top:8px&quot;>Calcular</button>
+      <div id=&quot;tr-l&quot; style=&quot;margin-top:14px&quot;></div>`,
+    checklist:`<h3 style=&quot;font-size:14px;font-weight:600;color:var(--ok);margin-bottom:6px&quot;><i class=&quot;fa fa-clipboard-check&quot; style=&quot;margin-right:7px&quot;></i>Checklist de instalación y entrega</h3>
+      <p style=&quot;font-size:11px;color:var(--t3);line-height:1.6;margin-bottom:14px&quot;>Se guarda solo en la tablet. Al terminar puedes mandar el informe a Telegram o copiar el acta para el cliente.</p>
+      <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Tipo de trabajo</label>
+        <select class=&quot;fs&quot; id=&quot;ck-t&quot; onchange=&quot;renderCheck()&quot;>
+          <option value=&quot;CCTV&quot;>CCTV / Videovigilancia</option>
+          <option value=&quot;Acceso&quot;>Control de acceso</option>
+          <option value=&quot;Alarma&quot;>Alarma / Intrusión</option>
+          <option value=&quot;Red&quot;>Red / Cableado estructurado</option>
+        </select></div>
+      <div id=&quot;ck-body&quot;></div>`,
   };
   panel.innerHTML=H[id]||`<p style=&quot;color:var(--t2);font-size:13px&quot;>Herramienta &quot;${id}&quot; — en construcción.</p>`;
+  if(id==='checklist')setTimeout(renderCheck,30);
   wrap.scrollIntoView({behavior:'smooth'});
 }
+// ── Lente y campo visual ──────────────────────────────────────
+// Niveles de la norma EN 62676-4, en píxeles por metro de escena
+var LENS_NIVELES=[
+  {n:'Inspección / placa',px:1000,c:'#FF4488'},
+  {n:'Identificación',px:250,c:'#00FF88'},
+  {n:'Reconocimiento',px:125,c:'#00D4FF'},
+  {n:'Observación',px:62.5,c:'#FFB800'},
+  {n:'Detección',px:25,c:'#FF6B35'},
+  {n:'Monitoreo',px:12.5,c:'#8899BB'}
+];
+function calcLens(){
+  var f=+document.getElementById('ln-f').value||4;
+  var d=+document.getElementById('ln-d').value||10;
+  var w=+document.getElementById('ln-s').value||5.37;
+  var px=+document.getElementById('ln-r').value||2560;
+  var h=w*9/16;
+  var hfov=2*Math.atan(w/(2*f))*180/Math.PI;
+  var vfov=2*Math.atan(h/(2*f))*180/Math.PI;
+  var anchoEscena=2*d*Math.tan(hfov/2*Math.PI/180);
+  var altoEscena=2*d*Math.tan(vfov/2*Math.PI/180);
+  var densidad=px/anchoEscena;
+  var nivel=LENS_NIVELES.filter(function(n){return densidad>=n.px;})[0];
+  var out=resBox([
+    {v:hfov.toFixed(0)+'°',l:'Ángulo horizontal',c:'var(--warn)'},
+    {v:anchoEscena.toFixed(1)+' m',l:'Ancho de escena a '+d+' m',c:'var(--ac)'},
+    {v:densidad.toFixed(0)+' px/m',l:'Densidad de píxeles',c:'var(--ac3)'},
+    {v:nivel?nivel.n:'Insuficiente',l:'Sirve para',c:nivel?nivel.c:'var(--danger)'}
+  ]);
+  out+='<div style=&quot;font-size:11px;color:var(--t3);margin:12px 0 6px&quot;>Alto de escena: '+altoEscena.toFixed(1)+
+       ' m · Ángulo vertical: '+vfov.toFixed(0)+'° · Sensor '+w+' mm · Lente '+f+' mm</div>';
+  out+='<div style=&quot;font-size:10px;font-family:var(--mono);color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin:10px 0 6px&quot;>Distancia máxima para cada uso</div>';
+  out+='<div style=&quot;background:var(--bg4);border-radius:var(--r);padding:10px 12px&quot;>';
+  LENS_NIVELES.forEach(function(n){
+    var anchoMax=px/n.px;
+    var dMax=anchoMax/(2*Math.tan(hfov/2*Math.PI/180));
+    var ok=d<=dMax;
+    out+='<div style=&quot;display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px;border-bottom:1px solid var(--bd)&quot;>'+
+      '<span style=&quot;width:9px;height:9px;border-radius:50%;background:'+n.c+';flex-shrink:0&quot;></span>'+
+      '<span style=&quot;flex:1;color:var(--t2)&quot;>'+n.n+' <span style=&quot;color:var(--t3);font-size:10px&quot;>('+n.px+' px/m)</span></span>'+
+      '<span style=&quot;font-family:var(--mono);color:'+(ok?'var(--ok)':'var(--t3)')+'&quot;>hasta '+dMax.toFixed(1)+' m</span></div>';
+  });
+  out+='</div>';
+  out+='<div style=&quot;font-size:11px;color:var(--t2);line-height:1.6;margin-top:10px&quot;>'+
+    (nivel&amp;&amp;nivel.px>=125
+      ? '✅ A '+d+' m esta cámara sirve para <b>'+nivel.n.toLowerCase()+'</b>. Es lo que debes prometerle al cliente, ni más ni menos.'
+      : '⚠️ A '+d+' m solo alcanza para <b>'+(nivel?nivel.n.toLowerCase():'nada útil')+'</b>. Para reconocer rostros necesitas acercar la cámara, subir la resolución o usar un lente más largo.')+
+    '</div>';
+  document.getElementById('tr-l').innerHTML=out;
+}
+
+// ── Checklist de instalación y entrega ────────────────────────
+var CHECKS={
+  'CCTV':['Cámaras instaladas en los puntos del plano','Alturas y ángulos verificados en sitio',
+    'Enfoque y encuadre ajustados de día','Visión nocturna verificada de noche','Cableado marquillado en ambos extremos',
+    'Canaleta o tubería fijada y sellada','NVR configurado: IP, fecha, hora y contraseñas',
+    'Grabación continua verificada 24 horas','Días de retención según lo cotizado','Acceso remoto probado en celular y PC',
+    'Usuarios y contraseñas entregados al cliente','Respaldo de configuración descargado',
+    'Capacitación al personal realizada','Acta de entrega firmada'],
+  'Acceso':['Lectores y cerraduras instalados y probados','Botón de salida probado',
+    'Liberación en emergencia probada (corte de energía)','Fuente y batería de respaldo verificadas',
+    'Usuarios enrolados y perfiles asignados','Horarios y grupos configurados',
+    'Anti-passback / puerta abierta configurados','Integración con CCTV verificada',
+    'Respaldo de la base de usuarios','Capacitación y entrega de credenciales','Acta de entrega firmada'],
+  'Alarma':['Panel y teclado instalados y anclados','Zonas programadas y rotuladas',
+    'Prueba de caminata en todos los sensores','Sirena interior y exterior probadas',
+    'Batería de respaldo y autonomía verificadas','Comunicación con la CRA probada',
+    'Códigos de usuario y código de coacción configurados','Prueba de corte de energía',
+    'Prueba de corte de línea / falla de comunicación','Capacitación al usuario','Acta de entrega firmada'],
+  'Red':['Puntos certificados y con resultado impreso','Patch panel y puntos rotulados',
+    'Switch configurado: VLAN, PoE y contraseñas','UPS conectada y autonomía probada',
+    'Puesta a tierra verificada','Rack organizado y cableado peinado',
+    'Prueba de velocidad en cada punto','Diagrama y memoria técnica entregados','Acta de entrega firmada']
+};
+var CK_KEY='nn_checklist_v1';
+function ckLoad(){try{return JSON.parse(localStorage.getItem(CK_KEY)||'{}');}catch(e){return{};}}
+function ckSave(d){try{localStorage.setItem(CK_KEY,JSON.stringify(d));}catch(e){}}
+function renderCheck(){
+  var box=document.getElementById('ck-body'); if(!box)return;
+  var tipo=document.getElementById('ck-t').value;
+  var st=ckLoad(), marcados=st[tipo]||[];
+  var items=CHECKS[tipo]||[];
+  var hechos=items.filter(function(x){return marcados.indexOf(x)>=0;}).length;
+  var pct=items.length?Math.round(hechos*100/items.length):0;
+  var h='<div style=&quot;height:8px;background:var(--bg4);border-radius:4px;overflow:hidden;margin:10px 0 6px&quot;>'+
+    '<div style=&quot;height:100%;width:'+pct+'%;background:'+(pct===100?'var(--ok)':'var(--ac)')+'&quot;></div></div>'+
+    '<div style=&quot;font-size:11px;font-family:var(--mono);color:var(--t3);margin-bottom:12px&quot;>'+hechos+' de '+items.length+' · '+pct+'%'+
+    (pct===100?' — <span style=&quot;color:var(--ok)&quot;>listo para entregar</span>':'')+'</div>';
+  items.forEach(function(it,i){
+    var ok=marcados.indexOf(it)>=0;
+    h+='<label style=&quot;display:flex;align-items:flex-start;gap:10px;padding:8px 10px;margin-bottom:5px;'+
+      'background:'+(ok?'rgba(0,255,136,.06)':'var(--bg3)')+';border:1px solid '+(ok?'rgba(0,255,136,.25)':'var(--bd)')+';'+
+      'border-radius:var(--r);cursor:pointer;font-size:12px;line-height:1.5;color:'+(ok?'var(--t3)':'var(--t1,#E8F0FE)')+';'+
+      (ok?'text-decoration:line-through;':'')+'&quot;>'+
+      '<input type=&quot;checkbox&quot; '+(ok?'checked':'')+' onchange=&quot;ckToggle('+i+')&quot; style=&quot;width:auto;margin-top:2px&quot;>'+
+      '<span>'+nnEsc(it)+'</span></label>';
+  });
+  h+='<div style=&quot;display:flex;gap:8px;margin-top:12px;flex-wrap:wrap&quot;>'+
+    '<button class=&quot;bp&quot; style=&quot;flex:1;min-width:150px&quot; onclick=&quot;ckEnviar()&quot;><i class=&quot;fa fa-paper-plane&quot; style=&quot;margin-right:6px&quot;></i>Enviar informe a Telegram</button>'+
+    '<button class=&quot;bs&quot; style=&quot;flex:1;min-width:130px&quot; onclick=&quot;ckActa()&quot;><i class=&quot;fa fa-copy&quot; style=&quot;margin-right:6px&quot;></i>Copiar acta</button>'+
+    '<button class=&quot;bs&quot; onclick=&quot;ckReset()&quot;>Reiniciar</button></div>';
+  box.innerHTML=h;
+}
+function ckToggle(i){
+  var tipo=document.getElementById('ck-t').value;
+  var st=ckLoad(); st[tipo]=st[tipo]||[];
+  var it=CHECKS[tipo][i];
+  var p=st[tipo].indexOf(it);
+  if(p>=0)st[tipo].splice(p,1); else st[tipo].push(it);
+  ckSave(st); renderCheck();
+}
+function ckReset(){
+  var tipo=document.getElementById('ck-t').value;
+  if(!confirm('¿Desmarcar todo el checklist de '+tipo+'?'))return;
+  var st=ckLoad(); st[tipo]=[]; ckSave(st); renderCheck();
+}
+function ckTexto(){
+  var tipo=document.getElementById('ck-t').value;
+  var st=ckLoad(), marcados=st[tipo]||[], items=CHECKS[tipo]||[];
+  var faltan=items.filter(function(x){return marcados.indexOf(x)<0;});
+  return {tipo:tipo,items:items,marcados:marcados,faltan:faltan};
+}
+function ckEnviar(){
+  var d=ckTexto();
+  var pct=d.items.length?Math.round(d.marcados.length*100/d.items.length):0;
+  var m=(pct===100?'🏁 ':'📋 ')+nnB('Checklist '+d.tipo)+'\n━━━━━━━━━━━━━━━\n';
+  m+='✅ Cumplido: '+nnB(d.marcados.length+' de '+d.items.length+' ('+pct+'%)')+'\n';
+  if(d.faltan.length){
+    m+='\n'+nnB('Pendiente:')+'\n';
+    d.faltan.forEach(function(x){m+='• '+nnEsc(x)+'\n';});
+  }else{
+    m+='\nTodo verificado. Listo para firmar el acta.\n';
+  }
+  m+='🕐 '+nnEsc(new Date().toLocaleString('es-CO'))+'\n<i>EM Suite PRO</i>';
+  nnTg(m);
+  T('Informe enviado','Revisa Telegram','📨');
+}
+function ckActa(){
+  var d=ckTexto();
+  var t='ACTA DE ENTREGA — '+d.tipo+'\n';
+  t+='Fecha: '+new Date().toLocaleDateString('es-CO')+'\n';
+  t+='Responsable: Ing. Edisson Macías Quevedo\n\n';
+  d.items.forEach(function(x){t+=(d.marcados.indexOf(x)>=0?'[X] ':'[ ] ')+x+'\n';});
+  t+='\nObservaciones: ______________________________\n\n';
+  t+='Firma del cliente: __________________   Firma del técnico: __________________\n';
+  intCopy(t,'Acta lista para pegar');
+}
+
 function resBox(items){return `<div style=&quot;display:grid;grid-template-columns:repeat(${items.length},1fr);gap:12px;background:var(--bg4);border-radius:var(--r);padding:16px&quot;>${items.map(i=>`<div style=&quot;text-align:center&quot;><div style=&quot;font-size:22px;font-weight:700;font-family:var(--mono);color:${i.c}&quot;>${i.v}</div><div style=&quot;font-size:10px;color:var(--t3)&quot;>${i.l}</div></div>`).join('')}</div>`;}
 function calcCable(){const V2=+document.getElementById('tv').value,I=+document.getElementById('ti').value,L=+document.getElementById('tl').value,A=+document.getElementById('tawg').value,R=(2*0.0172*L)/A,drop=I*R,pct=(drop/V2)*100,ok=pct<5;document.getElementById('tr-c').innerHTML=resBox([{v:drop.toFixed(2)+'V',l:'Caída tensión',c:'var(--ac)'},{v:pct.toFixed(1)+'%',l:'Porcentaje',c:ok?'var(--ok)':'var(--danger)'},{v:ok?'✓ OK':'✗ ALTO',l:'Estado (máx 5%)',c:ok?'var(--ok)':'var(--danger)'}]);}
 function calcBW(){const c=+document.getElementById('bc').value,r=+document.getElementById('br').value,co=+document.getElementById('bcomp').value,mbps=c*r*co,gb=(mbps*3600*24)/(8*1024);document.getElementById('tr-b').innerHTML=resBox([{v:mbps.toFixed(1)+' Mbps',l:'BW total',c:'var(--ac)'},{v:gb.toFixed(0)+' GB/día',l:'Almacén diario',c:'var(--ok)'},{v:(gb*30/1024).toFixed(1)+' TB/mes',l:'Por mes',c:'var(--ac3)'}]);}
