@@ -4527,9 +4527,9 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
     <div class=&quot;si&quot; onclick=&quot;goFinance('deudas')&quot;><i class=&quot;fa fa-credit-card&quot; style=&quot;color:var(--warn)&quot;></i> Deudas</div>
     <div class=&quot;si&quot; onclick=&quot;goFinance('presupuesto')&quot;><i class=&quot;fa fa-piggy-bank&quot; style=&quot;color:var(--ac)&quot;></i> Presupuesto</div>
     <div class=&quot;sl&quot;>Integraciones</div>
-    <div class=&quot;si&quot;><i class=&quot;fab fa-microsoft&quot; style=&quot;color:#6264A7&quot;></i> Microsoft Teams</div>
-    <div class=&quot;si&quot;><i class=&quot;fab fa-google&quot; style=&quot;color:#4285F4&quot;></i> Google Calendar</div>
-    <div class=&quot;si&quot;><i class=&quot;fab fa-google-drive&quot; style=&quot;color:#FBBC05&quot;></i> Google Drive</div>
+    <div class=&quot;si&quot; onclick=&quot;openIntegra('teams')&quot;><i class=&quot;fab fa-microsoft&quot; style=&quot;color:#6264A7&quot;></i> Microsoft Teams</div>
+    <div class=&quot;si&quot; onclick=&quot;openIntegra('gcal')&quot;><i class=&quot;fab fa-google&quot; style=&quot;color:#4285F4&quot;></i> Google Calendar</div>
+    <div class=&quot;si&quot; onclick=&quot;openIntegra('drive')&quot;><i class=&quot;fab fa-google-drive&quot; style=&quot;color:#FBBC05&quot;></i> Google Drive</div>
   </div>
   <button class=&quot;bna&quot; onclick=&quot;openModal('mo-new')&quot;><i class=&quot;fa fa-plus&quot;></i> Nuevo elemento</button>
 </aside>
@@ -4872,6 +4872,14 @@ Usa Markdown: **negrita**, *cursiva*, `código`&quot; oninput=&quot;markUns()&qu
       <div class=&quot;fg&quot;><label class=&quot;fl&quot;>Descripción</label><textarea class=&quot;ft&quot; id=&quot;new-desc&quot; placeholder=&quot;Detalles...&quot;></textarea></div>
     </div>
     <div class=&quot;mdf&quot;><button class=&quot;bs&quot; onclick=&quot;closeModal('mo-new')&quot;>Cancelar</button><button class=&quot;bp&quot; onclick=&quot;addNew()&quot;><i class=&quot;fa fa-check&quot; style=&quot;margin-right:5px&quot;></i>Crear</button></div>
+  </div>
+</div>
+
+<div class=&quot;mo&quot; id=&quot;mo-integra&quot;>
+  <div class=&quot;md&quot;>
+    <div class=&quot;mdh&quot;><i class=&quot;fa fa-plug&quot; style=&quot;color:var(--ac)&quot;></i><h3 id=&quot;int-ttl&quot;>Integración</h3><button class=&quot;xb&quot; onclick=&quot;closeModal('mo-integra')&quot;><i class=&quot;fa fa-times&quot;></i></button></div>
+    <div class=&quot;mdc&quot; id=&quot;int-body&quot;></div>
+    <div class=&quot;mdf&quot;><button class=&quot;bs&quot; onclick=&quot;closeModal('mo-integra')&quot;>Cerrar</button></div>
   </div>
 </div>
 
@@ -6544,6 +6552,122 @@ function calExportIcs(){
   a.download='neuronotes-agenda.ics'; a.click();
   setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
   T('Calendario exportado','Ábrelo en Outlook, Teams o Google Calendar','📅');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INTEGRACIONES — Teams, Google Calendar y Drive
+// Estos tres ítems del menú no hacían nada. Ahora abren lo que de
+// verdad se puede hacer sin montar un servidor: enlaces directos,
+// suscripción del calendario y respaldo de datos.
+// ═══════════════════════════════════════════════════════════════
+var EMCFG_NN=null;
+emPost({type:'EM_CFG_REQ'});
+window.addEventListener('message',function(e){
+  if(e.data&amp;&amp;e.data.type==='EM_CFG'&amp;&amp;e.data.cfg)EMCFG_NN=e.data.cfg;
+});
+
+function icsUrl(){
+  var g=(EMCFG_NN&amp;&amp;EMCFG_NN.gasUrl)||'';
+  if(!g)return '';
+  return g.replace(/\/+$/,'')+'?feed=ics&amp;k=emsuite';
+}
+function intCopy(txt,msg){
+  if(navigator.clipboard&amp;&amp;navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(function(){T('Copiado',msg||'','📋');},function(){T('No se pudo copiar','Selecciónalo a mano','⚠️');});
+  }else{
+    var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');T('Copiado',msg||'','📋');}catch(e){}
+    document.body.removeChild(ta);
+  }
+}
+// Próxima hora en punto, para la reunión rápida
+function proximaHora(){
+  var d=new Date();d.setMinutes(0,0,0);d.setHours(d.getHours()+1);return d;
+}
+function teamsRapida(){
+  var i=proximaHora(),f=new Date(i.getTime()+3600000);
+  window.open('https://teams.microsoft.com/l/meeting/new?subject='+encodeURIComponent('Reunión — EM Suite PRO')+
+    '&amp;startTime='+encodeURIComponent(i.toISOString())+'&amp;endTime='+encodeURIComponent(f.toISOString()),'_blank');
+}
+function gcalRapida(){
+  var i=proximaHora(),f=new Date(i.getTime()+3600000);
+  function u(d){function p(n){return String(n).padStart(2,'0');}
+    return d.getUTCFullYear()+p(d.getUTCMonth()+1)+p(d.getUTCDate())+'T'+p(d.getUTCHours())+p(d.getUTCMinutes())+'00Z';}
+  window.open('https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text='+
+    encodeURIComponent('Reunión — EM Suite PRO')+'&amp;dates='+u(i)+'/'+u(f),'_blank');
+}
+// Respaldo completo de NeuroNotes para subir a Drive
+function backupNN(){
+  var data={exportado:new Date().toISOString(),app:'EM Suite PRO — NeuroNotes',
+    NOTES:NOTES,KB:KB,MEETS:MEETS,GOALS:GOALS,COURSES:COURSES,TRIPS:TRIPS,
+    TRANSACTIONS:TRANSACTIONS,DEBTS:DEBTS,BUDGET_CATS:BUDGET_CATS,
+    HOME_FIXED:HOME_FIXED,HOME_TASKS:HOME_TASKS,PROJECTS:PROJECTS};
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a.download='neuronotes-respaldo-'+nnHoy()+'.json';
+  a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+  T('Respaldo descargado','Súbelo a tu carpeta de Drive','💾');
+}
+function restoreNN(){
+  var inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=function(e){
+    var f=e.target.files[0];if(!f)return;
+    var r=new FileReader();
+    r.onload=function(ev){
+      try{
+        var d=JSON.parse(ev.target.result);
+        if(!confirm('Esto reemplaza tus datos actuales de NeuroNotes por los del archivo. ¿Continuar?'))return;
+        if(d.NOTES)NOTES=d.NOTES; if(d.KB)KB=d.KB; if(d.MEETS)MEETS=d.MEETS;
+        if(d.GOALS)GOALS=d.GOALS; if(d.COURSES)COURSES=d.COURSES; if(d.TRIPS)TRIPS=d.TRIPS;
+        if(d.TRANSACTIONS)TRANSACTIONS=d.TRANSACTIONS; if(d.DEBTS)DEBTS=d.DEBTS;
+        if(d.BUDGET_CATS)BUDGET_CATS=d.BUDGET_CATS; if(d.HOME_FIXED)HOME_FIXED=d.HOME_FIXED;
+        if(d.HOME_TASKS)HOME_TASKS=d.HOME_TASKS; if(d.PROJECTS)PROJECTS=d.PROJECTS;
+        nnSave();projFillSelect();renderProjects();renderKB();renderDash();
+        closeModal('mo-integra');
+        T('Respaldo restaurado','Datos cargados correctamente','✅');
+      }catch(err){T('Error',err.message,'⚠️');}
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
+function openIntegra(cual){
+  var ics=icsUrl();
+  var nota=ics
+    ? '<div style=&quot;background:var(--bg4);border-radius:var(--r);padding:10px 12px;margin:8px 0&quot;>'+
+      '<div style=&quot;font-size:10px;color:var(--t3);font-family:var(--mono);margin-bottom:5px&quot;>URL DE TU AGENDA</div>'+
+      '<div style=&quot;font-size:11px;color:var(--ok);word-break:break-all;line-height:1.5&quot;>'+nnEsc(ics)+'</div>'+
+      '<button class=&quot;bs&quot; style=&quot;font-size:11px;margin-top:8px&quot; onclick=&quot;intCopy(\''+ics+'\',\'Pégala en tu calendario\')&quot;><i class=&quot;fa fa-copy&quot; style=&quot;margin-right:5px&quot;></i>Copiar URL</button></div>'
+    : '<div style=&quot;background:rgba(255,184,0,.08);border:1px solid rgba(255,184,0,.25);border-radius:var(--r);padding:10px 12px;margin:8px 0;font-size:11px;color:var(--warn);line-height:1.6&quot;>'+
+      'Para la suscripción automática falta instalar el robot 24/7 y pegar su URL en <b>Alertas → ⚙ Configuración</b>. Mientras tanto usa el botón de abajo para exportar el archivo .ics a mano.</div>';
+
+  var H={
+    teams:{t:'Microsoft Teams',c:
+      '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:10px&quot;>Desde aquí creas reuniones de Teams con los datos ya puestos, y dejas tu agenda visible en el calendario de Microsoft.</p>'+
+      '<button class=&quot;bp&quot; style=&quot;width:100%;margin-bottom:8px&quot; onclick=&quot;teamsRapida()&quot;><i class=&quot;fab fa-microsoft&quot; style=&quot;margin-right:6px&quot;></i>Crear reunión ahora en Teams</button>'+
+      '<button class=&quot;bs&quot; style=&quot;width:100%;margin-bottom:8px&quot; onclick=&quot;window.open(\'https://teams.microsoft.com/\',\'_blank\')&quot;>Abrir Microsoft Teams</button>'+
+      '<button class=&quot;bs&quot; style=&quot;width:100%;margin-bottom:8px&quot; onclick=&quot;window.open(\'https://outlook.office.com/calendar/\',\'_blank\')&quot;>Abrir el calendario de Outlook</button>'+
+      nota+
+      '<p style=&quot;font-size:11px;color:var(--t3);line-height:1.6&quot;>En Outlook: <b>Agregar calendario → Suscribirse desde la web</b> y pega la URL. Los eventos aparecen solos y se actualizan.<br>Ojo: el calendario suscrito se ve en Outlook, no dentro de la pestaña Calendario de Teams — Teams solo muestra el calendario principal. Por eso cada evento trae su botón para crear la reunión de verdad.</p>'},
+    gcal:{t:'Google Calendar',c:
+      '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:10px&quot;>Lleva tu agenda a Google Calendar: suscrita (se actualiza sola) o evento por evento.</p>'+
+      '<button class=&quot;bp&quot; style=&quot;width:100%;margin-bottom:8px&quot; onclick=&quot;gcalRapida()&quot;><i class=&quot;fa fa-calendar-plus&quot; style=&quot;margin-right:6px&quot;></i>Crear evento ahora en Google</button>'+
+      '<button class=&quot;bs&quot; style=&quot;width:100%;margin-bottom:8px&quot; onclick=&quot;window.open(\'https://calendar.google.com/\',\'_blank\')&quot;>Abrir Google Calendar</button>'+
+      '<button class=&quot;bs&quot; style=&quot;width:100%;margin-bottom:8px&quot; onclick=&quot;calExportIcs()&quot;><i class=&quot;fa fa-file-export&quot; style=&quot;margin-right:6px&quot;></i>Exportar mi agenda (.ics)</button>'+
+      nota+
+      '<p style=&quot;font-size:11px;color:var(--t3);line-height:1.6&quot;>En Google Calendar: <b>Otros calendarios → + → Desde URL</b> y pega la dirección. Google la refresca cada varias horas; Outlook es más rápido.</p>'},
+    drive:{t:'Google Drive — respaldo',c:
+      '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:10px&quot;>Tus notas, tareas, proyectos y finanzas viven en esta tablet. Descarga el respaldo y súbelo a Drive cada tanto; si cambias de equipo, lo restauras aquí mismo.</p>'+
+      '<button class=&quot;bp&quot; style=&quot;width:100%;margin-bottom:8px&quot; onclick=&quot;backupNN()&quot;><i class=&quot;fa fa-download&quot; style=&quot;margin-right:6px&quot;></i>Descargar respaldo completo (.json)</button>'+
+      '<button class=&quot;bs&quot; style=&quot;width:100%;margin-bottom:8px&quot; onclick=&quot;restoreNN()&quot;><i class=&quot;fa fa-upload&quot; style=&quot;margin-right:6px&quot;></i>Restaurar desde un respaldo</button>'+
+      '<button class=&quot;bs&quot; style=&quot;width:100%;margin-bottom:8px&quot; onclick=&quot;window.open(\'https://drive.google.com/\',\'_blank\')&quot;>Abrir Google Drive</button>'+
+      '<p style=&quot;font-size:11px;color:var(--t3);line-height:1.6&quot;>Los recordatorios y eventos ya están respaldados en Firebase; esto cubre lo demás: notas técnicas, kanban, metas, viajes y finanzas.</p>'}
+  };
+  var h=H[cual]||H.teams;
+  document.getElementById('int-ttl').textContent=h.t;
+  document.getElementById('int-body').innerHTML=h.c;
+  openModal('mo-integra');
 }
 
 // Planos avisa cuántos equipos lleva cada proyecto
@@ -9261,6 +9385,14 @@ window.addEventListener("message",function(e){
   }
   if(e.data.type==="EM_SUITE_EVENT_DONE"&&e.data.id){
     if(typeof window._apDoneEvent==="function")window._apDoneEvent(e.data.id,e.data.done!==false);
+    return;
+  }
+  // ── Un módulo pide la configuración (URL del robot, etc.) ──
+  if(e.data.type==="EM_CFG_REQ"){
+    try{
+      var cfg=(typeof window._apCfg==="function")?window._apCfg():null;
+      if(cfg&&e.source)e.source.postMessage({type:"EM_CFG",cfg:cfg},"*");
+    }catch(_){}
     return;
   }
   // ── Cualquier módulo pide mandar un mensaje a Telegram ──
