@@ -4566,7 +4566,7 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
   <div id=&quot;tb&quot;>
     <div class=&quot;tbb&quot;><i class=&quot;fa fa-home&quot; style=&quot;font-size:11px&quot;></i><i class=&quot;fa fa-chevron-right&quot; style=&quot;font-size:9px&quot;></i><span class=&quot;cur&quot; id=&quot;bc&quot;>Dashboard</span></div>
     <div class=&quot;tba&quot;>
-      <div class=&quot;online&quot;></div>
+      <div class=&quot;online&quot; id=&quot;nn-sync-dot&quot;></div>
       <span style=&quot;font-size:10px;color:var(--t3);cursor:pointer&quot; id=&quot;nn-sync-txt&quot; onclick=&quot;nnSyncAyuda()&quot; title=&quot;Toca para ver el detalle&quot;>Sincronización lista</span>
       <button class=&quot;bi&quot; onclick=&quot;nnSyncAhora()&quot; title=&quot;Sincronizar ahora con los demás equipos&quot;><i class=&quot;fa fa-sync-alt&quot;></i></button>
       <button class=&quot;bi&quot; onclick=&quot;openModal('mo-new')&quot;><i class=&quot;fa fa-plus&quot;></i></button>
@@ -4585,6 +4585,15 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
         <div class=&quot;sc&quot; onclick=&quot;V('goals')&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(255,184,0,.1)&quot;><i class=&quot;fa fa-bullseye&quot; style=&quot;color:var(--warn)&quot;></i></div><div class=&quot;scn&quot; id=&quot;ds-goals&quot;>0</div><div class=&quot;scl&quot;>Metas activas</div><div class=&quot;scc wa&quot; id=&quot;ds-goals-sub&quot;></div></div>
         <div class=&quot;sc&quot; id=&quot;ds-alerts-card&quot;><div class=&quot;sci&quot; style=&quot;background:rgba(255,184,0,.1)&quot;><i class=&quot;fa fa-bell&quot; style=&quot;color:var(--warn)&quot;></i></div><div class=&quot;scn&quot; style=&quot;color:var(--warn)&quot; id=&quot;ds-alerts-count&quot;>0</div><div class=&quot;scl&quot;>Alertas activas</div><div class=&quot;scc wa&quot; id=&quot;ds-alerts-sub&quot;>Sin alertas</div></div>
       </div>
+
+      <!-- ══ AGENDA CON EL ORIGEN DE CADA EVENTO ══ -->
+      <div style=&quot;display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap&quot;>
+        <div class=&quot;sect&quot; style=&quot;margin:0;flex:1&quot;>Agenda de los próximos días</div>
+        <div id=&quot;dash-agenda-leyenda&quot; style=&quot;display:flex;gap:10px;flex-wrap:wrap&quot;></div>
+        <button class=&quot;bs&quot; style=&quot;font-size:10px;padding:5px 9px&quot; onclick=&quot;V('calendar')&quot;>Ver calendario</button>
+      </div>
+      <div id=&quot;dash-agenda&quot; style=&quot;margin-bottom:22px&quot;></div>
+
       <div class=&quot;g2&quot; style=&quot;margin-bottom:22px&quot;>
         <div>
           <div class=&quot;sect&quot; id=&quot;dash-fin-sect&quot;>Finanzas</div>
@@ -5477,6 +5486,7 @@ function renderDash() {
 
   // al repintar el dashboard hay que volver a tapar las cifras
   try{ if(typeof finTapar==='function') finTapar(); }catch(e){}
+  try{ if(typeof renderAgendaDash==='function') renderAgendaDash(6); }catch(e){}
 }
 
 // ══ MEETINGS ══
@@ -6882,7 +6892,7 @@ function calEvents(){
   (MEETS||[]).forEach(function(m){
     var iso=nnParseDate(m.date); if(!iso)return;
     out.push({date:iso,time:m.time||'',title:m.t,type:'meet',src:'Reunión',color:'#0ea5e9',
-      link:m.link||'',project:m.plat||'',notes:m.agenda||'',id:'nn_meet_'+m.id});
+      link:m.link||'',plat:m.plat||'',project:'',notes:m.agenda||'',id:'nn_meet_'+m.id});
   });
   KB_COLS.forEach(function(col){
     (KB[col]||[]).forEach(function(t){
@@ -7033,9 +7043,33 @@ function calExportIcs(){
 // suscripción del calendario y respaldo de datos.
 // ═══════════════════════════════════════════════════════════════
 var EMCFG_NN=null;
-emPost({type:'EM_CFG_REQ'});
+// La configuración (Firebase, Telegram, robot) vive en el shell y llega
+// por mensaje. Antes se pedía UNA sola vez al cargar: si el shell todavía
+// no estaba escuchando, el mensaje se perdía y la app se quedaba en
+// &quot;Sin configurar&quot; aunque la clave sí existiera. Ahora se reintenta
+// hasta que llegue.
+var _cfgIntentos=0;
+function emPedirCfg(){
+  if(EMCFG_NN)return;
+  emPost({type:'EM_CFG_REQ'});
+  if(++_cfgIntentos<12)setTimeout(emPedirCfg,_cfgIntentos<4?300:1500);
+}
+emPedirCfg();
 window.addEventListener('message',function(e){
-  if(e.data&amp;&amp;e.data.type==='EM_CFG'&amp;&amp;e.data.cfg)EMCFG_NN=e.data.cfg;
+  if(!(e.data&amp;&amp;e.data.type==='EM_CFG'&amp;&amp;e.data.cfg))return;
+  var primera=!EMCFG_NN;
+  EMCFG_NN=e.data.cfg;
+  // en cuanto llega la configuración, se intenta sincronizar de una:
+  // así el aviso pasa a verde sin esperar el siguiente ciclo de 60s
+  if(primera){
+    try{
+      if(typeof nnCloudUrl==='function'&amp;&amp;nnCloudUrl()){
+        nnCloudPull(true).then(function(){return nnCloudPush(false);});
+      }else if(typeof nnSyncEstado==='function'){
+        nnSyncEstado('Sin configurar · falta la clave de Firebase');
+      }
+    }catch(_e){}
+  }
 });
 
 function icsUrl(){
@@ -7498,12 +7532,17 @@ var LV_SEC=[
   {k:'obs',l:'Observaciones',t:'area'}
 ]},
 {id:'redes',n:'Redes y comunicaciones',ico:'🌐',campos:[
-  {k:'proveedor',l:'Proveedor de internet',ph:'Claro, ETB, Movistar...'},
-  {k:'bajada',l:'Velocidad de bajada (Mbps)',t:'num'},
-  {k:'subida',l:'Velocidad de subida (Mbps)',t:'num',req:1,
+  // Si el edificio no tiene internet, los campos de velocidad no
+  // aplican: se ocultan en vez de quedar vacíos pidiendo un dato que
+  // no existe. La falta de servicio se evalúa como hallazgo crítico.
+  {k:'hayServicio',l:'¿Cuentan con servicio de internet?',t:'select',o:['Sí','No'],req:1,
+   ay:'Si no tienen, se marca aquí y el informe lo incluye como parte de la inversión.'},
+  {k:'proveedor',l:'Proveedor de internet',ph:'Claro, ETB, Movistar...',dep:['hayServicio','Sí']},
+  {k:'bajada',l:'Velocidad de bajada (Mbps)',t:'num',dep:['hayServicio','Sí']},
+  {k:'subida',l:'Velocidad de subida (Mbps)',t:'num',req:1,dep:['hayServicio','Sí'],
    ay:'El dato más importante: el video viaja del edificio hacia el centro remoto.'},
-  {k:'fibra',l:'¿Fibra óptica?',t:'select',o:LV_SINO},
-  {k:'respaldo',l:'¿Canal de respaldo?',t:'select',o:['No','Sí, otro proveedor','Sí, LTE/4G','En trámite']},
+  {k:'fibra',l:'¿Fibra óptica?',t:'select',o:LV_SINO,dep:['hayServicio','Sí']},
+  {k:'respaldo',l:'¿Canal de respaldo?',t:'select',o:['No','Sí, otro proveedor','Sí, LTE/4G','En trámite'],dep:['hayServicio','Sí']},
   {k:'wifi',l:'Cobertura WiFi en zonas comunes',t:'select',o:['Ninguna','Parcial','Completa']},
   {k:'rack',l:'¿Rack de comunicaciones?',t:'select',o:LV_SINO},
   {k:'estadoRack',l:'Estado del rack',t:'select',o:LV_EST},
@@ -7546,7 +7585,6 @@ var LV_SEC=[
 ]},
 {id:'fotos',n:'Registro fotográfico',ico:'📷',tipo:'fotos'},
 {id:'evaluacion',n:'Evaluación y factibilidad',ico:'📊',tipo:'eval'},
-{id:'presupuesto',n:'Presupuesto preliminar',ico:'💰',tipo:'presupuesto'},
 {id:'comercial',n:'Gestión comercial',ico:'🤝',campos:[
   {k:'consultor',l:'Consultor asignado',req:1},
   {k:'estado',l:'Estado de la oportunidad',t:'select',o:['Prospecto','Diagnóstico entregado','Cotización enviada','Negociación','Ganado','Perdido']},
@@ -7562,43 +7600,6 @@ var LV_SEC=[
 var LV_FOTOS=['Fachada','Recepción','Acceso peatonal','Acceso vehicular','Sótanos','Ascensores',
   'CCTV','Cuarto técnico','Rack','Internet','Planta eléctrica','Equipos existentes'];
 
-// Precios de referencia en pesos (edítalos en la sección de presupuesto)
-var LV_PRECIOS_DEF={
-  esclusa:14000000, torniquete:9500000, puertaSeguridad:3800000,
-  electroiman:850000, cierrapuertas:420000, controlAcceso:2400000,
-  lectorFacial:2900000, camaraIP:680000, camaraLPR:4200000, nvr:2600000,
-  disco:900000, citofoniaIP:1250000, motorVehicular:4800000, talanquera:6500000,
-  ups:2200000, plantaElectrica:18000000, rack:1900000, redPunto:180000,
-  internetRespaldo:180000, obraCivil:2500000, ingenieria:3500000, senalizacion:450000
-};
-var LV_ITEMS={
-  esclusa:'Esclusa de seguridad (suministro e instalación)',
-  torniquete:'Torniquete de control',
-  puertaSeguridad:'Puerta de seguridad sótano',
-  electroiman:'Electroimán 600 lb con fuente',
-  cierrapuertas:'Brazo cierrapuertas',
-  controlAcceso:'Control de acceso por puerta',
-  lectorFacial:'Lector facial / biométrico',
-  camaraIP:'Cámara IP 4 MP',
-  camaraLPR:'Cámara LPR lectura de placas',
-  nvr:'NVR / grabador',
-  disco:'Disco de almacenamiento',
-  citofoniaIP:'Citofonía IP por torre',
-  motorVehicular:'Motor puerta vehicular',
-  talanquera:'Talanquera vehicular',
-  ups:'UPS cuarto técnico',
-  plantaElectrica:'Planta eléctrica con transferencia',
-  rack:'Rack y organización de cuarto técnico',
-  redPunto:'Punto de red certificado',
-  internetRespaldo:'Canal de respaldo (mes)',
-  obraCivil:'Obra civil y adecuaciones',
-  ingenieria:'Ingeniería, configuración y puesta en marcha',
-  senalizacion:'Señalización y avisos'
-};
-
-// ── Estado ──────────────────────────────────────────────────
-var LVS=[];                 // todos los levantamientos (se guardan con nnSave)
-var LV=null;                // el que se está editando
 var LV_VISTA='general';
 
 function lvEsc(x){return String(x==null?'':x).replace(/&amp;/g,'&amp;amp;').replace(/</g,'&amp;lt;').replace(/>/g,'&amp;gt;').replace(/&quot;/g,'&amp;quot;');}
@@ -7648,7 +7649,10 @@ function lvCompleta(s){
   if(s.tipo==='fotos')return LV_FOTOS.some(function(c){return (LV.fotos[c]||[]).length;});
   if(s.tipo)return false;
   if(s.rep){var a=(LV.rep&amp;&amp;LV.rep[s.id])||[];return a.length>0&amp;&amp;Object.keys(a[0]||{}).length>2;}
-  var d=LV[s.id]||{},req=(s.campos||[]).filter(function(c){return c.req;});
+  var d=LV[s.id]||{};
+  // un campo obligatorio que está oculto por dependencia no cuenta:
+  // si el edificio no tiene internet, no se le puede exigir la velocidad
+  var req=(s.campos||[]).filter(function(c){return c.req&amp;&amp;lvAplica(s,c);});
   if(req.length)return req.every(function(c){return String(d[c.k]||'').trim();});
   return Object.keys(d).filter(function(k){return String(d[k]||'').trim();}).length>=Math.ceil((s.campos||[]).length*0.5);
 }
@@ -7658,7 +7662,14 @@ function lvPct(){
 }
 function lvIr(id){LV_VISTA=id;lvRender();var m=document.getElementById('lv-main');if(m)m.scrollTop=0;}
 
+// ¿Este campo aplica? c.dep=['otroCampo','valorQueLoActiva']
+function lvAplica(s,c,idx){
+  if(!c.dep)return true;
+  var d=(idx!==undefined)?((LV.rep&amp;&amp;LV.rep[s.id]&amp;&amp;LV.rep[s.id][idx])||{}):(LV[s.id]||{});
+  return String(d[c.dep[0]]||'')===c.dep[1];
+}
 function lvCampoHTML(s,c,val,idx){
+  if(!lvAplica(s,c,idx))return '';
   var ev=idx!==undefined
     ? &quot;lvSetRep('&quot;+s.id+&quot;',&quot;+idx+&quot;,'&quot;+c.k+&quot;',this.value)&quot;
     : &quot;lvSet('&quot;+s.id+&quot;','&quot;+c.k+&quot;',this.value)&quot;;
@@ -7682,7 +7693,17 @@ function lvCampoHTML(s,c,val,idx){
   if(c.ay)h+='<div style=&quot;font-size:10px;color:var(--t3);margin-top:4px;line-height:1.5&quot;>'+lvEsc(c.ay)+'</div>';
   return h+'</div>';
 }
-function lvSet(sid,k,v){LV[sid]=LV[sid]||{};LV[sid][k]=v;nnSave();lvBarra();}
+function lvSet(sid,k,v){
+  LV[sid]=LV[sid]||{};LV[sid][k]=v;nnSave();lvBarra();
+  // si otros campos dependen de este, hay que repintar para que
+  // aparezcan o desaparezcan
+  if(lvTieneDependientes(sid,k))lvRender();
+}
+function lvTieneDependientes(sid,k){
+  var s=LV_SEC.filter(function(x){return x.id===sid;})[0];
+  if(!s||!s.campos)return false;
+  return s.campos.some(function(c){return c.dep&amp;&amp;c.dep[0]===k;});
+}
 function lvSetRep(sid,i,k,v){LV.rep[sid]=LV.rep[sid]||[];LV.rep[sid][i]=LV.rep[sid][i]||{};LV.rep[sid][i][k]=v;nnSave();lvBarra();}
 function lvChip(sid,k,o){
   LV[sid]=LV[sid]||{};
@@ -7722,7 +7743,6 @@ function lvRender(){
   var cuerpo;
   if(s.tipo==='fotos')cuerpo=lvFotosHTML();
   else if(s.tipo==='eval')cuerpo=lvEvalHTML();
-  else if(s.tipo==='presupuesto')cuerpo=lvPresupuestoHTML();
   else if(s.rep){
     var arr=(LV.rep&amp;&amp;LV.rep[s.id])||[{}];
     cuerpo='<p class=&quot;pgp&quot; style=&quot;margin-bottom:12px&quot;>Un bloque por cada acceso.</p>'+
@@ -7863,13 +7883,25 @@ function lvEvaluar(){
   var razones={pv:[],hib:[],seg:[],riesgo:[]};
 
   // ── Internet: lo que manda en portería virtual ──
-  var sub=lvNum(rd.subida);
-  var ptsNet = sub>=20?20 : sub>=10?14 : sub>=5?8 : sub>0?3 : 0;
-  if(lvSi(rd.fibra))ptsNet+=3;
-  if(String(rd.respaldo||'').indexOf('Sí')===0)ptsNet+=5;
-  ptsNet=Math.min(28,ptsNet);
-  razones.pv.push({t:'Internet de subida '+(sub?sub+' Mbps':'sin dato')+(lvSi(rd.fibra)?' por fibra':''),p:ptsNet,max:28,
-    c:sub>=20?'ok':sub>=10?'warn':'dan'});
+  // &quot;No cuentan con servicio&quot; no es lo mismo que &quot;sin dato&quot;: es un dato
+  // firme, y de los que más pesan, porque sin canal no hay portería
+  // virtual hasta que se contrate uno.
+  var sinNet=String(rd.hayServicio||'')==='No';
+  var sub=sinNet?0:lvNum(rd.subida);
+  var ptsNet, txtNet, colNet;
+  if(sinNet){
+    ptsNet=0;
+    txtNet='El edificio NO cuenta con servicio de internet';
+    colNet='dan';
+  }else{
+    ptsNet = sub>=20?20 : sub>=10?14 : sub>=5?8 : sub>0?3 : 0;
+    if(lvSi(rd.fibra))ptsNet+=3;
+    if(String(rd.respaldo||'').indexOf('Sí')===0)ptsNet+=5;
+    ptsNet=Math.min(28,ptsNet);
+    txtNet='Internet de subida '+(sub?sub+' Mbps':'sin dato')+(lvSi(rd.fibra)?' por fibra':'');
+    colNet=sub>=20?'ok':sub>=10?'warn':'dan';
+  }
+  razones.pv.push({t:txtNet,p:ptsNet,max:28,c:colNet});
 
   // ── Respaldo eléctrico ──
   var ptsEl=0;
@@ -7963,19 +7995,16 @@ function lvEvaluar(){
   }
   riesgo=Math.min(100,riesgo);
 
-  var pres=lvPresupuesto();
-  var inv=pres.total;
-  var nivelInv= inv<30000000?'Bajo' : inv<80000000?'Medio' : 'Alto';
-
+  // El presupuesto preliminar se quitó a propósito: el precio se
+  // cotiza aparte, con proveedores y cantidades reales. Este informe
+  // sustenta la factibilidad técnica, no el valor.
   function color(v){return v>=70?'#00FF88':v>=45?'#FFB800':'#FF4444';}
-  function colorInv(v){return v<30000000?'#00FF88':v<80000000?'#FFB800':'#FF4444';}
   function colorR(v){return v<35?'#00FF88':v<65?'#FFB800':'#FF4444';}
 
   return{
     pv100:pv100, hibrida:hibrida, seguridad:seg, riesgo:riesgo,
-    inversion:inv, nivelInv:nivelInv,
     color100:color(pv100), colorHib:color(hibrida), colorSeg:color(seg),
-    colorRiesgo:colorR(riesgo), colorInv:colorInv(inv),
+    colorRiesgo:colorR(riesgo),
     razones:razones.pv, penalizaciones:penTxt, penTotal:pen,
     recomendacion: pv100>=70?'Portería Virtual 100%'
                   : hibrida>=65?'Portería Virtual Híbrida'
@@ -7991,10 +8020,16 @@ function lvHallazgos(){
       so=LV.sotanos||{}, as=LV.ascensores||{}, vi=LV.visitantes||{}, re=LV.restricciones||{};
   var pea=((LV.rep&amp;&amp;LV.rep.peatonal)||[]).filter(function(a){return a.ubicacion||a.material;});
   var veh=((LV.rep&amp;&amp;LV.rep.vehicular)||[]).filter(function(a){return a.ubicacion||a.material;});
-  var sub=lvNum(rd.subida);
-  if(sub&amp;&amp;sub<10)h.push({n:'alto',t:'Canal de internet insuficiente',d:'Subida de '+sub+' Mbps. Para transmitir el video al centro remoto se requieren al menos 10 Mbps de subida estables, idealmente 20.'});
-  if(!sub)h.push({n:'alto',t:'No se midió la velocidad de internet',d:'Es el dato que decide la viabilidad. Hay que medirlo antes de cotizar.'});
-  if(String(rd.respaldo||'').indexOf('No')===0)h.push({n:'medio',t:'Sin canal de respaldo',d:'Si se cae el proveedor principal, el edificio queda sin portería. Se recomienda un canal LTE de respaldo.'});
+  var sinNet=String(rd.hayServicio||'')==='No';
+  var sub=sinNet?0:lvNum(rd.subida);
+  if(sinNet){
+    h.push({n:'alto',t:'El edificio no cuenta con servicio de internet',
+      d:'Es el requisito de entrada: sin canal no hay portería virtual. Hay que contratar un servicio dedicado con mínimo 20 Mbps de subida antes de cualquier instalación, y contemplarlo dentro de la inversión del proyecto.'});
+  }else{
+    if(sub&amp;&amp;sub<10)h.push({n:'alto',t:'Canal de internet insuficiente',d:'Subida de '+sub+' Mbps. Para transmitir el video al centro remoto se requieren al menos 10 Mbps de subida estables, idealmente 20.'});
+    if(!sub)h.push({n:'alto',t:'No se midió la velocidad de internet',d:'Es el dato que decide la viabilidad. Hay que medirlo antes de cotizar.'});
+    if(String(rd.respaldo||'').indexOf('No')===0)h.push({n:'medio',t:'Sin canal de respaldo',d:'Si se cae el proveedor principal, el edificio queda sin portería. Se recomienda un canal LTE de respaldo.'});
+  }
   if(!lvSi(el.planta))h.push({n:'alto',t:'Sin planta eléctrica',d:'Un corte de energía deja sin acceso y sin cámaras. Mínimo UPS con autonomía para acceso, cámaras y comunicaciones.'});
   else if(!lvSi(el.transferencia))h.push({n:'medio',t:'Planta sin transferencia automática',d:'El arranque manual deja minutos sin servicio y depende de que haya alguien.'});
   if(!lvSi(el.ups))h.push({n:'medio',t:'Sin UPS en cuarto técnico',d:'Los equipos de red y control deben quedar respaldados.'});
@@ -8020,92 +8055,9 @@ function lvHallazgos(){
   return h.sort(function(a,b){return orden[a.n]-orden[b.n];});
 }
 
-// ═══════════════════════════════════════════════════════════════
-// PRESUPUESTO PRELIMINAR
-// Las cantidades salen del levantamiento; los precios se editan.
-// ═══════════════════════════════════════════════════════════════
-function lvCantidades(){
-  var q={}, rd=LV.redes||{}, el=LV.electrico||{}, cc=LV.cctv||{}, es=LV.esclusa||{},
-      so=LV.sotanos||{}, as=LV.ascensores||{}, g=LV.general||{};
-  var pea=((LV.rep&amp;&amp;LV.rep.peatonal)||[]).filter(function(a){return a.ubicacion||a.material;});
-  var veh=((LV.rep&amp;&amp;LV.rep.vehicular)||[]).filter(function(a){return a.ubicacion||a.material;});
-  if(!lvSi(es.existe))q.esclusa=1; else if(!lvSi(es.reutilizable))q.obraCivil=1;
-  if(String(es.tipoSugerido||'').indexOf('orniquete')>0)q.torniquete=1;
-  q.electroiman=pea.filter(function(a){return !lvSi(a.electroiman)||a.estadoEim==='Malo';}).length;
-  q.cierrapuertas=pea.filter(function(a){return !lvSi(a.brazo)||a.estadoBrazo==='Malo';}).length;
-  q.controlAcceso=pea.filter(function(a){return !lvSi(a.control);}).length;
-  q.lectorFacial=pea.length?1:0;
-  var ideal=Math.max(6,(pea.length*2)+(veh.length*2)+2+lvNum(as.cantidad)+lvNum(so.cantidad)*2);
-  q.camaraIP=Math.max(0,ideal-lvNum(cc.total));
-  q.camaraLPR=veh.filter(function(a){return !lvSi(a.lpr);}).length;
-  if(!String(cc.grabMarca||'').trim()||lvNum(cc.grabCanales)<ideal)q.nvr=1;
-  if(lvNum(cc.grabDias)<30)q.disco=1;
-  if(String(as.tipoCitofonia||'')!=='IP')q.citofoniaIP=Math.max(1,lvNum(g.torres));
-  q.motorVehicular=veh.filter(function(a){return String(a.automatizacion||'').indexOf('Ninguna')===0;}).length;
-  if(!lvSi(el.ups))q.ups=1;
-  if(!lvSi(el.planta))q.plantaElectrica=0;   // se cotiza aparte: decisión del cliente
-  if(!lvSi(rd.rack)||rd.estadoRack==='Malo')q.rack=1;
-  q.redPunto=(q.camaraIP||0)+pea.length*2+veh.length;
-  if(lvNum(so.cantidad)>0&amp;&amp;!lvSi(so.control))q.puertaSeguridad=lvNum(so.escaleras)||1;
-  q.senalizacion=1;
-  q.ingenieria=1;
-  if(q.esclusa)q.obraCivil=1;
-  return q;
-}
-function lvPresupuesto(){
-  var q=LV.cant||lvCantidades();
-  var pr=LV.precios||{};
-  var lineas=[],sub=0;
-  Object.keys(LV_ITEMS).forEach(function(k){
-    var cant=(LV.cant&amp;&amp;LV.cant[k]!==undefined)?lvNum(LV.cant[k]):(q[k]||0);
-    if(!cant)return;
-    var precio=pr[k]!==undefined?lvNum(pr[k]):LV_PRECIOS_DEF[k];
-    var tot=cant*precio;
-    sub+=tot;
-    lineas.push({k:k,n:LV_ITEMS[k],cant:cant,precio:precio,total:tot});
-  });
-  var iva=sub*0.19;
-  return {lineas:lineas,subtotal:sub,iva:iva,total:sub+iva};
-}
-function lvSetCant(k,v){LV.cant=LV.cant||lvCantidades();LV.cant[k]=lvNum(v);nnSave();lvRender();}
-function lvSetPrecio(k,v){LV.precios=LV.precios||{};LV.precios[k]=lvNum(v);nnSave();lvRender();}
-function lvResetPresupuesto(){LV.cant=lvCantidades();LV.precios={};nnSave();lvRender();}
+// El presupuesto preliminar se retiró del levantamiento: el precio
+// se cotiza aparte con cantidades y proveedores reales.
 
-function lvPresupuestoHTML(){
-  var p=lvPresupuesto();
-  var h='<p class=&quot;pgp&quot; style=&quot;margin-bottom:12px&quot;>Las cantidades salen de lo que registraste; los precios son de referencia y se pueden editar. Esto es un estimado para la conversación comercial, no una cotización en firme.</p>';
-  h+='<div class=&quot;card&quot; style=&quot;overflow-x:auto&quot;><table class=&quot;lv-tbl&quot;><thead><tr>'+
-     '<th>Ítem</th><th style=&quot;width:80px&quot;>Cant.</th><th style=&quot;width:130px&quot;>Valor unitario</th><th style=&quot;width:120px&quot;>Total</th></tr></thead><tbody>';
-  p.lineas.forEach(function(l){
-    h+='<tr><td>'+lvEsc(l.n)+'</td>'+
-      '<td><input class=&quot;fi&quot; style=&quot;padding:5px 7px;min-height:30px;font-size:12px;text-align:center&quot; type=&quot;number&quot; value=&quot;'+l.cant+'&quot; oninput=&quot;lvSetCant(\''+l.k+'\',this.value)&quot;></td>'+
-      '<td><input class=&quot;fi&quot; style=&quot;padding:5px 7px;min-height:30px;font-size:12px;text-align:right&quot; type=&quot;number&quot; value=&quot;'+l.precio+'&quot; oninput=&quot;lvSetPrecio(\''+l.k+'\',this.value)&quot;></td>'+
-      '<td class=&quot;n&quot;>'+lvCop(l.total)+'</td></tr>';
-  });
-  if(!p.lineas.length)h+='<tr><td colspan=&quot;4&quot; style=&quot;text-align:center;color:var(--t3);padding:20px&quot;>Llena el levantamiento y aquí aparecen las cantidades.</td></tr>';
-  h+='</tbody><tfoot>'+
-    '<tr><td colspan=&quot;3&quot; style=&quot;text-align:right;color:var(--t2)&quot;>Subtotal</td><td class=&quot;n&quot;>'+lvCop(p.subtotal)+'</td></tr>'+
-    '<tr><td colspan=&quot;3&quot; style=&quot;text-align:right;color:var(--t2)&quot;>IVA 19%</td><td class=&quot;n&quot;>'+lvCop(p.iva)+'</td></tr>'+
-    '<tr class=&quot;tot&quot;><td colspan=&quot;3&quot; style=&quot;text-align:right&quot;>TOTAL ESTIMADO</td><td class=&quot;n&quot;>'+lvCop(p.total)+'</td></tr>'+
-    '</tfoot></table></div>';
-  var op=LV.operacion||{};
-  var costoVig=lvNum(op.costo);
-  if(costoVig){
-    var meses=p.total/(costoVig*0.45||1);
-    h+='<div class=&quot;card&quot; style=&quot;border-left:3px solid var(--ok)&quot;>'+
-      '<div style=&quot;font-size:13px;font-weight:600;color:var(--ok);margin-bottom:8px&quot;>Comparativo con la operación actual</div>'+
-      '<div style=&quot;font-size:12px;color:var(--t2);line-height:1.8&quot;>'+
-      'Vigilancia actual: <b>'+lvCop(costoVig)+'/mes</b> · '+lvCop(costoVig*12)+' al año.<br>'+
-      'Si la portería virtual representa un ahorro del 45% mensual ('+lvCop(costoVig*0.45)+'), la inversión se recupera en <b>'+
-      Math.ceil(meses)+' meses</b>.<br>'+
-      '<span style=&quot;font-size:11px;color:var(--t3)&quot;>El porcentaje de ahorro real depende del esquema contratado; este cálculo es orientativo.</span>'+
-      '</div></div>';
-  }
-  h+='<button class=&quot;bs&quot; onclick=&quot;lvResetPresupuesto()&quot;>↻ Recalcular cantidades desde el levantamiento</button>';
-  return h;
-}
-
-// ── Vista de evaluación ─────────────────────────────────────
 function lvEvalHTML(){
   var e=lvEvaluar();
   function kpi(v,l,col,suf){
@@ -8122,8 +8074,7 @@ function lvEvalHTML(){
   h+='<div class=&quot;card&quot; style=&quot;border-left:3px solid '+e.color100+'&quot;>'+
     '<div style=&quot;font-size:10px;font-family:var(--mono);color:var(--t3);text-transform:uppercase;letter-spacing:1px&quot;>Recomendación</div>'+
     '<div style=&quot;font-size:18px;font-weight:700;color:'+e.color100+';margin:6px 0&quot;>'+lvEsc(e.recomendacion)+'</div>'+
-    '<div style=&quot;font-size:12px;color:var(--t2);line-height:1.7&quot;>Inversión estimada: <b>'+lvCop(e.inversion)+'</b> ('+e.nivelInv+')'+
-    (e.penalizaciones.length?'<br>Factores en contra: '+lvEsc(e.penalizaciones.join(', ')):'')+'</div></div>';
+    (e.penalizaciones.length?'<div style=&quot;font-size:12px;color:var(--t2);line-height:1.7&quot;>Factores en contra: '+lvEsc(e.penalizaciones.join(', '))+'</div>':'')+'</div>';
 
   h+='<div class=&quot;sect&quot;>Cómo se calculó la factibilidad</div><div class=&quot;card&quot;>';
   e.razones.forEach(function(r){
@@ -8158,7 +8109,7 @@ function lvPDF(){
   var jsPDF=window.jspdf.jsPDF;
   var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
   var W=210,H=297,M=15,y=0,pag=0;   // la portada no cuenta
-  var g=LV.general||{}, e=lvEvaluar(), pres=lvPresupuesto();
+  var g=LV.general||{}, e=lvEvaluar();
   // Paleta corporativa: azul profundo, cian de acento y apoyos legibles en papel
   var AZ=[0,150,214], CIAN=[0,196,255], OSC=[11,26,45], TINTA=[24,38,58],
       GRIS=[108,124,148], SUAVE=[238,244,250], BORDE=[206,218,232],
@@ -8296,7 +8247,7 @@ function lvPDF(){
     'operación actual y restricciones de implementación.');
   parrafo('Resultado: '+e.recomendacion+'. La copropiedad obtiene '+e.pv100+' sobre 100 en factibilidad de portería virtual 100% y '+
     e.hibrida+' sobre 100 en modalidad híbrida. El nivel de seguridad actual se califica en '+e.seguridad+' sobre 100, '+
-    'con un riesgo de implementación de '+e.riesgo+' sobre 100 y una inversión preliminar estimada de '+lvCop(e.inversion)+' ('+e.nivelInv.toLowerCase()+').');
+    'con un riesgo de implementación de '+e.riesgo+' sobre 100.');
   if(pf.problemas)parrafo('Problemática reportada por la administración: '+pf.problemas);
 
   titulo('3. Sustento de la calificación');
@@ -8320,8 +8271,10 @@ function lvPDF(){
   var cc=LV.cctv||{},rd=LV.redes||{},el=LV.electrico||{},as=LV.ascensores||{},es=LV.esclusa||{},so=LV.sotanos||{},op=LV.operacion||{};
   filaDato('CCTV',(cc.total||0)+' cámaras · '+(cc.tecnologia||'sin dato')+' · '+(cc.resolucion||'')+
     ' · grabador '+(cc.grabMarca||'no registrado')+' · '+(cc.grabDias||0)+' días');
-  filaDato('Internet',(rd.proveedor||'sin dato')+' · '+(rd.bajada||0)+'/'+(rd.subida||0)+' Mbps'+(lvSi(rd.fibra)?' · fibra':'')+
-    ' · respaldo: '+(rd.respaldo||'no'));
+  filaDato('Internet', String(rd.hayServicio||'')==='No'
+    ? 'NO cuentan con servicio de internet'
+    : (rd.proveedor||'sin dato')+' · '+(rd.bajada||0)+'/'+(rd.subida||0)+' Mbps'+(lvSi(rd.fibra)?' · fibra':'')+
+      ' · respaldo: '+(rd.respaldo||'no'));
   filaDato('Eléctrico',(lvSi(el.planta)?'Planta '+(el.cobertura||''):'Sin planta')+(lvSi(el.ups)?' · UPS '+(el.autonomia||'?')+' min':' · sin UPS')+
     (lvSi(el.transferencia)?' · transferencia automática':''));
   filaDato('Esclusa',lvSi(es.existe)?('Existente · '+(es.material||'')+' · '+(es.estado||'')+(lvSi(es.reutilizable)?' · reutilizable':' · no reutilizable')):'No existe');
@@ -8362,7 +8315,8 @@ function lvPDF(){
   if(e.pv100>=70)recs.push('Implementar portería virtual 100%: la infraestructura soporta la operación remota con las adecuaciones listadas.');
   else if(e.hibrida>=65)recs.push('Implementar portería virtual híbrida: un conserje presencial en horario diurno y centro remoto 24/7, migrando a 100% cuando se ejecuten las adecuaciones.');
   else recs.push('Ejecutar primero la modernización tecnológica (accesos, CCTV y comunicaciones) y reevaluar la migración a portería virtual en una segunda fase.');
-  if(lvNum(rd.subida)<10)recs.push('Contratar un canal dedicado con mínimo 20 Mbps de subida y un canal de respaldo LTE.');
+  if(String(rd.hayServicio||'')==='No')recs.push('Contratar el servicio de internet: canal dedicado de mínimo 20 Mbps de subida, mas un respaldo LTE. Es el primer paso, sin eso no arranca el proyecto.');
+  else if(lvNum(rd.subida)<10)recs.push('Contratar un canal dedicado con mínimo 20 Mbps de subida y un canal de respaldo LTE.');
   if(!lvSi(es.existe))recs.push('Construir esclusa de seguridad en el acceso peatonal principal: es el control que impide el ingreso detrás de un residente.');
   if(!lvSi(el.planta))recs.push('Garantizar respaldo eléctrico para accesos, cámaras y comunicaciones, con transferencia automática.');
   if(!lvSi(cc.grabUsuario))recs.push('Habilitar usuario de acceso remoto al grabador para el centro de monitoreo.');
@@ -8380,46 +8334,11 @@ function lvPDF(){
     y+=2.5;
   });
 
-  // ── PRESUPUESTO ──
-  titulo('7. Presupuesto preliminar');
-  parrafo('Valores de referencia para dimensionar la inversión. No constituyen cotización en firme; requieren visita de ingeniería de detalle.',8.5);
-  salto(12);
-  doc.setFillColor(AZ[0],AZ[1],AZ[2]);doc.roundedRect(M,y-4.5,W-2*M,8,1.5,1.5,'F');
-  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(8);
-  doc.text('ÍTEM',M+2,y);doc.text('CANT',W-M-56,y,{align:'right'});
-  doc.text('UNITARIO',W-M-30,y,{align:'right'});doc.text('TOTAL',W-M-2,y,{align:'right'});
-  y+=7;
-  pres.lineas.forEach(function(l,i){
-    salto(7);
-    if(i%2)doc.setFillColor(SUAVE[0],SUAVE[1],SUAVE[2]),doc.rect(M,y-4,W-2*M,6,'F');
-    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(56,70,92);
-    doc.text(doc.splitTextToSize(l.n,W-2*M-62)[0],M+2,y);
-    doc.text(String(l.cant),W-M-56,y,{align:'right'});
-    doc.text(lvCop(l.precio),W-M-30,y,{align:'right'});
-    doc.setFont('helvetica','bold');doc.text(lvCop(l.total),W-M-2,y,{align:'right'});
-    y+=6;
-  });
-  y+=2;salto(20);
-  doc.setDrawColor(200,208,220);doc.line(W-M-70,y-3,W-M,y-3);
-  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(80,95,120);
-  doc.text('Subtotal',W-M-40,y,{align:'right'});doc.text(lvCop(pres.subtotal),W-M-2,y,{align:'right'});y+=5.5;
-  doc.text('IVA 19%',W-M-40,y,{align:'right'});doc.text(lvCop(pres.iva),W-M-2,y,{align:'right'});y+=7;
-  doc.setFillColor(OSC[0],OSC[1],OSC[2]);doc.roundedRect(W-M-72,y-5.5,72,10,1.5,1.5,'F');
-  doc.setFillColor(CIAN[0],CIAN[1],CIAN[2]);doc.rect(W-M-72,y-5.5,2.4,10,'F');
-  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(10);
-  doc.text('TOTAL',W-M-66,y);doc.text(lvCop(pres.total),W-M-2,y,{align:'right'});
-  y+=12;
-  if(lvNum(op.costo)){
-    parrafo('La vigilancia actual cuesta '+lvCop(lvNum(op.costo))+' mensuales ('+lvCop(lvNum(op.costo)*12)+' al año). '+
-      'Con un ahorro estimado del 45%, la inversión se recupera en aproximadamente '+
-      Math.ceil(pres.total/(lvNum(op.costo)*0.45))+' meses.');
-  }
-
   // ── FOTOS ──
   var cats=LV_FOTOS.filter(function(c){return (LV.fotos[c]||[]).length;});
   if(cats.length){
     pie();doc.addPage();encabezado(g.nombre||'Levantamiento');
-    titulo('8. Registro fotográfico');
+    titulo('7. Registro fotográfico');
     var col=0,fw=(W-2*M-6)/2,fh=fw*0.72;
     cats.forEach(function(cat){
       salto(10);
@@ -8441,11 +8360,11 @@ function lvPDF(){
 
   // ── CONCLUSIONES ──
   salto(60);
-  titulo('9. Conclusiones');
+  titulo('8. Conclusiones');
   parrafo(e.recomendacion+'. '+
-    (e.pv100>=70?'La copropiedad está en condiciones de operar con portería virtual 100% una vez ejecutadas las adecuaciones descritas, con una inversión estimada de '+lvCop(e.inversion)+'.'
-     :e.hibrida>=65?'Se recomienda iniciar en modalidad híbrida y migrar a 100% una vez se ejecuten las adecuaciones críticas, con una inversión estimada de '+lvCop(e.inversion)+'.'
-     :'Antes de migrar a portería virtual se requiere modernizar la infraestructura descrita, con una inversión estimada de '+lvCop(e.inversion)+'.'));
+    (e.pv100>=70?'La copropiedad está en condiciones de operar con portería virtual 100% una vez ejecutadas las adecuaciones descritas.'
+     :e.hibrida>=65?'Se recomienda iniciar en modalidad híbrida y migrar a 100% una vez se ejecuten las adecuaciones críticas.'
+     :'Antes de migrar a portería virtual se requiere modernizar la infraestructura descrita.'));
   var altos=e.hallazgos.filter(function(x){return x.n==='alto';}).length;
   parrafo('Se identificaron '+e.hallazgos.length+' hallazgos, de los cuales '+altos+' son críticos y deben resolverse antes de la puesta en marcha. '+
     'El riesgo de implementación se califica en '+e.riesgo+' sobre 100'+(e.penalizaciones.length?', principalmente por '+e.penalizaciones.join(', '):'')+'.');
@@ -8502,7 +8421,7 @@ function lvImportarJSON(){
 // Manda el resumen por correo (vía el robot) y por Telegram
 function lvEnviar(){
   if(!LV)return;
-  var e=lvEvaluar(),g=LV.general||{},pres=lvPresupuesto();
+  var e=lvEvaluar(),g=LV.general||{};
   var m='🏢 '+nnB('Levantamiento — Portería Virtual')+'\n━━━━━━━━━━━━━━━\n';
   m+='📌 '+nnB(g.nombre||'Edificio')+'\n';
   if(g.direccion)m+='📍 '+nnEsc(g.direccion)+(g.ciudad?', '+nnEsc(g.ciudad):'')+'\n';
@@ -8513,7 +8432,7 @@ function lvEnviar(){
   m+='• Seguridad actual: '+e.seguridad+'/100\n';
   m+='• Riesgo: '+e.riesgo+'/100\n';
   m+='\n✅ '+nnB(e.recomendacion)+'\n';
-  m+='💰 Inversión estimada: '+nnB(lvCop(pres.total))+' ('+e.nivelInv+')\n';
+
   var altos=e.hallazgos.filter(function(x){return x.n==='alto';});
   if(altos.length){
     m+='\n🚨 '+nnB('Críticos ('+altos.length+')')+'\n';
@@ -8533,9 +8452,9 @@ function lvEnviar(){
       direccion:[g.direccion,g.ciudad].filter(Boolean).join(', '),
       proyecto:'Levantamiento portería virtual',tipoTrabajo:'Estudio de factibilidad',
       estado:e.recomendacion,horaIni:'',horaFin:'',
-      materiales:pres.lineas.map(function(l){return l.cant+' × '+l.n;}).join('; '),
+
       observaciones:'Factibilidad PV 100%: '+e.pv100+'/100 · Híbrida: '+e.hibrida+'/100 · Seguridad actual: '+
-        e.seguridad+'/100 · Riesgo: '+e.riesgo+'/100 · Inversión estimada: '+lvCop(pres.total),
+        e.seguridad+'/100 · Riesgo: '+e.riesgo+'/100',
       pendientes:e.hallazgos.filter(function(x){return x.n==='alto';}).map(function(x){return x.t;}).join('; '),
       checklist:e.razones.map(function(r){return{n:r.t+' ('+r.p+'/'+r.max+')',ok:r.c==='ok'};}),
       fotos:fotos,firma:null,correos:(EMCFG_NN&amp;&amp;EMCFG_NN.correos)||[]};
@@ -8565,7 +8484,7 @@ function lvCrearProyecto(){
   var hoy=new Date(),fin=new Date(Date.now()+45*86400000);
   var p={id:'p'+Date.now(),name:g.nombre||'Portería virtual',client:g.administracion||g.contacto||'',
     type:'Integral',start:nnHoy(),deadline:nnISO(fin),
-    notes:'Portería virtual · '+e.recomendacion+' · Inversión estimada '+lvCop(e.inversion),
+    notes:'Portería virtual · '+e.recomendacion,
     status:'Activo',auto:{fases:true,avance:true},created:nnHoy()};
   PROJECTS.unshift(p);
   LV.projId=p.id;
@@ -8589,7 +8508,7 @@ function lvCrearProyecto(){
   var m='📂 '+nnB('Proyecto creado desde el levantamiento')+'\n━━━━━━━━━━━━━━━\n';
   m+='📌 '+nnB(p.name)+'\n';
   if(p.client)m+='👤 '+nnEsc(p.client)+'\n';
-  m+='✅ '+nnEsc(e.recomendacion)+'\n💰 '+nnEsc(lvCop(e.inversion))+'\n';
+  m+='✅ '+nnEsc(e.recomendacion)+'\n';
   m+='📆 Entrega estimada: '+nnEsc(nnFechaLarga(p.deadline))+'\n';
   m+='🗂 '+creadas.length+' fases agendadas\n<i>EM Suite PRO</i>';
   nnTg(m);
@@ -8715,12 +8634,24 @@ function nnSyncEstado(txt,color){
   if(color==='var(--ok)')NN_SYNC_ERR='';
   var e=document.getElementById('nn-sync-txt');
   if(e){e.textContent=txt;e.style.color=color||'var(--t3)';}
+  // El punto sigue al mensaje. Antes era verde fijo por CSS, así que
+  // podía verse un punto verde al lado de &quot;Sin configurar&quot;.
+  var d=document.getElementById('nn-sync-dot');
+  if(d){
+    d.style.background=color||'var(--t3)';
+    d.style.animation=(color==='var(--ok)')?'pu 2s infinite':'none';
+  }
 }
 
 // ── Traer de la nube ──
 function nnCloudPull(silencioso){
   var url=nnCloudUrl();
-  if(!url){nnSyncEstado('Sin configurar');return Promise.resolve(false);}
+  if(!url){
+    // Todavía no llegó la configuración del shell, o no hay clave de Firebase
+    NN_SYNC_ERR=EMCFG_NN?'sinclave':'';
+    nnSyncEstado(EMCFG_NN?'Sin configurar · toca aquí':'Esperando configuración…');
+    return Promise.resolve(false);
+  }
   nnSyncEstado('Sincronizando…','var(--warn)');
   return fetch(url)
     .then(function(r){
@@ -8798,6 +8729,17 @@ function nnSyncAyuda(){
       '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7;margin-top:8px&quot;>Sácala de '+
       '<b>console.firebase.google.com</b> → ⚙ <b>Configuración del proyecto</b> → <b>General</b> → '+
       'sección <i>Tus apps</i> → campo <b>apiKey</b>. Luego pégala en la pestaña 🔔 Alertas → ⚙ Configuración.</p>';
+  }else if(NN_SYNC_ERR==='sinclave'){
+    cuerpo='<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7&quot;>La app no tiene la <b>API key de Firebase</b>, '+
+      'así que no puede guardar en la nube. Todo se está guardando en este equipo, pero <b>no viaja a la tablet</b>.</p>'+
+      '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7;margin-top:8px&quot;><b>Cómo se arregla:</b></p>'+
+      '<ol style=&quot;font-size:12px;color:var(--t2);line-height:1.9;padding-left:18px&quot;>'+
+      '<li>Ve a la pestaña <b>🔔 Alertas &amp;amp; Recordatorios</b></li>'+
+      '<li>Botón <b>⚙ Configuración</b> (arriba a la derecha)</li>'+
+      '<li>Llena <b>Proyecto Firebase</b> ('+nnEsc(proj)+') y <b>API key de Firebase</b></li>'+
+      '<li><b>💾 Guardar configuración</b></li></ol>'+
+      '<p style=&quot;font-size:11px;color:var(--t3);line-height:1.6;margin-top:8px&quot;>La API key sale en '+
+      '<b>console.firebase.google.com</b> → ⚙ Configuración del proyecto → General → sección <i>Tus apps</i> → campo <b>apiKey</b>.</p>';
   }else{
     cuerpo='<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7&quot;>No hay salida a internet en este momento. '+
       '<b>No se perdió nada</b>: todo quedó guardado en este equipo y sube solo en cuanto vuelva la señal.</p>'+
@@ -8805,7 +8747,8 @@ function nnSyncAyuda(){
       'puedes seguir trabajando normal. Lo único que no viaja al otro equipo hasta que haya señal son los '+
       'cambios nuevos.</p>';
   }
-  var t={permiso:'🔒 Falta un permiso en Firebase',clave:'🔑 API key inválida',red:'📴 Sin señal'}[NN_SYNC_ERR];
+  var t={permiso:'🔒 Falta un permiso en Firebase',clave:'🔑 API key inválida',
+    sinclave:'⚙️ Falta configurar Firebase',red:'📴 Sin señal'}[NN_SYNC_ERR];
   nnModalInfo(t,cuerpo);
 }
 function nnModalInfo(titulo,html){
@@ -8871,9 +8814,13 @@ function nnSyncProgramar(){
 
 // Arranque: primero traer, luego subir lo que haya de este equipo
 function nnSyncInit(){
-  setTimeout(function(){
+  // Esperar a que el shell mande la configuración antes del primer
+  // intento: si no, el primer ciclo siempre decía &quot;Sin configurar&quot;.
+  var esperas=0;
+  (function arrancar(){
+    if(!nnCloudUrl()&amp;&amp;esperas++<20){setTimeout(arrancar,400);return;}
     nnCloudPull(true).then(function(){nnCloudPush(false);});
-  },1500);
+  })();
   setInterval(function(){if(!document.hidden)nnCloudPull(true);},60000);
   document.addEventListener('visibilitychange',function(){if(!document.hidden)nnCloudPull(true);});
 }
@@ -9845,6 +9792,148 @@ function finTapar(){
 try{finPinInit();}catch(e){}
 
 // ═══════════════════════════════════════════════════════════════
+// AGENDA DEL DASHBOARD
+//
+// Muestra los próximos días con lo que hay agendado y, en cada
+// renglón, a qué agenda pertenece: Teams, Google, Outlook, Zoom,
+// presencial o la propia de la app.
+//
+// Importante y honesto: esto NO lee el calendario de Teams ni el de
+// Google. La app no tiene sesión con Microsoft ni con Google, así
+// que no puede traer de allá lo que se agendó por fuera. Lo que
+// muestra es lo agendado AQUÍ, marcado con la agenda a la que
+// pertenece cada evento, que es lo que permite saber de un vistazo
+// dónde va a sonar la alarma. Para que también aparezcan en Outlook
+// y Teams está la suscripción al calendario (.ics) del robot.
+// ═══════════════════════════════════════════════════════════════
+
+var AGENDAS={
+  teams:     {n:'Teams',     ico:'fab fa-microsoft',      c:'#6264A7'},
+  google:    {n:'Google',    ico:'fab fa-google',         c:'#4285F4'},
+  outlook:   {n:'Outlook',   ico:'fa fa-envelope',        c:'#0078D4'},
+  zoom:      {n:'Zoom',      ico:'fa fa-video',           c:'#2D8CFF'},
+  presencial:{n:'Presencial',ico:'fa fa-map-marker-alt',  c:'#00FF88'},
+  llamada:   {n:'Llamada',   ico:'fa fa-phone',           c:'#FFB800'},
+  em:        {n:'EM Suite',  ico:'fa fa-bolt',            c:'#00D4FF'}
+};
+
+// De dónde sale el origen: primero el enlace (es el dato duro),
+// después la plataforma que se eligió al crear la reunión.
+function agendaDe(ev){
+  var l=String(ev.link||'').toLowerCase();
+  if(/teams\.microsoft|teams\.live/.test(l))       return 'teams';
+  if(/meet\.google|calendar\.google/.test(l))      return 'google';
+  if(/outlook\.(office|live)|office\.com/.test(l)) return 'outlook';
+  if(/zoom\.us/.test(l))                           return 'zoom';
+  var p=String(ev.plat||'').toLowerCase().replace(/\s/g,'');
+  if(p){
+    if(p.indexOf('teams')>=0)                      return 'teams';
+    if(p.indexOf('meet')>=0||p.indexOf('google')>=0)return 'google';
+    if(p.indexOf('zoom')>=0)                       return 'zoom';
+    if(p.indexOf('outlook')>=0)                    return 'outlook';
+    if(p.indexOf('presencial')>=0)                 return 'presencial';
+    if(p.indexOf('llamada')>=0)                    return 'llamada';
+  }
+  if(ev.type==='call')                             return 'llamada';
+  return 'em';
+}
+
+function agendaChip(k,mini){
+  var a=AGENDAS[k]||AGENDAS.em;
+  return '<span title=&quot;'+a.n+'&quot; style=&quot;display:inline-flex;align-items:center;gap:4px;'+
+    'padding:'+(mini?'2px 6px':'3px 8px')+';border-radius:20px;font-size:'+(mini?'9px':'10px')+';'+
+    'background:'+a.c+'1f;color:'+a.c+';border:1px solid '+a.c+'44;white-space:nowrap&quot;>'+
+    '<i class=&quot;'+a.ico+'&quot; style=&quot;font-size:'+(mini?'8px':'9px')+'&quot;></i>'+a.n+'</span>';
+}
+
+// Los próximos N días, con lo vencido arriba porque es lo que urge
+function renderAgendaDash(dias){
+  var box=document.getElementById('dash-agenda'); if(!box)return;
+  dias=dias||6;
+  var evs=[];
+  try{evs=calEvents()||[];}catch(e){evs=[];}
+  var hoy=nnHoy();
+  var tope=agendaSumar(hoy,dias-1);
+
+  var vencidos=evs.filter(function(e){return e.date<hoy&amp;&amp;e.type!=='done';});
+  var rango=evs.filter(function(e){return e.date>=hoy&amp;&amp;e.date<=tope&amp;&amp;e.type!=='done';});
+
+  if(!vencidos.length&amp;&amp;!rango.length){
+    box.innerHTML='<div class=&quot;card&quot; style=&quot;text-align:center;padding:28px 20px;color:var(--t3)&quot;>'+
+      '<i class=&quot;fa fa-calendar-check&quot; style=&quot;font-size:26px;display:block;margin-bottom:10px;opacity:.3&quot;></i>'+
+      '<p style=&quot;font-size:12px&quot;>Nada agendado para los próximos '+dias+' días</p>'+
+      '<p style=&quot;font-size:11px;margin-top:4px&quot;>Pulsa <b>+</b> arriba para agendar algo</p></div>';
+    agendaLeyenda([]);
+    return;
+  }
+
+  var usadas={};
+  var h='';
+
+  if(vencidos.length){
+    h+=agendaBloque('🚨 Vencido','var(--danger)',
+      vencidos.sort(function(a,b){return a.date<b.date?-1:1;}).slice(0,6),usadas,true);
+  }
+
+  for(var i=0;i<dias;i++){
+    var d=agendaSumar(hoy,i);
+    var delDia=rango.filter(function(e){return e.date===d;})
+      .sort(function(a,b){return (a.time||'99:99')>(b.time||'99:99')?1:-1;});
+    if(!delDia.length)continue;
+    var etq=i===0?'Hoy':i===1?'Mañana':agendaDiaTxt(d);
+    var col=i===0?'var(--ac)':'var(--bd)';
+    h+=agendaBloque(etq+(i>1?'':' · '+agendaDiaTxt(d)),col,delDia,usadas,false);
+  }
+
+  box.innerHTML=h;
+  agendaLeyenda(Object.keys(usadas));
+}
+
+function agendaBloque(titulo,color,lista,usadas,urgente){
+  var h='<div class=&quot;card&quot; style=&quot;margin-bottom:8px;padding:0;overflow:hidden;border-left:3px solid '+color+'&quot;>'+
+    '<div style=&quot;padding:8px 13px;background:var(--bg4);display:flex;align-items:center;gap:8px&quot;>'+
+      '<span style=&quot;font-size:11px;font-weight:600;color:'+(urgente?'var(--danger)':'var(--t2)')+'&quot;>'+nnEsc(titulo)+'</span>'+
+      '<span style=&quot;font-size:10px;color:var(--t3);font-family:var(--mono);margin-left:auto&quot;>'+lista.length+'</span>'+
+    '</div>';
+  lista.forEach(function(e,i){
+    var k=agendaDe(e); usadas[k]=1;
+    var a=AGENDAS[k];
+    h+='<div style=&quot;display:flex;align-items:center;gap:10px;padding:9px 13px;'+
+      (i?'border-top:1px solid var(--bd);':'')+'&quot;>'+
+      '<span style=&quot;font-family:var(--mono);font-size:11px;color:'+(e.time?'var(--t2)':'var(--t3)')+';'+
+        'min-width:42px;flex-shrink:0&quot;>'+(e.time||'—')+'</span>'+
+      '<i class=&quot;'+a.ico+'&quot; style=&quot;color:'+a.c+';font-size:12px;width:14px;text-align:center;flex-shrink:0&quot;></i>'+
+      '<span style=&quot;flex:1;min-width:0;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap&quot;>'+
+        nnEsc(e.title)+
+        (e.project?'<span style=&quot;color:var(--t3);font-size:11px&quot;> · '+nnEsc(e.project)+'</span>':'')+'</span>'+
+      (urgente?'<span style=&quot;font-size:10px;color:var(--danger);font-family:var(--mono);flex-shrink:0&quot;>'+nnEsc(nnCorto(e.date))+'</span>':'')+
+      agendaChip(k,true)+
+      (e.link?'<a href=&quot;'+nnEsc(e.link)+'&quot; target=&quot;_blank&quot; class=&quot;bi&quot; style=&quot;width:24px;height:24px;font-size:10px;text-decoration:none;flex-shrink:0&quot; title=&quot;Abrir&quot;><i class=&quot;fa fa-arrow-up-right-from-square&quot;></i></a>':'')+
+      '</div>';
+  });
+  return h+'</div>';
+}
+
+function agendaLeyenda(claves){
+  var l=document.getElementById('dash-agenda-leyenda'); if(!l)return;
+  l.innerHTML=claves.map(function(k){return agendaChip(k);}).join('');
+}
+
+// ── Fechas, siempre locales ──
+function agendaSumar(iso,n){
+  var p=String(iso).split('-');
+  var d=new Date(+p[0],+p[1]-1,+p[2]+n,12,0,0);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function agendaDiaTxt(iso){
+  var p=String(iso).split('-');
+  var d=new Date(+p[0],+p[1]-1,+p[2],12,0,0);
+  var dias=['dom','lun','mar','mié','jue','vie','sáb'];
+  var mes=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return dias[d.getDay()]+' '+d.getDate()+' '+mes[d.getMonth()];
+}
+
+// ═══════════════════════════════════════════════════════════════
 // TÉCNICOS Y ASIGNACIÓN
 // Cada técnico tiene su correo corporativo. Al asignarle una tarea
 // o una visita se le manda: el correo con invitación de calendario
@@ -10040,6 +10129,9 @@ window.addEventListener('message',function(e){
   if(!e.data||e.data.type!=='EM_SUITE_AP_EVENTS')return;
   window._apAlertas=e.data.events||[];
   _renderAlertas(window._apAlertas);
+  // los eventos de Alertas llegan después de pintar el dashboard,
+  // así que la agenda se repinta cuando lleguen
+  try{ if(typeof renderAgendaDash==='function') renderAgendaDash(6); }catch(_e){}
 });
 function _renderAlertas(evs){
   var cnt=document.getElementById('ds-alerts-count');
@@ -11243,7 +11335,9 @@ function toast(msg,type){
       <div class="fg"><label>Correos que reciben los reportes t&eacute;cnicos</label><input id="cfg-correos" type="text" placeholder="uno@correo.com, dos@correo.com"/></div>
       <div class="fg2">
         <div><label>Avisos antes del evento (minutos)</label><input id="cfg-remind" type="text" placeholder="1440,60,15,0"/></div>
-        <div><label>Hora del resumen diario</label><input id="cfg-digest" type="time"/></div>
+        <div><label>Resumen de la ma&ntilde;ana</label><input id="cfg-digest" type="time"/></div></div>
+      <div class="fg2">
+        <div><label>Resumen de la tarde (pendientes)</label><input id="cfg-digest-pm" type="time"/></div>
       </div>
       <label style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:12px;color:#8899BB;margin:10px 0;">
         <input id="cfg-teams" type="checkbox" style="width:auto;"/> Al agendar una reuni&oacute;n, abrir Teams para crearla en el calendario
@@ -11696,7 +11790,8 @@ var EM_DEFAULTS={
   gasUrl:'',
   correos:['edissonm60@gmail.com','academiatecnicadelhogar@gmail.com'],
   remind:[1440,60,15,0],   // minutos antes: 1 día, 1 hora, 15 min, a la hora
-  digest:'07:00',          // resumen diario
+  digest:'07:00',          // resumen de la mañana
+  digestPm:'18:00',        // resumen de la tarde: qué quedó pendiente
   autoTeams:false,         // abrir Teams al agendar una reunión
   tgOn:true
 };
@@ -12401,32 +12496,89 @@ function emCheckReminders(){
 }
 
 // Resumen diario: una sola vez al día, a la hora configurada
+// ── Resúmenes del día ──
+// Dos: el de la mañana dice qué hay por delante, el de la tarde qué
+// quedó pendiente. Este es el respaldo del navegador: si el robot 24/7
+// está vivo, él los manda y aquí no se duplica.
+//
+// El error que tenían: se marcaban como enviados ANTES de revisar si
+// había algo que contar, así que un día sin nada agendado a las 7 a.m.
+// apagaba el resumen para el resto del día.
 function emDigest(){
   var tod=apToday();
-  var key='digest_'+tod;
+  var ahora=new Date();
+  var hm=String(EMC.digest||'07:00');
+  var ht=String(EMC.digestPm||'18:00');
+  emDigestUno(tod,'am',hm,ahora);
+  emDigestUno(tod,'pm',ht,ahora);
+}
+function emDigestUno(tod,cual,hora,ahora){
+  var key='digest_'+cual+'_'+tod;
   try{if(JSON.parse(localStorage.getItem('_ap_sent')||'{}')[key])return;}catch(e){}
-  var hh=String(EMC.digest||'07:00');
-  var target=emAtLocal(tod,hh);
-  if(!target||new Date()<target)return;
-  if(emGasFresh()){emMarkSent({},key);return;}
-  var act=_events.filter(function(e){return !e.done;});
-  var hoy=act.filter(function(e){return e.date===tod;});
-  var ven=act.filter(function(e){return e.date<tod;});
-  if(!hoy.length&&!ven.length){emMarkSent({},key);return;}
-  var m='☀️ '+emB('Agenda de hoy')+' · '+emEsc(emFechaLarga(tod))+'\n━━━━━━━━━━━━━━━\n';
-  if(hoy.length){
-    m+=emB('Hoy ('+hoy.length+')')+'\n';
-    hoy.sort(function(a,b){return(a.time||'99')>(b.time||'99')?1:-1;}).forEach(function(e){
-      m+=apIcon(e.type)+' '+(e.time?emEsc(e.time)+' · ':'')+emEsc(e.title)+(e.project?' <i>('+emEsc(e.project)+')</i>':'')+'\n';
-    });
+  var target=emAtLocal(tod,hora);
+  if(!target||ahora<target)return;
+  // el de la mañana caduca cuando llega la hora del de la tarde
+  if(cual==='am'){
+    var corte=emAtLocal(tod,String(EMC.digestPm||'18:00'));
+    if(corte&&ahora>=corte){emMarkSent({},key);return;}
   }
+  if(emGasFresh()){emMarkSent({},key);return;}   // lo manda el robot
+  var act=_events.filter(function(e){return !e.done;});
+  var m=(cual==='am')?emDigestManana(tod,act):emDigestTarde(tod,act);
+  emTg(m);
+  emMarkSent({},key);
+}
+function emDigestManana(tod,act){
+  var hoy=act.filter(function(e){return e.date===tod;})
+    .sort(function(a,b){return(a.time||'99')>(b.time||'99')?1:-1;});
+  var ven=act.filter(function(e){return e.date<tod;});
+  var m='☀️ '+emB('Buenos días')+' · '+emEsc(emFechaLarga(tod))+'\n━━━━━━━━━━━━━━━\n';
+  if(!hoy.length&&!ven.length)return m+'✅ Día despejado: no hay nada agendado ni pendiente.\n\n<i>EM Suite PRO</i>';
+  if(hoy.length){
+    m+=emB('Para hoy ('+hoy.length+')')+'\n';
+    hoy.forEach(function(e){
+      m+=apIcon(e.type)+' '+(e.time?emEsc(e.time)+' · ':'')+emEsc(e.title)+
+         (e.project?' <i>('+emEsc(e.project)+')</i>':'')+'\n';
+    });
+  }else m+='Nada agendado para hoy.\n';
   if(ven.length){
     m+='\n'+emB('🚨 Vencidos ('+ven.length+')')+'\n';
     ven.slice(0,10).forEach(function(e){m+='• '+emEsc(e.title)+' — '+emEsc(e.date)+'\n';});
   }
-  m+='\n<i>EM Suite PRO</i>';
-  emTg(m);
-  emMarkSent({},key);
+  return m+'\n<i>EM Suite PRO</i>';
+}
+function emDigestTarde(tod,act){
+  var pend=act.filter(function(e){return e.date===tod;})
+    .sort(function(a,b){return(a.time||'99')>(b.time||'99')?1:-1;});
+  var hechos=_events.filter(function(e){return e.date===tod&&e.done;});
+  var ven=act.filter(function(e){return e.date<tod;});
+  var man=act.filter(function(e){return e.date===emDiaSig(tod);})
+    .sort(function(a,b){return(a.time||'99')>(b.time||'99')?1:-1;});
+  var m='🌙 '+emB('Cierre del día')+' · '+emEsc(emFechaLarga(tod))+'\n━━━━━━━━━━━━━━━\n';
+  var total=pend.length+hechos.length;
+  if(total)m+='📊 Hoy: '+emB(hechos.length+'/'+total)+' cumplido'+(hechos.length===1?'':'s')+'\n\n';
+  if(pend.length){
+    m+=emB('⏳ Quedó pendiente ('+pend.length+')')+'\n';
+    pend.forEach(function(e){
+      m+=apIcon(e.type)+' '+(e.time?emEsc(e.time)+' · ':'')+emEsc(e.title)+
+         (e.project?' <i>('+emEsc(e.project)+')</i>':'')+'\n';
+    });
+  }else if(total)m+='✅ '+emB('Todo lo de hoy quedó hecho.')+'\n';
+  else m+='No había nada agendado para hoy.\n';
+  if(ven.length){
+    m+='\n'+emB('🚨 Atrasados de días anteriores ('+ven.length+')')+'\n';
+    ven.slice(0,10).forEach(function(e){m+='• '+emEsc(e.title)+' — '+emEsc(e.date)+'\n';});
+  }
+  if(man.length){
+    m+='\n'+emB('📅 Mañana ('+man.length+')')+'\n';
+    man.slice(0,10).forEach(function(e){m+=apIcon(e.type)+' '+(e.time?emEsc(e.time)+' · ':'')+emEsc(e.title)+'\n';});
+  }else m+='\n📅 Mañana no tienes nada agendado.\n';
+  return m+'\n<i>EM Suite PRO</i>';
+}
+function emDiaSig(iso){
+  var p=String(iso).split('-');
+  var d=new Date(+p[0],+p[1]-1,+p[2]+1,12,0,0);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
 setInterval(emCheckReminders,30000);
@@ -12671,7 +12823,7 @@ function apToggleCfg(){
     var v=function(id,val){var e=document.getElementById(id);if(e)e.value=val;};
     v('cfg-tg-token',EMC.tgToken);v('cfg-tg-chat',EMC.tgChat);
     v('cfg-fb-proj',EMC.fbProject);v('cfg-fb-key',EMC.fbKey);
-    v('cfg-gas',EMC.gasUrl);v('cfg-digest',EMC.digest);
+    v('cfg-gas',EMC.gasUrl);v('cfg-digest',EMC.digest);v('cfg-digest-pm',EMC.digestPm);
     v('cfg-correos',(EMC.correos||[]).join(', '));
     v('cfg-remind',(EMC.remind||[]).join(','));
     var t=document.getElementById('cfg-teams'); if(t)t.checked=!!EMC.autoTeams;
@@ -12686,6 +12838,7 @@ function apSaveCfg(){
   EMC.gasUrl=g('cfg-gas');
   EMC.correos=g('cfg-correos').split(',').map(function(x){return x.trim();}).filter(Boolean);
   EMC.digest=g('cfg-digest')||'07:00';
+  EMC.digestPm=g('cfg-digest-pm')||'18:00';
   EMC.remind=g('cfg-remind').split(',').map(function(x){return parseInt(x.trim(),10);})
               .filter(function(x){return !isNaN(x)&&x>=0;});
   if(!EMC.remind.length)EMC.remind=[1440,60,15,0];
