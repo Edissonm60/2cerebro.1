@@ -5521,7 +5521,7 @@ function renderMeets() {
   document.getElementById('meets-upcoming').innerHTML = up.length ? up.map(m=>meetHTML(m)).join('') : empty;
   document.getElementById('meets-past').innerHTML     = ps.length ? ps.map(m=>meetHTML(m)).join('') : '<div style=&quot;text-align:center;padding:20px;color:var(--t3);font-size:12px&quot;>Sin historial aún</div>';
 }
-function deleteMeet(id){MEETS=MEETS.filter(m=>m.id!==id);nnSave();renderMeets();renderDash();T('Reunión eliminada','','🗑️');}
+function deleteMeet(id){var _m=MEETS.filter(m=>m.id===id)[0];MEETS=MEETS.filter(m=>m.id!==id);nnSave();renderMeets();renderDash();nnAviso('📅','Reunión','borrado',_m&amp;&amp;_m.t,[{i:'📆',v:_m&amp;&amp;_m.date},{i:'🕐',v:_m&amp;&amp;_m.time}],'f');T('Reunión eliminada','','🗑️');}
 function filterMeets(f,btn){
   document.querySelectorAll('#v-meetings .bd2b').forEach(b=>b.classList.remove('on'));
   if(btn)btn.classList.add('on');
@@ -5818,9 +5818,10 @@ function addNote(){
     body:'## Título\n\nEscribe aquí...',date:new Date().toLocaleDateString('es-CO').slice(0,5),tags:[],
     projId:_p?String(_p.id):'',projName:_p?_p.name:''});
   curNote=0;nnSave();renderNotes();T('Nota creada',_p?('En '+_p.name):'Lista para editar','📝');
+  avNota('nuevo',NOTES[0]);
 }
 function saveNote(){if(NOTES[curNote]){NOTES[curNote].title=document.getElementById('note-title').value;NOTES[curNote].body=document.getElementById('note-body').value;nnSave();document.getElementById('ns-status').textContent='Guardado ✓';document.getElementById('ns-status').style.color='var(--ok)';T('Guardado','Nota guardada correctamente','✅');}}
-function deleteNote(i){if(!confirm('¿Eliminar esta nota?'))return;NOTES.splice(i,1);curNote=Math.max(0,Math.min(curNote,NOTES.length-1));nnSave();renderNotes();T('Nota eliminada','','🗑️');}
+function deleteNote(i){if(!confirm('¿Eliminar esta nota?'))return;var _n=NOTES[i];NOTES.splice(i,1);curNote=Math.max(0,Math.min(curNote,NOTES.length-1));nnSave();renderNotes();avNota('borrado',_n);T('Nota eliminada','','🗑️');}
 function markUns(){document.getElementById('ns-status').textContent='● Sin guardar';document.getElementById('ns-status').style.color='var(--warn)';}
 function fc(cmd){document.execCommand(cmd,false,null);}
 
@@ -6107,6 +6108,7 @@ function addTrans(){
   document.getElementById('t-monto').value='';
   closeModal('mo-trans');
   nnSave();
+  avTrans('nuevo',TRANSACTIONS[0]);
   T('Transacción','Registrada correctamente','💰');
   if(document.getElementById('v-finance').classList.contains('on'))renderFinance();
   renderDash();
@@ -6239,6 +6241,7 @@ function addGoal(){
   document.getElementById('g-title').value='';
   closeModal('mo-goal');
   T('Meta creada',t.substring(0,40),'🎯');
+  avMeta('nuevo',GOALS[GOALS.length-1]);
   playAlarmSound('task');
   var deadISO=document.getElementById('g-dead').value;
   if(deadISO){
@@ -6264,6 +6267,7 @@ function addTrip(){
   document.getElementById('tr-dest').value='';
   closeModal('mo-trip');
   nnSave();
+  avViaje('nuevo',TRIPS[0]);
   T('Viaje agregado',d,'✈️');
   if(document.getElementById('v-travel').classList.contains('on'))renderTrips();
   renderDash();
@@ -6282,6 +6286,7 @@ function addHomeExpense(){
   document.getElementById('h-monto').value='';
   closeModal('mo-home');
   nnSave();
+  avHogar('nuevo',HOME_FIXED[HOME_FIXED.length-1],'Gasto fijo del hogar');
   T('Gasto fijo agregado',n,'🏠');
   if(document.getElementById('v-home').classList.contains('on'))renderHome();
 }
@@ -6336,13 +6341,13 @@ function sendAI(){
 }
 
 // ══ DELETE &amp; HELPERS ══
-function deleteGoal(i){if(!confirm('¿Eliminar esta meta?'))return;GOALS.splice(i,1);nnSave();renderGoals();renderDash();T('Meta eliminada','','🗑️');}
-function deleteCourse(i){if(!confirm('¿Eliminar este curso?'))return;COURSES.splice(i,1);nnSave();renderGoals();T('Curso eliminado','','🗑️');}
-function deleteTrip(i){if(!confirm('¿Eliminar este viaje?'))return;TRIPS.splice(i,1);nnSave();renderTrips();renderDash();T('Viaje eliminado','','🗑️');}
+function deleteGoal(i){if(!confirm('¿Eliminar esta meta?'))return;var _g=GOALS[i];GOALS.splice(i,1);nnSave();renderGoals();renderDash();avMeta('borrado',_g);T('Meta eliminada','','🗑️');}
+function deleteCourse(i){if(!confirm('¿Eliminar este curso?'))return;var _c=COURSES[i];COURSES.splice(i,1);nnSave();renderGoals();avCurso('borrado',_c);T('Curso eliminado','','🗑️');}
+function deleteTrip(i){if(!confirm('¿Eliminar este viaje?'))return;var _v=TRIPS[i];TRIPS.splice(i,1);nnSave();renderTrips();renderDash();avViaje('borrado',_v);T('Viaje eliminado','','🗑️');}
 function changeTripStatus(i,status){TRIPS[i].status=status;nnSave();renderTrips();T('Estado actualizado',TRIPS[i].dest+' → '+status,'✈️');}
-function deleteTrans(i){TRANSACTIONS.splice(i,1);nnSave();renderFinance();renderDash();T('Transacción eliminada','','🗑️');}
+function deleteTrans(i){var _t=TRANSACTIONS[i];TRANSACTIONS.splice(i,1);nnSave();renderFinance();renderDash();avTrans('borrado',_t);T('Transacción eliminada','','🗑️');}
 function deleteDebt(i){var d=DEBTS[i];if(d)deudaBorrar(d.id);}
-function deleteHomeFixed(i){HOME_FIXED.splice(i,1);nnSave();renderHome();T('Gasto fijo eliminado','','🗑️');}
+function deleteHomeFixed(i){var _h=HOME_FIXED[i];HOME_FIXED.splice(i,1);nnSave();renderHome();avHogar('borrado',_h,'Gasto fijo del hogar');T('Gasto fijo eliminado','','🗑️');}
 function deleteHomeTask(i){HOME_TASKS.splice(i,1);nnSave();renderHome();T('Tarea eliminada','','🗑️');}
 function toggleHomeTask(i){HOME_TASKS[i].done=!HOME_TASKS[i].done;nnSave();renderHome();}
 function updateGoalProgress(i){const pct=parseInt(prompt('Nuevo porcentaje de avance (0-100):',GOALS[i].pct));if(isNaN(pct)||pct<0||pct>100){T('Error','Ingresa un número entre 0 y 100','⚠️');return;}GOALS[i].pct=pct;nnSave();renderGoals();renderDash();T('Meta actualizada',GOALS[i].t.substring(0,35)+' — '+pct+'%','🎯');}
@@ -6378,6 +6383,7 @@ try{
   tecLlenarSelects();
   deudaMigrarFormato();
   nnSyncInit();
+  externosInit();
   projFillSelect(); calFillProjects(); renderProjects();
   var _cd=document.getElementById('cal-new-date'); if(_cd)_cd.value=nnHoy();
 }catch(e){console.warn('init proyectos',e);}
@@ -6804,6 +6810,7 @@ function projDelete(id){
   nnEventDel('nn_proj_'+id);
   PROJECTS=PROJECTS.filter(function(q){return String(q.id)!==String(id);});
   nnSave(); projFillSelect(); renderProjects(); renderKB(); renderDash();
+  avProyecto('borrado',p);
   T('Proyecto eliminado',p.name,'🗑️');
 }
 function projPlano(id){
@@ -6928,6 +6935,8 @@ function calEvents(){
     out.push({date:e.date,time:e.time||'',title:e.title,type:e.type||'task',src:'Alertas',
       color:'#f59e0b',project:e.project||'',link:e.link||'',id:e.id});
   });
+  // lo que el robot trajo de Google Calendar y de Outlook/Teams
+  try{ out=out.concat(externosComoEventos()); }catch(e){}
   return out;
 }
 function renderCalFull(){
@@ -7006,6 +7015,7 @@ function calAdd(){
   }
   ['cal-new-title','cal-new-notes','cal-new-link'].forEach(function(i){var e=document.getElementById(i);if(e)e.value='';});
   renderCalFull(); renderDash();
+  avEvento('nuevo',ev);
   T('Evento creado','Agendado y enviado a tus recordatorios','📅');
   if(document.getElementById('cal-new-teams').checked)window.open(calTeamsLink(ev),'_blank');
 }
@@ -7636,6 +7646,7 @@ function lvNuevo(projId){
   LVS.unshift(d);
   LV=d; LV_VISTA='general';
   nnSave();
+  avLevantamiento('nuevo',d);
   return d;
 }
 function lvPorProyecto(projId){
@@ -7653,9 +7664,11 @@ function lvAbrir(id){
 }
 function lvBorrar(id){
   if(!confirm('¿Eliminar este levantamiento y sus fotos?'))return;
+  var _l=LVS.filter(function(x){return x.id===id;})[0];
   LVS=LVS.filter(function(x){return x.id!==id;});
   if(LV&amp;&amp;LV.id===id)LV=null;
   nnSave();lvRender();
+  avLevantamiento('borrado',_l);
 }
 
 // ── Render ──────────────────────────────────────────────────
@@ -9142,6 +9155,7 @@ function deudaGuardar(){
   closeModal('mo-debt');
   deudaAgendar(obj.id,true);
   nnSave();renderDeudas();renderDash();
+  avDeuda(id?'cambio':'nuevo',obj);
   var av=dAhoga(obj)?' · ⚠️ la cuota no cubre ni el interés':'';
   T(id?'Deuda actualizada':'Deuda registrada',n+av,'💳');
 }
@@ -9945,7 +9959,39 @@ function agendaBloque(titulo,color,lista,usadas,urgente){
 
 function agendaLeyenda(claves){
   var l=document.getElementById('dash-agenda-leyenda'); if(!l)return;
-  l.innerHTML=claves.map(function(k){return agendaChip(k);}).join('');
+  var h=claves.map(function(k){return agendaChip(k);}).join('');
+  // De dónde vienen los calendarios de fuera y cuándo se trajeron
+  var ext=(typeof EXTERNOS!=='undefined'&amp;&amp;EXTERNOS)?EXTERNOS.length:0;
+  if(ext){
+    h+='<span style=&quot;font-size:10px;color:var(--t3);cursor:help&quot; title=&quot;Los trae el robot 24/7 desde Google Calendar y Outlook. '+
+       'Son de solo lectura: para cambiarlos, entra al calendario de donde vienen.&quot;>☁️ '+ext+
+       ' de tus calendarios'+(EXTERNOS_AT?' · '+nnEsc(EXTERNOS_AT):'')+'</span>';
+  }else{
+    h+='<span style=&quot;font-size:10px;color:var(--t3);cursor:pointer;text-decoration:underline&quot; '+
+       'onclick=&quot;agendaAyudaExternos()&quot;>¿Y mi Google Calendar y Teams?</span>';
+  }
+  l.innerHTML=h;
+}
+function agendaAyudaExternos(){
+  var proj=((EMCFG_NN||{}).fbProject)||'em-suite-pro';
+  nnModalInfo('☁️ Traer Google Calendar y Teams',
+    '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7&quot;>La app <b>no puede</b> leer tu Google Calendar ni tu Outlook por sí sola: '+
+    'no tiene sesión con Google ni con Microsoft, y el navegador bloquea ese tipo de petición.</p>'+
+    '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7;margin-top:8px&quot;>Quien sí puede es el <b>robot 24/7</b>, porque corre dentro de tu '+
+    'cuenta de Google. Él los baja cada 5 minutos y los deja en Firebase; la app solo los lee.</p>'+
+    '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7;margin-top:10px&quot;><b>Para activarlo:</b></p>'+
+    '<ol style=&quot;font-size:12px;color:var(--t2);line-height:1.9;padding-left:18px&quot;>'+
+    '<li>Pega en Apps Script la última versión del <b>Codigo.gs</b></li>'+
+    '<li>Ejecuta la función <b>instalar</b> y <b>autoriza el permiso de calendario</b> que va a pedir (es nuevo)</li>'+
+    '<li>En Firebase → Firestore → <b>Reglas</b>, agrega esta línea y publica:<br>'+
+    '<code style=&quot;font-size:11px;color:var(--ac);font-family:var(--mono)&quot;>match /externos/{doc} { allow read, write: if true; }</code></li>'+
+    '<li>Para <b>Outlook / Teams</b>: publica tu calendario como enlace .ics '+
+    '(Outlook → Configuración → Calendario → Calendarios compartidos → Publicar) y pega esa URL en '+
+    '<b>ICS_EXTERNOS</b>, dentro del Codigo.gs</li></ol>'+
+    '<p style=&quot;font-size:11px;color:var(--t3);line-height:1.6;margin-top:8px&quot;>Para comprobar, en Apps Script ejecuta '+
+    '<b>verCalendarios</b>: el registro te dice cuántos eventos trajo.</p>'+
+    '<p style=&quot;font-size:11px;color:var(--t3);line-height:1.6;margin-top:8px&quot;>Los eventos externos son de <b>solo lectura</b>. '+
+    'Se ven aquí, pero se cambian en el calendario de donde vienen.</p>');
 }
 
 // ── Fechas, siempre locales ──
@@ -9961,6 +10007,180 @@ function agendaDiaTxt(iso){
   var mes=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   return dias[d.getDay()]+' '+d.getDate()+' '+mes[d.getMonth()];
 }
+
+// ═══════════════════════════════════════════════════════════════
+// AVISO DE CUALQUIER MOVIMIENTO
+//
+// Hasta ahora solo avisaban las tareas y las reuniones. Todo lo
+// demás —notas, metas, gastos, viajes, cursos, técnicos, eventos—
+// se guardaba en silencio, así que no había forma de saber desde el
+// celular que algo se había registrado, ni de darse cuenta si se
+// creó algo por error en el otro equipo.
+//
+// Ahora cada alta, cambio o borrado manda una línea a Telegram.
+// Se puede apagar en Alertas → ⚙ Configuración si llega a molestar:
+// son bastantes mensajes al día si se trabaja fuerte.
+// ═══════════════════════════════════════════════════════════════
+
+function nnAvisosOn(){
+  try{ return !(EMCFG_NN &amp;&amp; EMCFG_NN.avisarTodo===false); }catch(e){ return true; }
+}
+
+// acc: 'nuevo' | 'cambio' | 'borrado'
+// g: 'f' si la palabra es femenina (nota, meta, deuda), 'm' si no.
+// Sin esto salía &quot;Nota técnica registrado&quot;, que se lee mal.
+function nnAviso(ico, que, acc, titulo, lineas, g){
+  if(!nnAvisosOn())return;
+  try{
+    var a=(g==='f')?'a':'o';
+    var verbo={nuevo:'registrad'+a,cambio:'actualizad'+a,borrado:'eliminad'+a}[acc]||('registrad'+a);
+    var punta={nuevo:ico,cambio:'✏️',borrado:'🗑️'}[acc]||ico;
+    var m=punta+' '+nnB(que+' '+verbo)+'\n━━━━━━━━━━━━━━━\n';
+    if(titulo)m+='📌 '+nnB(nnEsc(String(titulo).slice(0,90)))+'\n';
+    (lineas||[]).forEach(function(l){
+      if(l&amp;&amp;l.v!==undefined&amp;&amp;l.v!==null&amp;&amp;String(l.v).trim()!=='')
+        m+=l.i+' '+nnEsc(String(l.v).slice(0,120))+'\n';
+    });
+    m+='🕐 '+nnEsc(new Date().toLocaleString('es-CO',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}))+'\n';
+    m+='<i>EM Suite PRO</i>';
+    nnTg(m);
+  }catch(e){}
+}
+
+// Atajos por módulo, para que cada llamada quede en una línea
+function avNota(acc,n){
+  nnAviso('📝','Nota técnica',acc,n&amp;&amp;n.title,[
+    {i:'📂',v:n&amp;&amp;n.projName},
+    {i:'🏷️',v:n&amp;&amp;(n.tags||[]).join(', ')}
+  ],'f');
+}
+function avMeta(acc,g){
+  nnAviso('🎯','Meta',acc,g&amp;&amp;g.t,[
+    {i:'📊',v:g&amp;&amp;g.type},
+    {i:'📆',v:g&amp;&amp;g.dead},
+    {i:'📈',v:g&amp;&amp;g.pct!==undefined?g.pct+'% de avance':''}
+  ],'f');
+}
+function avCurso(acc,c){
+  nnAviso('📚','Curso',acc,c&amp;&amp;(c.t||c.n),[
+    {i:'🏫',v:c&amp;&amp;(c.plat||c.inst)},
+    {i:'📈',v:c&amp;&amp;c.pct!==undefined?c.pct+'%':''}
+  ],'m');
+}
+function avViaje(acc,t){
+  nnAviso('✈️','Viaje',acc,t&amp;&amp;t.dest,[
+    {i:'📆',v:t&amp;&amp;t.dates},
+    {i:'🎯',v:t&amp;&amp;t.why},
+    {i:'💰',v:t&amp;&amp;t.budget?nnMoneda(t.budget):''}
+  ],'m');
+}
+function avTrans(acc,t){
+  var signo=(t&amp;&amp;t.type==='ingreso')?'🟢 Ingreso':'🔴 Egreso';
+  nnAviso(t&amp;&amp;t.type==='ingreso'?'💵':'💸',signo,acc,t&amp;&amp;t.t,[
+    {i:'🏷️',v:t&amp;&amp;t.cat},
+    {i:'💰',v:t&amp;&amp;t.amt?nnMoneda(t.amt):''},
+    {i:'📆',v:t&amp;&amp;t.date}
+  ],'m');
+}
+function avHogar(acc,h,tipo){
+  nnAviso('🏠',tipo||'Gasto del hogar',acc,h&amp;&amp;(h.n||h.t),[
+    {i:'🏷️',v:h&amp;&amp;h.cat},
+    {i:'💰',v:h&amp;&amp;(h.monto||h.amt)?nnMoneda(h.monto||h.amt):''},
+    {i:'📆',v:h&amp;&amp;h.dia?('día '+h.dia):''}
+  ],'m');
+}
+function avTecnico(acc,t){
+  nnAviso('👷','Técnico',acc,t&amp;&amp;t.nombre,[
+    {i:'📧',v:t&amp;&amp;t.correo},
+    {i:'🔧',v:t&amp;&amp;t.rol},
+    {i:'📱',v:t&amp;&amp;t.telefono}
+  ],'m');
+}
+function avDeuda(acc,d){
+  nnAviso('💳','Deuda',acc,d&amp;&amp;d.n,[
+    {i:'💰',v:d&amp;&amp;d.total?nnMoneda(d.total):''},
+    {i:'📊',v:(d&amp;&amp;typeof dEA==='function')?dEA(d).toFixed(1)+'% E.A.':''},
+    {i:'📆',v:d&amp;&amp;d.pago?('paga el '+d.pago+' de cada mes'):''}
+  ],'f');
+}
+function avLevantamiento(acc,l){
+  nnAviso('🏢','Levantamiento',acc,l&amp;&amp;l.general&amp;&amp;l.general.nombre,[
+    {i:'📍',v:l&amp;&amp;l.general&amp;&amp;l.general.direccion},
+    {i:'🏠',v:l&amp;&amp;l.general&amp;&amp;l.general.apartamentos?(l.general.apartamentos+' apartamentos'):''}
+  ],'m');
+}
+function avProyecto(acc,p){
+  nnAviso('📂','Proyecto',acc,p&amp;&amp;p.name,[
+    {i:'👤',v:p&amp;&amp;p.client},
+    {i:'🏷️',v:p&amp;&amp;p.type},
+    {i:'📆',v:p&amp;&amp;p.deadline?nnFechaLarga(p.deadline):''}
+  ],'m');
+}
+function avEvento(acc,e){
+  nnAviso('📅','Evento',acc,e&amp;&amp;e.title,[
+    {i:'📆',v:e&amp;&amp;e.date?nnFechaLarga(e.date):''},
+    {i:'🕐',v:e&amp;&amp;e.time},
+    {i:'📂',v:e&amp;&amp;e.project}
+  ],'m');
+}
+
+function nnMoneda(v){
+  var n=Number(String(v).replace(/[^\d.-]/g,''))||0;
+  return '$'+Math.round(n).toLocaleString('es-CO');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CALENDARIOS EXTERNOS (Google Calendar, Outlook/Teams)
+//
+// La app NO puede leer esos calendarios directamente: no tiene
+// sesión con Google ni con Microsoft, y el navegador bloquea la
+// petición. Quien sí puede es el robot 24/7, que corre dentro de la
+// cuenta de Google y del lado del servidor. Él los baja cada 5
+// minutos y los deja en Firebase; aquí solo se leen.
+//
+// Son de SOLO LECTURA: se ven en la agenda con el logo de su origen,
+// pero no se editan ni se borran desde aquí. Para eso está el
+// calendario de donde vienen.
+// ═══════════════════════════════════════════════════════════════
+var EXTERNOS=[];           // lo que trajo el robot
+var EXTERNOS_AT='';        // cuándo lo trajo
+
+function externosUrl(){
+  var c=EMCFG_NN||{};
+  var proj=c.fbProject||'em-suite-pro', key=c.fbKey||'';
+  if(!key)return '';
+  return 'https://firestore.googleapis.com/v1/projects/'+proj+
+         '/databases/(default)/documents/externos/agenda?key='+key;
+}
+function externosTraer(){
+  var url=externosUrl(); if(!url)return Promise.resolve(0);
+  return fetch(url)
+    .then(function(r){ return r.status===404?null:(r.ok?r.json():null); })
+    .then(function(j){
+      if(!j||!j.fields||!j.fields.json){EXTERNOS=[];return 0;}
+      EXTERNOS=JSON.parse(j.fields.json.stringValue||'[]')||[];
+      EXTERNOS_AT=(j.fields.at&amp;&amp;j.fields.at.stringValue)||'';
+      try{ if(typeof renderAgendaDash==='function')renderAgendaDash(6); }catch(e){}
+      try{ if(document.getElementById('v-calendar').classList.contains('on'))renderCalFull(); }catch(e){}
+      return EXTERNOS.length;
+    })
+    .catch(function(){ return 0; });
+}
+function externosInit(){
+  setTimeout(externosTraer,2500);
+  setInterval(function(){if(!document.hidden)externosTraer();},5*60000);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)externosTraer();});
+}
+// Los convierte al formato que usa la agenda
+function externosComoEventos(){
+  return (EXTERNOS||[]).map(function(e){
+    return {date:e.date,time:e.time||'',title:e.title,type:'meet',
+      src:e.calendario||'Externo',color:'#6264A7',link:e.link||'',
+      plat:e.origen||'google',project:'',externo:true,
+      id:'ext_'+e.id};
+  });
+}
+
 
 // ═══════════════════════════════════════════════════════════════
 // TÉCNICOS Y ASIGNACIÓN
@@ -9999,6 +10219,7 @@ function tecGuardar(){
   TECNICOS.push({id:'t'+Date.now(),nombre:n,correo:c,telefono:g('tec-tel'),rol:g('tec-rol')});
   ['tec-nombre','tec-correo','tec-tel','tec-rol'].forEach(function(i){var e=document.getElementById(i);if(e)e.value='';});
   nnSave();tecRender();tecLlenarSelects();
+  avTecnico('nuevo',TECNICOS[TECNICOS.length-1]);
   T('Técnico agregado',n,'👷');
 }
 function tecBorrar(id){
@@ -10006,6 +10227,7 @@ function tecBorrar(id){
   if(!confirm('¿Eliminar a '+t.nombre+' del directorio?'))return;
   TECNICOS=TECNICOS.filter(function(x){return String(x.id)!==String(id);});
   nnSave();tecRender();tecLlenarSelects();
+  avTecnico('borrado',t);
 }
 function tecLlenarSelects(){
   ['ct-tec-sel','new-tec','asig-tec'].forEach(function(id){
@@ -10152,9 +10374,24 @@ window.addEventListener('message',function(e){
 // al abrir Proyectos se le pide el conteo a Notas &amp; Canvas
 setTimeout(function(){try{emPost({type:'EM_CANVAS_STATS_REQ'});}catch(e){}},2000);
 
+// Pedir los eventos de Alertas hasta que lleguen. Sin esto, el
+// dashboard y la agenda quedaban vacíos aunque hubiera eventos.
+var _apRecibido=false, _apIntentos=0;
+function emPedirAlertas(){
+  if(_apRecibido)return;
+  try{emPost({type:'EM_AP_EVENTS_REQ'});}catch(e){}
+  if(++_apIntentos<12)setTimeout(emPedirAlertas,_apIntentos<4?400:2000);
+}
+setTimeout(emPedirAlertas,600);
+// y cada vez que se vuelve a la app, por si cambió algo estando fuera
+document.addEventListener('visibilitychange',function(){
+  if(!document.hidden){try{emPost({type:'EM_AP_EVENTS_REQ'});}catch(e){}}
+});
+
 // BRIDGE: recibir eventos de Alertas y mostrar en dashboard
 window.addEventListener('message',function(e){
   if(!e.data||e.data.type!=='EM_SUITE_AP_EVENTS')return;
+  _apRecibido=true;
   window._apAlertas=e.data.events||[];
   _renderAlertas(window._apAlertas);
   // los eventos de Alertas llegan después de pintar el dashboard,
@@ -11370,6 +11607,9 @@ function toast(msg,type){
       <label style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:12px;color:#8899BB;margin:10px 0;">
         <input id="cfg-teams" type="checkbox" style="width:auto;"/> Al agendar una reuni&oacute;n, abrir Teams para crearla en el calendario
       </label>
+      <label style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:12px;color:#8899BB;margin:10px 0;">
+        <input id="cfg-avisar" type="checkbox" style="width:auto;"/> Avisar a Telegram <strong>cualquier movimiento</strong> (notas, metas, gastos, viajes, t&eacute;cnicos&hellip;)
+      </label>
       <div class="ff">
         <button class="abtn" style="flex:1" onclick="apToggleCfg()">Cerrar</button>
         <button class="abtn prim" style="flex:2" onclick="apSaveCfg()">&#128190; Guardar configuraci&oacute;n</button>
@@ -11821,6 +12061,7 @@ var EM_DEFAULTS={
   digest:'07:00',          // resumen de la mañana
   digestPm:'18:00',        // resumen de la tarde: qué quedó pendiente
   autoTeams:false,         // abrir Teams al agendar una reunión
+  avisarTodo:true,         // avisar a Telegram cualquier movimiento
   tgOn:true
 };
 var EMC=(function(){
@@ -12852,6 +13093,7 @@ function apToggleCfg(){
     v('cfg-tg-token',EMC.tgToken);v('cfg-tg-chat',EMC.tgChat);
     v('cfg-fb-proj',EMC.fbProject);v('cfg-fb-key',EMC.fbKey);
     v('cfg-gas',EMC.gasUrl);v('cfg-digest',EMC.digest);v('cfg-digest-pm',EMC.digestPm);
+    var _ca=document.getElementById('cfg-avisar'); if(_ca)_ca.checked=(EMC.avisarTodo!==false);
     v('cfg-correos',(EMC.correos||[]).join(', '));
     v('cfg-remind',(EMC.remind||[]).join(','));
     var t=document.getElementById('cfg-teams'); if(t)t.checked=!!EMC.autoTeams;
@@ -12867,6 +13109,7 @@ function apSaveCfg(){
   EMC.correos=g('cfg-correos').split(',').map(function(x){return x.trim();}).filter(Boolean);
   EMC.digest=g('cfg-digest')||'07:00';
   EMC.digestPm=g('cfg-digest-pm')||'18:00';
+  EMC.avisarTodo=!!(document.getElementById('cfg-avisar')||{}).checked;
   EMC.remind=g('cfg-remind').split(',').map(function(x){return parseInt(x.trim(),10);})
               .filter(function(x){return !isNaN(x)&&x>=0;});
   if(!EMC.remind.length)EMC.remind=[1440,60,15,0];
@@ -13096,6 +13339,14 @@ window.addEventListener("message",function(e){
   }
 
   // ── Alertas → reenviar eventos a NeuroNotes para el dashboard ──
+  // NeuroNotes pide los eventos de Alertas. Antes solo se los
+  // mandábamos cuando algo cambiaba: si el iframe todavía no estaba
+  // escuchando en ese momento, nunca los recibía y el dashboard se
+  // quedaba en ceros con la agenda vacía.
+  if(e.data.type==="EM_AP_EVENTS_REQ"){
+    try{ emBroadcast(); }catch(_){}
+    return;
+  }
   if(e.data.type==="EM_SUITE_AP_EVENTS"){
     var f2=document.getElementById("f2");
     if(f2&&f2.contentWindow)f2.contentWindow.postMessage({type:"EM_SUITE_AP_EVENTS",events:e.data.events},"*");
