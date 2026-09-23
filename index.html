@@ -5350,6 +5350,20 @@ let PROJECTS     = _saved ? (_saved.PROJECTS     || []) : [];
 var _LVS_INIT    = _saved ? (_saved.LVS          || []) : [];
 var _TEC_INIT    = _saved ? (_saved.TECNICOS     || []) : [];
 
+// Levantamientos de portería virtual. Se declaran AQUÍ, antes de
+// cualquier uso: estaban dentro del bloque del presupuesto preliminar
+// y al quitarlo se fueron con él, así que abrir la pestaña sin haber
+// abierto antes un levantamiento reventaba con &quot;LV is not defined&quot; y
+// la pantalla quedaba en blanco. Sin valor inicial a propósito: el
+// bloque de INIT de más abajo es el que las llena, y volver a
+// asignarlas aquí borraría lo cargado.
+var LVS;         // todos los levantamientos guardados
+var LV;          // el que está abierto (null cuando se ve la lista)
+var TECNICOS;    // directorio de técnicos — mismo motivo: el módulo de
+                 // técnicos va más abajo en el archivo, y si allí se
+                 // inicializaba con [] borraba lo que el INIT ya había
+                 // cargado del disco. Los técnicos desaparecían al recargar.
+
 // ══ FINANCE SUB-TAB ══
 let finTab = 'all'; // 'all' | 'ingresos' | 'egresos' | 'deudas' | 'presupuesto'
 
@@ -6359,6 +6373,7 @@ function ht(){document.getElementById('toast').classList.remove('sh');}
 renderCal('cal-main',calM);
 try{
   LVS=_LVS_INIT||[];
+  LV=null;
   TECNICOS=_TEC_INIT||[];
   tecLlenarSelects();
   deudaMigrarFormato();
@@ -7738,6 +7753,20 @@ function lvMenu(){
 
 function lvRender(){
   var cont=document.getElementById('v-lev'); if(!cont)return;
+  if(!LVS)LVS=[];
+  // Si algo falla al armar la pantalla, se muestra el error en vez de
+  // dejar la pestaña en blanco: una pantalla vacía no dice qué pasó.
+  try{ lvRenderInterno(cont); }
+  catch(err){
+    cont.innerHTML='<div class=&quot;pg&quot;><h1 class=&quot;pgh1&quot;>Levantamiento <em>portería virtual</em></h1></div>'+
+      '<div class=&quot;card&quot; style=&quot;border-left:3px solid var(--danger)&quot;>'+
+      '<div style=&quot;font-size:13px;font-weight:600;color:var(--danger);margin-bottom:8px&quot;>No se pudo mostrar esta pantalla</div>'+
+      '<div style=&quot;font-size:12px;color:var(--t2);line-height:1.7&quot;>'+lvEsc(String(err&amp;&amp;err.message||err))+'</div>'+
+      '<button class=&quot;bs&quot; style=&quot;margin-top:12px&quot; onclick=&quot;LV=null;lvRender()&quot;>← Volver a la lista</button></div>';
+    try{console.error('lvRender',err);}catch(e){}
+  }
+}
+function lvRenderInterno(cont){
   if(!LV){ cont.innerHTML=lvListaHTML(); return; }
   var s=LV_SEC.filter(function(x){return x.id===LV_VISTA;})[0]||LV_SEC[0];
   var cuerpo;
@@ -9940,8 +9969,7 @@ function agendaDiaTxt(iso){
 // (queda en su Outlook y por tanto en el calendario de Teams), el
 // chat de Teams abierto con el mensaje listo, y el aviso a Telegram.
 // ═══════════════════════════════════════════════════════════════
-var TECNICOS=[];
-var _asignando=null;
+var _asignando=null;   // TECNICOS se declara arriba, con el resto del estado
 
 function tecFind(id){return TECNICOS.filter(function(t){return String(t.id)===String(id);})[0]||null;}
 function tecPorCorreo(c){return TECNICOS.filter(function(t){return (t.correo||'').toLowerCase()===String(c||'').toLowerCase();})[0]||null;}
