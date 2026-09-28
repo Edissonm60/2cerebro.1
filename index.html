@@ -50,6 +50,16 @@ html,body{height:100%;overflow:hidden;background:#080C14;color:#E8F0FE;font-fami
 </style>
 </head>
 <body>
+<!-- Aviso de archivo privado. Solo aparece cuando el archivo lleva
+     llaves puestas de fábrica, que es el caso del tuyo. El que se
+     entrega a un cliente sale sin llaves y NO muestra esto. Sirve
+     para no confundir los archivos al mandarlos. -->
+<div id="em-privado" style="display:none;position:fixed;right:10px;bottom:10px;z-index:99999;
+  background:#3A1212;border:1px solid #C0392B;color:#FF8A80;border-radius:8px;
+  padding:7px 11px;font:600 11px/1.3 system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.45);
+  cursor:pointer" title="Este archivo lleva tus llaves adentro. No se lo mandes a nadie.">
+  🔒 ARCHIVO PRIVADO — con tus llaves
+</div>
 <div id="suite">
   <div id="tabbar">
     <div class="brand"><span class="badge">EM</span> Suite PRO</div>
@@ -3174,7 +3184,7 @@ function loadPlan(){
 // el mismo plano, desde cualquier equipo. Rellena firebaseConfig con los datos de TU
 // proyecto de Firebase (ver instrucciones que te di aparte).
 const firebaseConfig={
-  apiKey:&quot;AIzaSyBrgf1VtKll2j1V-J6Dd1mt57b7BMbBQWE&quot;,
+  apiKey:&quot;TU_API_KEY_DE_FIREBASE&quot;,
   authDomain:&quot;em-seguridad-pro.firebaseapp.com&quot;,
   databaseURL:&quot;https://em-seguridad-pro-default-rtdb.firebaseio.com&quot;,
   projectId:&quot;em-seguridad-pro&quot;,
@@ -4553,6 +4563,12 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
     <div class=&quot;si&quot; onclick=&quot;goFinance('egresos')&quot;><i class=&quot;fa fa-arrow-down&quot; style=&quot;color:var(--danger)&quot;></i> Egresos</div>
     <div class=&quot;si&quot; onclick=&quot;goFinance('deudas')&quot;><i class=&quot;fa fa-credit-card&quot; style=&quot;color:var(--warn)&quot;></i> Deudas</div>
     <div class=&quot;si&quot; onclick=&quot;goFinance('presupuesto')&quot;><i class=&quot;fa fa-piggy-bank&quot; style=&quot;color:var(--ac)&quot;></i> Presupuesto</div>
+    <div class=&quot;sl&quot;>Sistema</div>
+    <div class=&quot;si&quot; onclick=&quot;marcaAbrir()&quot;><i class=&quot;fa fa-palette&quot; style=&quot;color:var(--ac3)&quot;></i> Apariencia y licencia</div>
+    <div class=&quot;si&quot; onclick=&quot;yoPedir(true)&quot;><i class=&quot;fa fa-user-check&quot; style=&quot;color:var(--ok)&quot;></i> Mi perfil y rol</div>
+    <div class=&quot;si&quot; onclick=&quot;eqAbrir()&quot;><i class=&quot;fa fa-users&quot; style=&quot;color:var(--ac)&quot;></i> Equipos de trabajo</div>
+    <div class=&quot;si&quot; onclick=&quot;licAbrir()&quot;><i class=&quot;fa fa-key&quot; style=&quot;color:var(--warn)&quot;></i> <span id=&quot;lic-sello&quot;>Licencia</span></div>
+    <div class=&quot;si&quot; onclick=&quot;escAbrirCarpeta()&quot;><i class=&quot;fa fa-folder-open&quot; style=&quot;color:var(--t3)&quot;></i> <span id=&quot;esc-sello&quot;>Carpeta de datos</span></div>
     <div class=&quot;sl&quot;>Integraciones</div>
     <div class=&quot;si&quot; onclick=&quot;openIntegra('teams')&quot;><i class=&quot;fab fa-microsoft&quot; style=&quot;color:#6264A7&quot;></i> Microsoft Teams</div>
     <div class=&quot;si&quot; onclick=&quot;openIntegra('gcal')&quot;><i class=&quot;fab fa-google&quot; style=&quot;color:#4285F4&quot;></i> Google Calendar</div>
@@ -4623,6 +4639,12 @@ body{font-family:var(--fm);background:var(--bg);color:var(--t1);min-height:100vh
           <div id=&quot;dash-goals&quot;></div>
           <div class=&quot;sect&quot; style=&quot;margin-top:16px&quot;>🔔 Alertas &amp; Recordatorios</div>
           <div id=&quot;dash-alerts-list&quot;></div>
+          <div class=&quot;sect&quot; style=&quot;margin-top:16px;display:flex;align-items:center;gap:8px&quot;>
+            <span style=&quot;flex:1&quot;>👥 Movimiento del equipo</span>
+            <span id=&quot;dash-yo&quot; style=&quot;font-size:10px;color:var(--t3);cursor:pointer;text-transform:none&quot;
+                  onclick=&quot;yoPedir(true)&quot; title=&quot;Cambiar mis datos&quot;></span>
+          </div>
+          <div class=&quot;card&quot; id=&quot;dash-bitacora&quot;></div>
         </div>
       </div>
       <div style=&quot;margin-bottom:16px&quot;>
@@ -5291,10 +5313,17 @@ const DEFAULT_KB = {'Pendiente':[],'Iniciado':[],'En Progreso':[],'Revisión':[]
 
 function nnSave(sinSubir) {
   try {
+    // Sellar lo que no tenga sello todavía. Sin esto la fusión no
+    // sabe cuál registro es más reciente y vuelve a perder cambios.
+    try{
+      sellarLista(PROJECTS);sellarLista(NOTES);sellarLista(MEETS);
+      sellarLista(TECNICOS);sellarLista(LVS);
+      KB_COLS.forEach(function(c){sellarLista(KB[c]);});
+    }catch(_s){}
     const data = {
       NOTES, KB, MEETS, GOALS, COURSES, TRIPS,
       TRANSACTIONS, DEBTS, BUDGET_CATS, HOME_FIXED, HOME_TASKS, PROJECTS, LVS, TECNICOS,
-      FIN_PIN_H
+      FIN_PIN_H, EQUIPOS, BITACORA, EQUIPO
     };
     const serialized = JSON.stringify(data);
     localStorage.setItem(NN_KEY, serialized);
@@ -5307,6 +5336,8 @@ function nnSave(sinSubir) {
     } catch(_e) {}
     // y a la nube, para que el otro equipo vea lo mismo
     try{ if(!sinSubir&amp;&amp;typeof nnSyncProgramar==='function')nnSyncProgramar(); }catch(_e2){}
+    // en escritorio, además a un archivo de la carpeta del usuario
+    try{ if(typeof escRespaldar==='function')escRespaldar(); }catch(_e3){}
   } catch(e) { console.warn('NeuroNotes: error guardando', e); }
 }
 
@@ -5349,6 +5380,9 @@ let HOME_TASKS   = _saved ? (_saved.HOME_TASKS   || []) : [];
 let PROJECTS     = _saved ? (_saved.PROJECTS     || []) : [];
 var _LVS_INIT    = _saved ? (_saved.LVS          || []) : [];
 var _TEC_INIT    = _saved ? (_saved.TECNICOS     || []) : [];
+var _EQ_INIT     = _saved ? (_saved.EQUIPOS      || []) : [];
+var _BIT_INIT    = _saved ? (_saved.BITACORA     || []) : [];
+var _EQP_INIT    = _saved ? (_saved.EQUIPO       || []) : [];
 
 // Levantamientos de portería virtual. Se declaran AQUÍ, antes de
 // cualquier uso: estaban dentro del bloque del presupuesto preliminar
@@ -5501,6 +5535,12 @@ function renderDash() {
   // al repintar el dashboard hay que volver a tapar las cifras
   try{ if(typeof finTapar==='function') finTapar(); }catch(e){}
   try{ if(typeof renderAgendaDash==='function') renderAgendaDash(6); }catch(e){}
+  try{
+    var _b=document.getElementById('dash-bitacora');
+    if(_b)_b.innerHTML=bitHTML(8);
+    var _y=document.getElementById('dash-yo');
+    if(_y)_y.textContent=YO?((ROLES[YO.rol]||{}).ico+' '+YO.nombre+' · '+(yoVeTodo()?'ves todo':'ves lo tuyo')):'¿quién eres?';
+  }catch(e){}
 }
 
 // ══ MEETINGS ══
@@ -5727,6 +5767,8 @@ function moveTask(fromCol,taskId,toCol){
   const task=KB[fromCol].splice(idx,1)[0];
   if(!KB[toCol])KB[toCol]=[];
   KB[toCol].push(task);
+  sellar(task);                       // este cambio es mío y es de ahora
+  bitAnotar('movió «'+task.t.substring(0,40)+'» a',toCol,'estado');
   nnSave();  renderKB(); T('Estado cambiado',task.t.substring(0,35)+' → '+toCol,'🔄');
   // avisa a la agenda, reporta el cambio y dispara la automatización del proyecto
   try{
@@ -5741,6 +5783,7 @@ function moveTask(fromCol,taskId,toCol){
       m+='━━━━━━━━━━━━━━━\n';
       m+='📌 '+nnB(task.t)+'\n';
       m+='📋 '+nnEsc(fromCol)+' → '+nnB(toCol)+'\n';
+      m+='👤 '+nnEsc(yoNombre())+'\n';
       if(task.projName||pr)m+='📂 '+nnEsc(task.projName||pr.name)+'\n';
       if(task.date)m+='📆 '+nnEsc(nnFechaLarga(task.date))+(task.time?' · '+nnEsc(task.time):'')+'\n';
       if(task.p&amp;&amp;task.p!=='Normal')m+='⚡ '+nnEsc(task.p)+'\n';
@@ -6200,7 +6243,9 @@ function addMeeting(){
   if(meetDate.getTime()===today.getTime()) when='today';
   else if(meetDate<today) when='past';
   const fechaFmt=fecha?new Date(fecha+'T12:00').toLocaleDateString('es-CO').slice(0,5):new Date().toLocaleDateString('es-CO').slice(0,5);
-  MEETS.unshift({id:Date.now(),t,time:document.getElementById('m-time').value,date:fechaFmt,plat:document.getElementById('m-plat').value.toLowerCase().replace(/\s/g,''),parts:[document.getElementById('m-parts').value||'Yo'],agenda:document.getElementById('m-agenda').value,when});
+  // iso: la fecha completa. &quot;date&quot; va en dd/mm por compatibilidad,
+  // pero sin año no se puede saber de qué día se habla.
+  MEETS.unshift({id:Date.now(),t,iso:fecha||dispHoyISO(),time:document.getElementById('m-time').value,date:fechaFmt,plat:document.getElementById('m-plat').value.toLowerCase().replace(/\s/g,''),parts:[document.getElementById('m-parts').value||'Yo'],agenda:document.getElementById('m-agenda').value,when});
   document.getElementById('m-title').value='';
   document.getElementById('m-agenda').value='';
   document.getElementById('m-parts').value='';
@@ -6380,10 +6425,18 @@ try{
   LVS=_LVS_INIT||[];
   LV=null;
   TECNICOS=_TEC_INIT||[];
+  EQUIPOS=_EQ_INIT||[];
+  BITACORA=_BIT_INIT||[];
+  EQUIPO=_EQP_INIT||[];
   tecLlenarSelects();
   deudaMigrarFormato();
   nnSyncInit();
   externosInit();
+  // La identidad y la apariencia se arrancan al final del archivo,
+  // donde sus variables ya existen. Llamarlas desde aquí reventaba
+  // —MARCA todavía no estaba definida— y como este bloque va dentro
+  // de un try, se tragaba el error y dejaba sin arrancar todo lo que
+  // venía después, incluida la sincronización periódica.
   projFillSelect(); calFillProjects(); renderProjects();
   var _cd=document.getElementById('cal-new-date'); if(_cd)_cd.value=nnHoy();
 }catch(e){console.warn('init proyectos',e);}
@@ -6745,6 +6798,7 @@ function projSave(){
   var g=function(id){var e=document.getElementById(id);return e?e.value.trim():'';};
   var name=g('pj-name');
   if(!name){T('Error','Escribe el nombre del proyecto','⚠️');return;}
+  if(!licPuedeCrear((PROJECTS||[]).length))return;   // tope sin licencia
   var tipo=g('pj-type')||'CCTV';
   var ini=g('pj-start')||nnHoy(), fin=g('pj-end')||ini;
   var conFases=document.getElementById('pj-fases').checked;
@@ -6754,7 +6808,11 @@ function projSave(){
     auto:{fases:conFases,avance:document.getElementById('pj-avance').checked},
     created:nnHoy()
   };
+  sellar(p,true);                       // queda con dueño: quien lo creó
+  var _mis=(typeof eqMios==='function')?eqMios():[];
+  if(_mis.length===1)p.equipoId=_mis[0].id;          // si solo estoy en uno, ahí va
   PROJECTS.unshift(p);
+  bitAnotar('creó el proyecto',name,'proyecto');
 
   var creadas=[];
   if(conFases){
@@ -6765,6 +6823,7 @@ function projSave(){
       var iso=nnISO(d), hora=PROJ_HORA[f.t]||'09:00';
       var task={id:Date.now()+i,t:f.n,p:f.pr||'Normal',proj:tipo,projId:p.id,projName:name,
         tags:[tipo,name.slice(0,18)],date:iso,time:hora,due:nnCorto(iso),fase:i+1,evType:f.t};
+      sellar(task,true); task._owner=p._owner;   // la fase es del dueño del proyecto
       KB['Pendiente']=KB['Pendiente']||[];
       KB['Pendiente'].push(task);
       creadas.push({task:task,tipo:f.t});
@@ -6847,6 +6906,8 @@ function projOnTaskMoved(task,fromCol,toCol){
     if(p.client)m+='👤 '+nnEsc(p.client)+'\n';
     m+='✅ '+pr.total+' fases completadas\n';
     p.status='Terminado';
+    sellar(p);
+    bitAnotar('terminó el proyecto',p.name,'proyecto');
     nnEventDone('nn_proj_'+p.id,true);
   }
   m+='<i>EM Suite PRO</i>';
@@ -6857,13 +6918,16 @@ function projOnTaskMoved(task,fromCol,toCol){
 // ── Tarjetas de proyecto sobre el kanban ──────────────────────
 function renderProjects(){
   var box=document.getElementById('proj-cards'); if(!box)return;
-  if(!PROJECTS.length){
+  if(!PROJECTS.filter(eqPuedoVerProyecto).length){
     box.innerHTML='<div style=&quot;padding:14px;border:1px dashed var(--bd);border-radius:var(--r);'+
-      'font-size:12px;color:var(--t3);text-align:center&quot;>Sin proyectos. Crea uno y sus fases se agendan solas.</div>';
+      'font-size:12px;color:var(--t3);text-align:center&quot;>'+
+      (PROJECTS.length?'No tienes proyectos asignados. El jefe los ve todos.'
+                      :'Sin proyectos. Crea uno y sus fases se agendan solas.')+'</div>';
     return;
   }
   var hoy=nnHoy();
-  box.innerHTML=PROJECTS.map(function(p){
+  // el jefe ve todos; los demás, los suyos y los que les asignaron
+  box.innerHTML=PROJECTS.filter(eqPuedoVerProyecto).map(function(p){
     var pr=projProgress(p.id);
     var venc=p.deadline&amp;&amp;p.deadline<hoy&amp;&amp;p.status!=='Terminado';
     var dias=p.deadline?Math.round((new Date(p.deadline+'T12:00')-new Date(hoy+'T12:00'))/86400000):null;
@@ -6967,7 +7031,17 @@ function renderCalFull(){
   g.innerHTML=html;
   calDay();
 }
-function calPick(iso){calSel=iso;renderCalFull();}
+function calPick(iso){
+  calSel=iso;
+  // Además de mostrar el día, deja lista la fecha del evento nuevo.
+  // En tablet esta es la forma más rápida: tocar el día y ya.
+  try{
+    var f=document.getElementById('cal-new-date');
+    if(f&amp;&amp;typeof tacPoner==='function')tacPoner(f,iso);
+    else if(f)f.value=iso;
+  }catch(e){}
+  renderCalFull();
+}
 function calDay(){
   var box=document.getElementById('cal-day'); if(!box)return;
   var evs=calEvents().filter(function(e){return e.date===calSel;})
@@ -8587,12 +8661,55 @@ var NN_DEV=(function(){
   }catch(e){return 'dev';}
 })();
 
-function nnCloudUrl(){
+// El trabajo del equipo va a un documento común; lo personal de cada
+// quien va al suyo. Antes todo iba junto, y al abrir su copia el jefe
+// veía las tarjetas de crédito y el sueldo de los demás.
+//
+// Y cada CLIENTE tiene su propio espacio. Sin esto, dos empresas con
+// licencia distinta pero en el mismo Firebase escribirían en el mismo
+// documento: verían los proyectos del otro y se borrarían entre sí.
+//
+// El espacio se fija UNA vez, al activar la licencia, y no se mueve
+// solo nunca más: cambiarlo dejaría los datos huérfanos en el
+// documento anterior.
+function nnEspacio(){
+  try{
+    var e=localStorage.getItem('em_espacio_v1');
+    if(e)return e;
+  }catch(_){}
+  return 'neuronotes';        // sin licencia: el de siempre
+}
+// Se le pasa la licencia entera. El nombre del espacio sale de &quot;s&quot;,
+// un revoltijo al azar que puso el generador al firmarla. Antes salía
+// del id (L-0001), y eso era adivinable: el que tuviera la clave de
+// Firebase podía probar eL0001, eL0002… hasta dar con otro cliente.
+// Las licencias viejas no traen &quot;s&quot;; esas siguen con su id de siempre,
+// o se les quedarían los datos huérfanos en el documento anterior.
+function nnEspacioFijar(lic){
+  var d=(lic&amp;&amp;typeof lic==='object')?lic:{id:lic};
+  var semilla=d.s||d.id||'';
+  var nuevo='e'+String(semilla).replace(/[^a-zA-Z0-9]/g,'');
+  if(nuevo.length<3)return false;
+  try{
+    var actual=localStorage.getItem('em_espacio_v1');
+    if(actual)return false;   // ya tiene: no se toca
+    localStorage.setItem('em_espacio_v1',nuevo);
+  }catch(_){return false;}
+  return true;
+}
+function nnCloudUrl(){ return nnDocUrl(nnEspacio()); }
+function nnPersonalUrl(){
+  if(!YO||!YO.id)return '';
+  var esp=nnEspacio();
+  var base='personal_'+String(YO.id).replace(/[^a-zA-Z0-9_]/g,'');
+  return nnDocUrl(esp==='neuronotes'?base:(esp+'_'+base));
+}
+function nnDocUrl(doc){
   var c=EMCFG_NN||{};
-  var proj=c.fbProject||'em-suite-pro', key=c.fbKey||'';
-  if(!key)return '';
+  var proj=c.fbProject||'', key=c.fbKey||'';
+  if(!key||!proj)return '';
   return 'https://firestore.googleapis.com/v1/projects/'+proj+
-         '/databases/(default)/documents/appdata/neuronotes?key='+key;
+         '/databases/(default)/documents/appdata/'+doc+'?key='+key;
 }
 
 // Lo que viaja (sin fotos)
@@ -8603,10 +8720,17 @@ function nnEstado(){
     Object.keys(l.fotos||{}).forEach(function(cat){c.fotosCount[cat]=(l.fotos[cat]||[]).length;});
     return c;
   });
-  return {NOTES:NOTES,KB:KB,MEETS:MEETS,GOALS:GOALS,COURSES:COURSES,TRIPS:TRIPS,
+  // LO DEL TRABAJO — lo ve el equipo
+  return {NOTES:NOTES,KB:KB,MEETS:MEETS,PROJECTS:PROJECTS,
+    LVS:levs,TECNICOS:TECNICOS,EQUIPO:EQUIPO,EQUIPOS:EQUIPOS,BITACORA:BITACORA,
+    ts:NN_SYNC_TS,dev:NN_DEV};
+}
+// LO PERSONAL — solo lo ve su dueño, va a otro documento
+function nnEstadoPersonal(){
+  return {GOALS:GOALS,COURSES:COURSES,TRIPS:TRIPS,
     TRANSACTIONS:TRANSACTIONS,DEBTS:DEBTS,BUDGET_CATS:BUDGET_CATS,
-    HOME_FIXED:HOME_FIXED,HOME_TASKS:HOME_TASKS,PROJECTS:PROJECTS,
-    LVS:levs,TECNICOS:TECNICOS,FIN_PIN_H:FIN_PIN_H,ts:NN_SYNC_TS,dev:NN_DEV};
+    HOME_FIXED:HOME_FIXED,HOME_TASKS:HOME_TASKS,FIN_PIN_H:FIN_PIN_H,
+    ts:Date.now(),dev:NN_DEV,de:yoId()};
 }
 
 // Fusiona dos listas por id: se quedan todos, y ante el mismo id manda
@@ -8646,16 +8770,36 @@ function nnMergeKB(local,remoto,remotoNuevo){
   return out;
 }
 
+// LO DEL TRABAJO. Fusión por REGISTRO: gana el que se tocó de último,
+// uno por uno. Antes ganaba el lado completo que hubiera guardado de
+// último, y por eso se perdían cambios cuando dos personas movían
+// cosas distintas casi al tiempo.
 function nnAplicarRemoto(r,remotoNuevo){
-  NOTES        = nnMergeLista(NOTES||[],r.NOTES||[],remotoNuevo);
-  MEETS        = nnMergeLista(MEETS||[],r.MEETS||[],remotoNuevo);
-  GOALS        = nnMergeLista(GOALS||[],r.GOALS||[],remotoNuevo);
-  COURSES      = nnMergeLista(COURSES||[],r.COURSES||[],remotoNuevo);
-  TRIPS        = nnMergeLista(TRIPS||[],r.TRIPS||[],remotoNuevo);
-  DEBTS        = nnMergeLista(DEBTS||[],r.DEBTS||[],remotoNuevo);
-  PROJECTS     = nnMergeLista(PROJECTS||[],r.PROJECTS||[],remotoNuevo);
-  TECNICOS     = nnMergeLista(TECNICOS||[],r.TECNICOS||[],remotoNuevo);
-  KB           = nnMergeKB(KB||{},r.KB||{},remotoNuevo);
+  NOTES        = fusionarLista(NOTES||[],r.NOTES||[],remotoNuevo);
+  MEETS        = fusionarLista(MEETS||[],r.MEETS||[],remotoNuevo);
+  PROJECTS     = fusionarLista(PROJECTS||[],r.PROJECTS||[],remotoNuevo);
+  TECNICOS     = fusionarLista(TECNICOS||[],r.TECNICOS||[],remotoNuevo);
+  EQUIPO       = fusionarLista(EQUIPO||[],r.EQUIPO||[],remotoNuevo);
+  EQUIPOS      = fusionarLista(EQUIPOS||[],r.EQUIPOS||[],remotoNuevo);
+  KB           = fusionarKB(KB||{},r.KB||{},remotoNuevo);
+  // La bitácora solo crece: se juntan las dos y se deja lo más nuevo
+  BITACORA     = fusionarLista(BITACORA||[],r.BITACORA||[],remotoNuevo)
+                   .sort(function(a,b){return (b.ts||0)-(a.ts||0);}).slice(0,300);
+  // Levantamientos: se fusionan por id y se conservan las fotos locales
+  var fotosLocales={};
+  (LVS||[]).forEach(function(l){fotosLocales[l.id]=l.fotos||{};});
+  LVS=fusionarLista(LVS||[],r.LVS||[],remotoNuevo).map(function(l){
+    if(!l.fotos)l.fotos=fotosLocales[l.id]||{};
+    return l;
+  });
+}
+// LO PERSONAL. Viene del documento privado de cada quien, así que
+// no hay con quién chocar: si lo de la nube es más nuevo, manda.
+function nnAplicarPersonal(r,remotoNuevo){
+  GOALS   = fusionarLista(GOALS||[],r.GOALS||[],remotoNuevo);
+  COURSES = fusionarLista(COURSES||[],r.COURSES||[],remotoNuevo);
+  TRIPS   = fusionarLista(TRIPS||[],r.TRIPS||[],remotoNuevo);
+  DEBTS   = fusionarLista(DEBTS||[],r.DEBTS||[],remotoNuevo);
   if(remotoNuevo){
     if(r.FIN_PIN_H)FIN_PIN_H=r.FIN_PIN_H;
     if(r.TRANSACTIONS)TRANSACTIONS=r.TRANSACTIONS;
@@ -8663,13 +8807,6 @@ function nnAplicarRemoto(r,remotoNuevo){
     if(r.HOME_FIXED)HOME_FIXED=r.HOME_FIXED;
     if(r.HOME_TASKS)HOME_TASKS=r.HOME_TASKS;
   }
-  // Levantamientos: se fusionan por id y se conservan las fotos locales
-  var fotosLocales={};
-  (LVS||[]).forEach(function(l){fotosLocales[l.id]=l.fotos||{};});
-  LVS=nnMergeLista(LVS||[],r.LVS||[],remotoNuevo).map(function(l){
-    if(!l.fotos)l.fotos=fotosLocales[l.id]||{};
-    return l;
-  });
 }
 
 function nnSyncEstado(txt,color){
@@ -8744,7 +8881,7 @@ function nnSyncFallo(e){
 var NN_SYNC_ERR='';
 function nnSyncAyuda(){
   if(!NN_SYNC_ERR)return;
-  var c=EMCFG_NN||{}, proj=c.fbProject||'em-suite-pro';
+  var c=EMCFG_NN||{}, proj=c.fbProject||'TU-PROYECTO';
   var cuerpo;
   if(NN_SYNC_ERR==='permiso'){
     cuerpo='<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:10px&quot;>'+
@@ -8810,9 +8947,33 @@ function nnModalInfo(titulo,html){
 }
 
 // ── Subir a la nube ──
+// Subir es LEER-FUSIONAR-ESCRIBIR, no escribir a secas.
+// Un PATCH reemplaza el documento entero. Si dos personas cambian
+// cosas distintas y la segunda sube sin haber traído lo de la
+// primera, el trabajo de la primera desaparece de la nube aunque la
+// fusión al traer sea perfecta. Por eso, antes de escribir, se mira
+// si alguien más escribió desde nuestra última sincronización y, si
+// fue así, se fusiona primero.
 function nnCloudPush(forzar){
   var url=nnCloudUrl();
   if(!url)return Promise.resolve(false);
+  return fetch(url)
+    .then(function(r){ return r.status===404?null:(r.ok?r.json():null); })
+    .then(function(j){
+      if(!j||!j.fields||!j.fields.json)return;
+      var rts=+(j.fields.ts&amp;&amp;(j.fields.ts.integerValue||j.fields.ts.stringValue))||0;
+      if(rts<=NN_SYNC_TS)return;            // nadie escribió después de nosotros
+      var otro=(j.fields.dev&amp;&amp;j.fields.dev.stringValue)||'';
+      if(otro===NN_DEV)return;              // fuimos nosotros mismos
+      NN_SYNC_ON=true;
+      nnAplicarRemoto(JSON.parse(j.fields.json.stringValue||'{}'),true);
+      NN_SYNC_ON=false;
+      try{renderProjects();renderKB();renderDash();}catch(e){}
+    })
+    .catch(function(){})
+    .then(function(){ return nnCloudEscribir(url); });
+}
+function nnCloudEscribir(url){
   NN_SYNC_TS=Date.now();
   var estado=nnEstado();
   var txt=JSON.stringify(estado);
@@ -8838,13 +8999,46 @@ function nnCloudPush(forzar){
     .catch(function(e){
       nnSyncFallo(e);
       return false;
-    });
+    })
+    .then(function(ok){ return nnPersonalPush().then(function(){return ok;}); });
 }
 
+// ── Lo personal, a su propio documento ──
+function nnPersonalPush(){
+  var url=nnPersonalUrl(); if(!url)return Promise.resolve(false);
+  var txt=JSON.stringify(nnEstadoPersonal());
+  return fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:{
+        json:{stringValue:txt},
+        ts:{integerValue:String(Date.now())},
+        de:{stringValue:yoId()}
+      }})})
+    .then(function(r){return r.ok;})
+    .catch(function(){return false;});
+}
+function nnPersonalPull(){
+  var url=nnPersonalUrl(); if(!url)return Promise.resolve(false);
+  return fetch(url)
+    .then(function(r){ return r.status===404?null:(r.ok?r.json():null); })
+    .then(function(j){
+      if(!j||!j.fields||!j.fields.json)return false;
+      var r=JSON.parse(j.fields.json.stringValue||'{}');
+      var rts=+(j.fields.ts&amp;&amp;(j.fields.ts.integerValue||j.fields.ts.stringValue))||0;
+      nnAplicarPersonal(r,rts>NN_PERSONAL_TS);
+      NN_PERSONAL_TS=Math.max(rts,NN_PERSONAL_TS);
+      nnSave(true);
+      try{renderDash();if(document.getElementById('v-finance').classList.contains('on'))renderFinance();}catch(e){}
+      return true;
+    })
+    .catch(function(){return false;});
+}
+var NN_PERSONAL_TS=0;
+
 function nnSyncAhora(){
-  nnCloudPull(true).then(function(){return nnCloudPush(true);})
+  nnCloudPull(true).then(function(){return nnPersonalPull();})
+    .then(function(){return nnCloudPush(true);})
     .then(function(ok){
-      if(ok)T('Sincronizado','Proyectos, fases y levantamientos al día','☁️');
+      if(ok)T('Sincronizado','Trabajo del equipo y tus datos personales al día','☁️');
       else T('Sin sincronizar','Revisa la conexión o la configuración de Firebase','⚠️');
     });
 }
@@ -8861,9 +9055,9 @@ function nnSyncInit(){
   var esperas=0;
   (function arrancar(){
     if(!nnCloudUrl()&amp;&amp;esperas++<20){setTimeout(arrancar,400);return;}
-    nnCloudPull(true).then(function(){nnCloudPush(false);});
+    nnCloudPull(true).then(function(){return nnPersonalPull();}).then(function(){nnCloudPush(false);});
   })();
-  setInterval(function(){if(!document.hidden)nnCloudPull(true);},60000);
+  setInterval(function(){if(!document.hidden){nnCloudPull(true);nnPersonalPull();}},60000);
   document.addEventListener('visibilitychange',function(){if(!document.hidden)nnCloudPull(true);});
 }
 
@@ -9973,7 +10167,7 @@ function agendaLeyenda(claves){
   l.innerHTML=h;
 }
 function agendaAyudaExternos(){
-  var proj=((EMCFG_NN||{}).fbProject)||'em-suite-pro';
+  var proj=((EMCFG_NN||{}).fbProject)||'TU-PROYECTO';
   nnModalInfo('☁️ Traer Google Calendar y Teams',
     '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7&quot;>La app <b>no puede</b> leer tu Google Calendar ni tu Outlook por sí sola: '+
     'no tiene sesión con Google ni con Microsoft, y el navegador bloquea ese tipo de petición.</p>'+
@@ -10147,8 +10341,8 @@ var EXTERNOS_AT='';        // cuándo lo trajo
 
 function externosUrl(){
   var c=EMCFG_NN||{};
-  var proj=c.fbProject||'em-suite-pro', key=c.fbKey||'';
-  if(!key)return '';
+  var proj=c.fbProject||'', key=c.fbKey||'';
+  if(!key||!proj)return '';
   return 'https://firestore.googleapis.com/v1/projects/'+proj+
          '/databases/(default)/documents/externos/agenda?key='+key;
 }
@@ -10183,6 +10377,1769 @@ function externosComoEventos(){
 
 
 // ═══════════════════════════════════════════════════════════════
+// EQUIPO: QUIÉN SOY, QUÉ VEO Y CÓMO SE FUSIONAN LOS CAMBIOS
+//
+// Antes la app era de una sola persona con dos equipos, y la
+// sincronización comparaba QUIÉN GUARDÓ MÁS RECIENTE, no QUÉ
+// REGISTRO CAMBIÓ. Con tres personas eso pierde trabajo en
+// silencio: probado, el jefe movió un proyecto a &quot;En curso&quot;, la
+// comercial movió otro a &quot;Terminado&quot; casi al tiempo, y el cambio
+// del jefe desapareció sin un solo aviso.
+//
+// El arreglo: cada registro lleva su propio sello —cuándo se tocó
+// y quién lo tocó— y al fusionar gana el registro más reciente,
+// uno por uno. Así dos personas pueden trabajar a la vez sobre
+// cosas distintas sin pisarse.
+//
+// Sobre los roles: el jefe ve todo, los demás ven lo suyo. Eso es
+// ORDEN EN PANTALLA, no seguridad. Mientras las reglas de Firebase
+// estén abiertas, quien tenga el archivo puede leer los datos de
+// todos. Para que sea seguridad de verdad hace falta Firebase Auth
+// con reglas por empresa — está en el plan, pero hoy no lo es, y
+// más vale saberlo antes de vendérselo a un tercero.
+// ═══════════════════════════════════════════════════════════════
+
+var YO=null;                 // {id, nombre, correo, rol, empresa}
+var EQUIPO;                  // los demás usuarios que se han visto
+// Sin valor a propósito: este módulo corre DESPUÉS del bloque INIT,
+// y un '=[]' aquí borraría lo que INIT acaba de leer del disco.
+var ROLES={
+  jefe:     {n:'Jefe / Dirección', ve:'todo',  ico:'👔'},
+  comercial:{n:'Comercial',        ve:'suyo',  ico:'💼'},
+  tecnico:  {n:'Técnico',          ve:'suyo',  ico:'🔧'},
+  admin:    {n:'Administración',   ve:'todo',  ico:'📋'}
+};
+
+function yoCargar(){
+  try{
+    var raw=localStorage.getItem('em_yo_v1');
+    if(raw)YO=JSON.parse(raw);
+  }catch(e){}
+  if(YO&amp;&amp;!YO.id)YO=null;
+  return YO;
+}
+function yoGuardar(y){
+  YO=y;
+  try{localStorage.setItem('em_yo_v1',JSON.stringify(y));}catch(e){}
+}
+function yoVeTodo(){ return !!(YO&amp;&amp;ROLES[YO.rol]&amp;&amp;ROLES[YO.rol].ve==='todo'); }
+function yoNombre(){ return (YO&amp;&amp;YO.nombre)||'Sin identificar'; }
+function yoId(){ return (YO&amp;&amp;YO.id)||'anon'; }
+
+// ── El sello de cada registro ──
+// _ts: cuándo se tocó por última vez · _by: quién · _owner: de quién es
+function sellar(r,esNuevo){
+  if(!r||typeof r!=='object')return r;
+  r._ts=Date.now();
+  r._by=yoId();
+  r._byN=yoNombre();
+  if(esNuevo&amp;&amp;!r._owner)r._owner=yoId();
+  return r;
+}
+function sellarLista(lista){
+  (lista||[]).forEach(function(r){ if(r&amp;&amp;!r._ts)sellar(r,true); });
+  return lista;
+}
+
+// ── ¿Puedo ver este registro? ──
+// El jefe y administración ven todo. Los demás, lo que crearon o
+// lo que les asignaron.
+function puedoVer(r){
+  if(!r)return false;
+  if(yoVeTodo())return true;
+  var mio=String(r._owner||'')===yoId();
+  var asignado=r.asignado&amp;&amp;String(r.asignado.id||'')===yoId();
+  var enEquipo=(r.equipo||[]).some(function(x){return String(x)===yoId();});
+  if(!r._owner&amp;&amp;!r.asignado)return true;   // lo de antes de los roles: visible
+  return mio||asignado||enEquipo;
+}
+function filtrarVisibles(lista){
+  return (lista||[]).filter(puedoVer);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FUSIÓN POR REGISTRO
+// Gana el registro con el sello más reciente, no el lado que
+// guardó de último. Los que no tienen sello (datos de antes) se
+// resuelven como antes, por lado, para no perderlos.
+// ═══════════════════════════════════════════════════════════════
+function fusionarLista(local,remoto,remotoNuevo){
+  var porId={}, orden=[];
+  function meter(x,lado){
+    if(!x||x.id==null)return;
+    var k=String(x.id);
+    if(!porId[k]){porId[k]={l:null,r:null};orden.push(k);}
+    porId[k][lado]=x;
+  }
+  (local||[]).forEach(function(x){meter(x,'l');});
+  (remoto||[]).forEach(function(x){meter(x,'r');});
+  return orden.map(function(k){
+    var p=porId[k];
+    if(p.l&amp;&amp;!p.r)return p.l;
+    if(p.r&amp;&amp;!p.l)return p.r;
+    var tl=+p.l._ts||0, tr=+p.r._ts||0;
+    if(tl||tr)return tr>tl?p.r:p.l;       // gana el registro más reciente
+    return remotoNuevo?p.r:p.l;           // sin sello: como antes
+  });
+}
+
+// El kanban: además del registro, importa en qué columna quedó
+function fusionarKB(local,remoto,remotoNuevo){
+  var cols=KB_COLS.slice();
+  Object.keys(local||{}).concat(Object.keys(remoto||{})).forEach(function(c){
+    if(cols.indexOf(c)<0)cols.push(c);
+  });
+  var pos={},out={};
+  cols.forEach(function(c){out[c]=[];});
+  function indexar(obj,lado){
+    Object.keys(obj||{}).forEach(function(c){
+      (obj[c]||[]).forEach(function(t){
+        if(!t||t.id==null)return;
+        pos[t.id]=pos[t.id]||{};
+        pos[t.id][lado]={col:c,t:t};
+      });
+    });
+  }
+  indexar(local,'l');indexar(remoto,'r');
+  Object.keys(pos).forEach(function(id){
+    var p=pos[id], elegido;
+    if(p.l&amp;&amp;!p.r)elegido=p.l;
+    else if(p.r&amp;&amp;!p.l)elegido=p.r;
+    else{
+      var tl=+(p.l.t._ts)||0, tr=+(p.r.t._ts)||0;
+      elegido=(tl||tr)?(tr>tl?p.r:p.l):(remotoNuevo?p.r:p.l);
+    }
+    if(!elegido)return;
+    if(!out[elegido.col])out[elegido.col]=[];
+    out[elegido.col].push(elegido.t);
+  });
+  return out;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BITÁCORA: quién hizo qué
+// Se guarda con el trabajo y viaja a todos, para que el jefe vea
+// el movimiento del equipo sin tener que preguntar.
+// ═══════════════════════════════════════════════════════════════
+var BITACORA;   // la llena INIT — ver la nota de EQUIPO
+function bitAnotar(que,detalle,tipo){
+  try{
+    BITACORA.unshift({id:'b'+Date.now()+Math.random().toString(36).slice(2,6),
+      ts:Date.now(), quien:yoNombre(), quienId:yoId(), rol:(YO&amp;&amp;YO.rol)||'',
+      que:que, detalle:detalle||'', tipo:tipo||''});
+    if(BITACORA.length>300)BITACORA=BITACORA.slice(0,300);
+  }catch(e){}
+}
+function bitHTML(n){
+  var l=(BITACORA||[]).slice(0,n||12);
+  if(!l.length)return '<div style=&quot;font-size:12px;color:var(--t3);text-align:center;padding:20px&quot;>'+
+    'Sin movimientos todavía</div>';
+  return l.map(function(b){
+    var r=ROLES[b.rol]||{ico:'👤'};
+    return '<div style=&quot;display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--bd)&quot;>'+
+      '<span style=&quot;font-size:13px;flex-shrink:0&quot;>'+r.ico+'</span>'+
+      '<div style=&quot;flex:1;min-width:0&quot;>'+
+        '<div style=&quot;font-size:12px;line-height:1.5&quot;><b>'+nnEsc(b.quien)+'</b> '+nnEsc(b.que)+
+        (b.detalle?' <span style=&quot;color:var(--ac)&quot;>'+nnEsc(b.detalle)+'</span>':'')+'</div>'+
+        '<div style=&quot;font-size:10px;color:var(--t3);font-family:var(--mono)&quot;>'+bitCuando(b.ts)+'</div>'+
+      '</div></div>';
+  }).join('');
+}
+function bitCuando(ts){
+  var min=Math.round((Date.now()-ts)/60000);
+  if(min<1)return 'ahora mismo';
+  if(min<60)return 'hace '+min+' min';
+  if(min<1440)return 'hace '+Math.round(min/60)+' h';
+  return new Date(ts).toLocaleDateString('es-CO',{day:'2-digit',month:'short'});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PRIMERA VEZ: decir quién eres
+// ═══════════════════════════════════════════════════════════════
+function yoPedir(forzar){
+  if(YO&amp;&amp;!forzar)return;
+  var d=document.getElementById('mo-yo');
+  if(!d){
+    d=document.createElement('div');d.className='mo';d.id='mo-yo';
+    d.innerHTML='<div class=&quot;md&quot; style=&quot;max-width:420px&quot;>'+
+      '<div class=&quot;mdh&quot;><i class=&quot;fa fa-user-check&quot; style=&quot;color:var(--ac)&quot;></i>'+
+      '<h3>¿Quién eres?</h3></div>'+
+      '<div class=&quot;mdc&quot;>'+
+        '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:14px&quot;>'+
+        'Esto identifica tus cambios ante el resto del equipo y decide qué ves. '+
+        'Se guarda en este equipo; lo puedes cambiar después.</p>'+
+        '<div class=&quot;fg&quot;><label class=&quot;fl&quot;>Tu nombre</label>'+
+        '<input class=&quot;fi&quot; id=&quot;yo-nombre&quot; placeholder=&quot;Ej: Edisson Macías&quot;></div>'+
+        '<div class=&quot;fg&quot;><label class=&quot;fl&quot;>Tu correo</label>'+
+        '<input class=&quot;fi&quot; id=&quot;yo-correo&quot; type=&quot;email&quot; placeholder=&quot;tu.correo@empresa.com&quot;></div>'+
+        '<div class=&quot;fg&quot;><label class=&quot;fl&quot;>Tu rol</label>'+
+        '<select class=&quot;fi&quot; id=&quot;yo-rol&quot;>'+
+          Object.keys(ROLES).map(function(k){
+            return '<option value=&quot;'+k+'&quot;>'+ROLES[k].ico+' '+ROLES[k].n+
+              (ROLES[k].ve==='todo'?' — ve todo':' — ve lo suyo')+'</option>';
+          }).join('')+
+        '</select></div>'+
+        '<div class=&quot;fg&quot;><label class=&quot;fl&quot;>Empresa</label>'+
+        '<input class=&quot;fi&quot; id=&quot;yo-empresa&quot; placeholder=&quot;Ej: EM Seguridad Electrónica&quot;></div>'+
+      '</div>'+
+      '<div class=&quot;mdf&quot;><button class=&quot;bp&quot; style=&quot;width:100%&quot; onclick=&quot;yoConfirmar()&quot;>Entrar</button></div></div>';
+    document.body.appendChild(d);
+  }
+  if(YO){
+    var v=function(i,x){var e=document.getElementById(i);if(e)e.value=x||'';};
+    v('yo-nombre',YO.nombre);v('yo-correo',YO.correo);v('yo-empresa',YO.empresa);
+    var s=document.getElementById('yo-rol'); if(s)s.value=YO.rol||'jefe';
+  }
+  openModal('mo-yo');
+}
+function yoConfirmar(){
+  var g=function(i){var e=document.getElementById(i);return e?e.value.trim():'';};
+  var n=g('yo-nombre');
+  if(!n){T('Falta tu nombre','','⚠️');return;}
+  var nuevo=!YO;
+  yoGuardar({
+    id:(YO&amp;&amp;YO.id)||('u_'+n.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,12)+'_'+Math.random().toString(36).slice(2,6)),
+    nombre:n, correo:g('yo-correo'), rol:g('yo-rol')||'jefe', empresa:g('yo-empresa')
+  });
+  closeModal('mo-yo');
+  equipoRegistrarme();
+  // si alguien ya lo invitó con ese correo, queda dentro con su rol
+  try{ if(eqEngancharme())T('Entraste a tu equipo','','👥'); }catch(_e){}
+  try{ licCargar(); }catch(_e){}
+  try{nnSave();renderDash();renderProjects();renderKB();}catch(e){}
+  T(nuevo?('Bienvenido, '+n):'Datos actualizados',
+    (ROLES[YO.rol]||{}).n+(yoVeTodo()?' · ves todo el equipo':' · ves lo tuyo'),'👤');
+  if(nuevo)bitAnotar('entró al equipo como',(ROLES[YO.rol]||{}).n,'equipo');
+}
+// Deja constancia de que existo, para que los demás me vean en la lista
+function equipoRegistrarme(){
+  if(!YO)return;
+  var i=EQUIPO.findIndex(function(u){return u.id===YO.id;});
+  var yo={id:YO.id,nombre:YO.nombre,correo:YO.correo,rol:YO.rol,visto:Date.now(),_ts:Date.now()};
+  if(i>=0)EQUIPO[i]=yo; else EQUIPO.push(yo);
+}
+function equipoHTML(){
+  if(!EQUIPO.length)return '<div style=&quot;font-size:12px;color:var(--t3);padding:12px&quot;>Solo tú por ahora</div>';
+  return EQUIPO.slice().sort(function(a,b){return (b.visto||0)-(a.visto||0);}).map(function(u){
+    var r=ROLES[u.rol]||{n:u.rol,ico:'👤'};
+    var yo=u.id===yoId();
+    return '<div style=&quot;display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--bd)&quot;>'+
+      '<span style=&quot;font-size:15px&quot;>'+r.ico+'</span>'+
+      '<div style=&quot;flex:1;min-width:0&quot;>'+
+        '<div style=&quot;font-size:12px;font-weight:600&quot;>'+nnEsc(u.nombre)+(yo?' <span style=&quot;color:var(--ac);font-weight:400&quot;>(tú)</span>':'')+'</div>'+
+        '<div style=&quot;font-size:10px;color:var(--t3)&quot;>'+nnEsc(r.n)+(u.correo?' · '+nnEsc(u.correo):'')+'</div>'+
+      '</div>'+
+      '<span style=&quot;font-size:10px;color:var(--t3);font-family:var(--mono)&quot;>'+(u.visto?bitCuando(u.visto):'')+'</span>'+
+      '</div>';
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PLANTILLAS, COLORES Y LICENCIA
+//
+// Un solo programa que cambia de vestido: la plantilla decide qué
+// módulos se ven, cómo se llaman las cosas y de qué color es todo.
+// Así hay un solo código que mantener en vez de cuatro.
+//
+// Sobre la licencia, sin rodeos: esta comprobación NO impide abrir
+// el programa. Es HTML; cualquiera lo abre con un editor y borra
+// esta línea. Lo que de verdad protege está en el robot, que corre
+// en el servidor del proveedor: sin licencia válida no hay
+// sincronización, ni Telegram, ni informes, ni correos. Esta
+// pantalla solo lo hace visible y cómodo de activar.
+// ═══════════════════════════════════════════════════════════════
+
+var PLANTILLAS = {
+  seguridad: {
+    n:'Seguridad Electrónica', ico:'🛡️',
+    desc:'Planos, CCTV, control de acceso, levantamientos y control técnico',
+    color:'#00D4FF', color2:'#7B5EA7',
+    modulos:['planos','levantamiento','control','tecnicos','proyectos','notas','canvas','agenda','finanzas'],
+    nombres:{proyectos:'Proyectos',tareas:'Fases',notas:'Notas técnicas',
+             clientes:'Copropiedades',equipo:'Técnicos'}
+  },
+  contenido: {
+    n:'Creación de Contenido', ico:'🎬',
+    desc:'Guiones, calendario de publicación, ideas y seguimiento de piezas',
+    color:'#FF4D8D', color2:'#FFB800',
+    modulos:['proyectos','notas','canvas','agenda','metas','finanzas'],
+    nombres:{proyectos:'Producciones',tareas:'Piezas',notas:'Guiones',
+             clientes:'Marcas',equipo:'Colaboradores'}
+  },
+  estudio: {
+    n:'Estudio', ico:'📚',
+    desc:'Materias, tareas, apuntes, cronograma de exámenes y metas',
+    color:'#22C55E', color2:'#0EA5E9',
+    modulos:['proyectos','notas','canvas','agenda','metas','cursos'],
+    nombres:{proyectos:'Materias',tareas:'Trabajos',notas:'Apuntes',
+             clientes:'Profesores',equipo:'Grupo'}
+  },
+  oficina: {
+    n:'Oficina', ico:'🏢',
+    desc:'Proyectos, reuniones, documentos, agenda y seguimiento de equipo',
+    color:'#6264A7', color2:'#00B8A9',
+    modulos:['proyectos','notas','canvas','agenda','reuniones','finanzas'],
+    nombres:{proyectos:'Proyectos',tareas:'Tareas',notas:'Documentos',
+             clientes:'Clientes',equipo:'Equipo'}
+  }
+};
+
+var MARCA = {
+  plantilla:'seguridad',
+  empresa:'',
+  color:'', color2:'',       // vacío = el de la plantilla
+  logo:'',                   // data URL, opcional
+  licencia:'',
+  licEstado:null             // lo que respondió el robot
+};
+
+function marcaCargar(){
+  try{
+    var raw=localStorage.getItem('em_marca_v1');
+    if(raw)MARCA=Object.assign(MARCA,JSON.parse(raw));
+  }catch(e){}
+  marcaAplicar();
+  return MARCA;
+}
+function marcaGuardar(){
+  try{localStorage.setItem('em_marca_v1',JSON.stringify(MARCA));}catch(e){}
+  marcaAplicar();
+  try{ emPost({type:'EM_MARCA',marca:MARCA}); }catch(e){}
+}
+function plantillaActual(){ return PLANTILLAS[MARCA.plantilla]||PLANTILLAS.seguridad; }
+function nombreDe(clave){
+  var p=plantillaActual();
+  return (p.nombres&amp;&amp;p.nombres[clave])||clave;
+}
+function moduloOn(m){
+  return plantillaActual().modulos.indexOf(m)>=0;
+}
+
+// ── Pintar ──
+// Los colores viven en variables CSS, así que cambiarlos es
+// cambiar dos valores, no repintar la app entera.
+function marcaAplicar(){
+  var p=plantillaActual();
+  var c1=MARCA.color||p.color, c2=MARCA.color2||p.color2;
+  try{
+    var r=document.documentElement.style;
+    r.setProperty('--ac',c1);
+    r.setProperty('--ac3',c2);
+    r.setProperty('--ac6',c2);
+  }catch(e){}
+  // ocultar lo que la plantilla no usa
+  try{
+    var mapa={planos:null,levantamiento:'lev',control:'control',
+      metas:'goals',cursos:'goals',reuniones:'meetings',finanzas:'finance',
+      agenda:'calendar',notas:'notes',canvas:null,proyectos:'kanban'};
+    Object.keys(mapa).forEach(function(m){
+      var vista=mapa[m]; if(!vista)return;
+      var on=moduloOn(m);
+      document.querySelectorAll('.si').forEach(function(el){
+        var oc=el.getAttribute('onclick')||'';
+        // V('finance') y goFinance('ingresos') son la misma familia
+        var toca=(oc.indexOf(&quot;'&quot;+vista+&quot;'&quot;)>=0) ||
+                 (vista==='finance'&amp;&amp;oc.indexOf('goFinance')>=0);
+        if(toca)el.style.display=on?'':'none';
+      });
+    });
+  }catch(e){}
+  // renombrar lo que la plantilla llama distinto
+  try{
+    var t=document.querySelector('#v-kanban .pgh1');
+    if(t)t.innerHTML=nombreDe('proyectos')+' <em>y '+nombreDe('tareas').toLowerCase()+'</em>';
+  }catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PANTALLA DE CONFIGURACIÓN
+// ═══════════════════════════════════════════════════════════════
+function marcaAbrir(){
+  var d=document.getElementById('mo-marca');
+  if(!d){
+    d=document.createElement('div');d.className='mo';d.id='mo-marca';
+    d.innerHTML='<div class=&quot;md&quot; style=&quot;max-width:560px&quot;>'+
+      '<div class=&quot;mdh&quot;><i class=&quot;fa fa-palette&quot; style=&quot;color:var(--ac)&quot;></i>'+
+      '<h3>Apariencia y licencia</h3>'+
+      '<button class=&quot;xb&quot; onclick=&quot;closeModal(\'mo-marca\')&quot;><i class=&quot;fa fa-times&quot;></i></button></div>'+
+      '<div class=&quot;mdc&quot; id=&quot;marca-cuerpo&quot; style=&quot;max-height:70vh;overflow-y:auto&quot;></div>'+
+      '<div class=&quot;mdf&quot;><button class=&quot;bs&quot; onclick=&quot;closeModal(\'mo-marca\')&quot;>Cerrar</button>'+
+      '<button class=&quot;bp&quot; onclick=&quot;marcaAplicarForm()&quot;>Guardar</button></div></div>';
+    document.body.appendChild(d);
+    d.addEventListener('click',function(e){if(e.target===this)this.classList.remove('op');});
+  }
+  marcaPintarForm();
+  openModal('mo-marca');
+}
+function marcaPintarForm(){
+  var c=document.getElementById('marca-cuerpo'); if(!c)return;
+  var p=plantillaActual();
+  var lic=MARCA.licEstado;
+  var h='';
+
+  // ── plantilla ──
+  h+='<div class=&quot;fl&quot; style=&quot;margin-bottom:8px&quot;>Plantilla</div>'+
+     '<div style=&quot;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px&quot;>';
+  Object.keys(PLANTILLAS).forEach(function(k){
+    var t=PLANTILLAS[k], on=(k===MARCA.plantilla);
+    h+='<div onclick=&quot;marcaElegir(\''+k+'\')&quot; style=&quot;cursor:pointer;padding:11px 12px;border-radius:var(--rs);'+
+      'border:1px solid '+(on?t.color:'var(--bd)')+';background:'+(on?t.color+'14':'var(--bg4)')+'&quot;>'+
+      '<div style=&quot;font-size:13px;font-weight:600;margin-bottom:3px&quot;>'+t.ico+' '+nnEsc(t.n)+'</div>'+
+      '<div style=&quot;font-size:10px;color:var(--t3);line-height:1.5&quot;>'+nnEsc(t.desc)+'</div>'+
+      '<div style=&quot;display:flex;gap:4px;margin-top:7px&quot;>'+
+        '<span style=&quot;width:14px;height:14px;border-radius:3px;background:'+t.color+'&quot;></span>'+
+        '<span style=&quot;width:14px;height:14px;border-radius:3px;background:'+t.color2+'&quot;></span></div>'+
+      '</div>';
+  });
+  h+='</div>';
+
+  // ── colores ──
+  h+='<div class=&quot;fg2&quot;>'+
+     '<div class=&quot;fg&quot;><label class=&quot;fl&quot;>Color principal</label>'+
+     '<input class=&quot;fi&quot; type=&quot;color&quot; id=&quot;mk-c1&quot; value=&quot;'+(MARCA.color||p.color)+'&quot; style=&quot;height:38px;padding:3px&quot;></div>'+
+     '<div class=&quot;fg&quot;><label class=&quot;fl&quot;>Color secundario</label>'+
+     '<input class=&quot;fi&quot; type=&quot;color&quot; id=&quot;mk-c2&quot; value=&quot;'+(MARCA.color2||p.color2)+'&quot; style=&quot;height:38px;padding:3px&quot;></div>'+
+     '</div>'+
+     '<div style=&quot;font-size:11px;color:var(--t3);margin-bottom:14px&quot;>'+
+     '<span style=&quot;cursor:pointer;text-decoration:underline&quot; onclick=&quot;marcaColoresPlantilla()&quot;>Volver a los colores de la plantilla</span></div>';
+
+  // ── empresa ──
+  h+='<div class=&quot;fg&quot;><label class=&quot;fl&quot;>Nombre de la empresa</label>'+
+     '<input class=&quot;fi&quot; id=&quot;mk-empresa&quot; value=&quot;'+nnEsc(MARCA.empresa||'')+'&quot; placeholder=&quot;Aparece en los informes y el encabezado&quot;></div>';
+
+  // ── licencia ──
+  h+='<div style=&quot;border-top:1px solid var(--bd);margin:16px 0 14px&quot;></div>'+
+     '<div class=&quot;fl&quot; style=&quot;margin-bottom:8px&quot;>Licencia</div>';
+  if(lic){
+    var col=lic.ok?(lic.estado==='gracia'?'var(--warn)':'var(--ok)'):'var(--danger)';
+    var ico=lic.ok?(lic.estado==='gracia'?'⚠️':'✅'):'🔒';
+    h+='<div style=&quot;padding:11px 13px;border-radius:var(--rs);border:1px solid '+col+'44;'+
+       'background:'+col+'11;margin-bottom:12px&quot;>'+
+       '<div style=&quot;font-size:12px;color:'+col+';font-weight:600&quot;>'+ico+' '+nnEsc(lic.msg||'')+'</div>'+
+       (lic.cliente?'<div style=&quot;font-size:11px;color:var(--t3);margin-top:4px&quot;>'+nnEsc(lic.cliente)+'</div>':'')+
+       '</div>';
+  }
+  h+='<div style=&quot;display:flex;gap:6px&quot;>'+
+     '<input class=&quot;fi&quot; id=&quot;mk-lic&quot; value=&quot;'+nnEsc(MARCA.licencia||'')+'&quot; placeholder=&quot;EMQ-XXXX-XXXX-XXXX-XX&quot; style=&quot;flex:1;font-family:var(--mono);text-transform:uppercase&quot;>'+
+     '<button class=&quot;bs&quot; onclick=&quot;licComprobar()&quot;>Comprobar</button></div>'+
+     '<div style=&quot;font-size:11px;color:var(--t3);line-height:1.6;margin-top:8px&quot;>'+
+     'Sin licencia válida el programa abre y guarda en este equipo, pero el servidor no sincroniza '+
+     'entre equipos, no manda avisos a Telegram ni envía los informes.</div>';
+
+  c.innerHTML=h;
+}
+function marcaElegir(k){
+  MARCA.plantilla=k;
+  MARCA.color=''; MARCA.color2='';    // los colores nuevos son los de la plantilla
+  marcaGuardar(); marcaPintarForm();
+  T('Plantilla: '+PLANTILLAS[k].n,PLANTILLAS[k].desc,PLANTILLAS[k].ico);
+}
+function marcaColoresPlantilla(){
+  MARCA.color=''; MARCA.color2='';
+  marcaGuardar(); marcaPintarForm();
+}
+function marcaAplicarForm(){
+  var g=function(i){var e=document.getElementById(i);return e?e.value.trim():'';};
+  var p=plantillaActual();
+  var c1=g('mk-c1'), c2=g('mk-c2');
+  MARCA.color=(c1&amp;&amp;c1.toLowerCase()!==p.color.toLowerCase())?c1:'';
+  MARCA.color2=(c2&amp;&amp;c2.toLowerCase()!==p.color2.toLowerCase())?c2:'';
+  MARCA.empresa=g('mk-empresa');
+  MARCA.licencia=g('mk-lic').toUpperCase();
+  marcaGuardar();
+  closeModal('mo-marca');
+  T('Guardado',plantillaActual().n,'🎨');
+}
+
+// ── Comprobar la licencia contra el robot ──
+function licUrl(){
+  var g=(EMCFG_NN&amp;&amp;EMCFG_NN.gasUrl)||'';
+  return g?g:'';
+}
+function licComprobar(){
+  var e=document.getElementById('mk-lic');
+  var clave=(e?e.value:MARCA.licencia||'').toUpperCase().trim();
+  var url=licUrl();
+  if(!url){T('Falta el robot','Sin su URL no se puede comprobar la licencia','⚠️');return;}
+  if(!clave){T('Escribe la clave','','⚠️');return;}
+  T('Comprobando…','','⏳');
+  fetch(url+(url.indexOf('?')>=0?'&amp;':'?')+'lic='+encodeURIComponent(clave))
+    .then(function(r){return r.json();})
+    .then(function(j){
+      MARCA.licencia=clave; MARCA.licEstado=j;
+      if(j.plantilla&amp;&amp;PLANTILLAS[j.plantilla])MARCA.plantilla=j.plantilla;
+      marcaGuardar(); marcaPintarForm();
+      T(j.ok?'Licencia válida':'Licencia no válida',j.msg||'',j.ok?'✅':'🔒');
+    })
+    .catch(function(){
+      T('No se pudo comprobar','¿El robot está publicado como &quot;Cualquier persona&quot;?','⚠️');
+    });
+}
+// Arranque de identidad y apariencia. Va al final del archivo a
+// propósito: aquí YO, MARCA y PLANTILLAS ya tienen valor.
+function emArranqueModulos(){
+  try{ yoCargar(); }catch(e){}
+  try{ marcaCargar(); }catch(e){}
+  try{ if(YO)equipoRegistrarme(); }catch(e){}
+  try{ licCargar(); }catch(e){}
+  try{ eqEngancharme(); }catch(e){}
+  try{ if(!YO)setTimeout(function(){yoPedir();},1200); }catch(e){}
+  try{ renderDash(); }catch(e){}
+}
+
+// Al arrancar, en silencio
+function licInit(){
+  setTimeout(function(){
+    if(!MARCA.licencia||!licUrl())return;
+    fetch(licUrl()+(licUrl().indexOf('?')>=0?'&amp;':'?')+'lic='+encodeURIComponent(MARCA.licencia))
+      .then(function(r){return r.json();})
+      .then(function(j){
+        MARCA.licEstado=j;
+        try{localStorage.setItem('em_marca_v1',JSON.stringify(MARCA));}catch(e){}
+        if(!j.ok)T('Licencia '+(j.estado||''),j.msg||'','🔒');
+        else if(j.estado==='gracia')T('Licencia por vencer',j.msg||'','⚠️');
+      }).catch(function(){});
+  },4000);
+}
+
+try{emArranqueModulos();}catch(e){console.warn(&quot;arranque módulos&quot;,e);}
+
+// ═══════════════════════════════════════════════════════════════
+// LICENCIA FIRMADA
+//
+// Aquí dentro solo va la llave PÚBLICA. Sirve para COMPROBAR una
+// firma, nunca para fabricarla. Por eso el programa se puede
+// repartir libremente: aunque alguien lo abra con un editor y lea
+// todo el código, no puede darse una licencia a sí mismo.
+//
+// La llave privada vive únicamente en el generador del proveedor,
+// un archivo aparte que nunca se entrega.
+//
+// La licencia va atada al CORREO DEL ADMINISTRADOR, no al equipo.
+// Atarla al equipo —como en el punto de venta— obligaría a pedir
+// una clave nueva por cada computador, y aquí la misma persona
+// trabaja en su PC y en su tablet.
+//
+// Qué NO hace: impedir que el programa abra. Es HTML; cualquiera
+// puede borrar esta comprobación. Lo que se pierde sin licencia es
+// lo que vale: sincronización, avisos, informes y equipos.
+// ═══════════════════════════════════════════════════════════════
+
+var LIC_PUB = {&quot;key_ops&quot;:[&quot;verify&quot;],&quot;ext&quot;:true,&quot;kty&quot;:&quot;EC&quot;,
+  &quot;x&quot;:&quot;VNqnR3A1pnJm0tSKn9EAJSVB39ZAs8bEjS-8KDVt5mU&quot;,
+  &quot;y&quot;:&quot;vP11z4AM5VCAZIJhktG2-9TGQLTJZWWpWG02onu71A8&quot;,&quot;crv&quot;:&quot;P-256&quot;};
+
+var LIC = { clave:'', datos:null, ok:false, motivo:'sin_clave', demo:true };
+var LIC_TOPE_DEMO = 3;        // proyectos que deja crear sin licencia
+
+// ── base64url ──
+function licB64(bytes){
+  var s=''; var b=new Uint8Array(bytes);
+  for(var i=0;i<b.length;i++)s+=String.fromCharCode(b[i]);
+  return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function licBytes(b64){
+  var s=String(b64).replace(/-/g,'+').replace(/_/g,'/');
+  while(s.length%4)s+='=';
+  var bin=atob(s), out=new Uint8Array(bin.length);
+  for(var i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);
+  return out;
+}
+
+// ── Comprobar la firma ──
+// Se firma el TEXTO en base64url del payload, no el JSON crudo: así
+// se verifican exactamente los mismos bytes, sin depender de
+// espacios ni del orden de las llaves.
+function licVerificar(clave, correoAdmin){
+  var m=String(clave||'').replace(/\s+/g,'').match(/^EMS1\.([\w-]+)\.([\w-]+)$/);
+  if(!m)return Promise.resolve({ok:false,motivo:'formato'});
+  if(!(window.crypto&amp;&amp;window.crypto.subtle))
+    return Promise.resolve({ok:false,motivo:'navegador'});
+  return window.crypto.subtle.importKey('jwk',LIC_PUB,{name:'ECDSA',namedCurve:'P-256'},false,['verify'])
+    .then(function(k){
+      return window.crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},k,
+        licBytes(m[2]), new TextEncoder().encode(m[1]));
+    })
+    .then(function(firmaOk){
+      if(!firmaOk)return {ok:false,motivo:'firma'};
+      var d;
+      try{ d=JSON.parse(new TextDecoder().decode(licBytes(m[1]))); }
+      catch(e){ return {ok:false,motivo:'formato'}; }
+      // el correo del administrador debe coincidir
+      if(correoAdmin&amp;&amp;d.adm&amp;&amp;String(d.adm).toLowerCase()!==String(correoAdmin).toLowerCase())
+        return {ok:false,motivo:'correo',datos:d};
+      if(!licRelojConfiable())return {ok:false,motivo:'reloj',datos:d};
+      if(d.x&amp;&amp;nnHoy()>d.x)return {ok:false,motivo:'vencida',datos:d};
+      return {ok:true,motivo:'ok',datos:d};
+    })
+    .catch(function(){ return {ok:false,motivo:'firma'}; });
+}
+
+// Si atrasan la fecha del equipo para estirar la licencia, se nota:
+// se recuerda la fecha más alta vista y no se admite retroceder.
+function licRelojConfiable(){
+  try{
+    var hoy=nnHoy();
+    var ult=localStorage.getItem('em_lic_ult_fecha')||'';
+    if(ult&amp;&amp;hoy<ult){
+      var dif=(new Date(ult+'T12:00')-new Date(hoy+'T12:00'))/86400000;
+      if(dif>1)return false;
+    }
+    if(!ult||hoy>ult)localStorage.setItem('em_lic_ult_fecha',hoy);
+  }catch(e){}
+  return true;
+}
+
+var LIC_MOTIVOS={
+  formato:'La clave está incompleta o mal copiada. Cópiala completa, en una sola línea.',
+  firma:'Esta clave no es válida.',
+  correo:'Esta licencia es para otro correo de administrador.',
+  vencida:'Esta licencia ya venció.',
+  reloj:'La fecha del equipo está atrasada. Corrígela y vuelve a intentar.',
+  navegador:'Este navegador no puede comprobar la firma. Usa Chrome o Edge.',
+  sin_clave:'Sin licencia: modo demostración.'
+};
+
+// ── Guardar y cargar ──
+function licGuardar(clave,datos){
+  LIC.clave=clave; LIC.datos=datos; LIC.ok=true; LIC.motivo='ok'; LIC.demo=false;
+  try{localStorage.setItem('em_licencia_v1',JSON.stringify({c:clave}));}catch(e){}
+}
+function licCargar(){
+  var clave='';
+  try{
+    var raw=localStorage.getItem('em_licencia_v1');
+    if(raw)clave=(JSON.parse(raw)||{}).c||'';
+  }catch(e){}
+  if(!clave){LIC.demo=true;LIC.motivo='sin_clave';licPintarEstado();return Promise.resolve(LIC);}
+  return licVerificar(clave,(YO&amp;&amp;YO.correo)||'').then(function(r){
+    LIC.clave=clave; LIC.datos=r.datos||null; LIC.ok=r.ok; LIC.motivo=r.motivo; LIC.demo=!r.ok;
+    if(r.ok&amp;&amp;r.datos&amp;&amp;r.datos.t&amp;&amp;typeof PLANTILLAS!=='undefined'&amp;&amp;PLANTILLAS[r.datos.t]){
+      MARCA.plantilla=r.datos.t;
+      if(r.datos.n&amp;&amp;!MARCA.empresa)MARCA.empresa=r.datos.n;
+      marcaGuardar();
+    }
+    licPintarEstado();
+    licAvisarSiVence();
+    return LIC;
+  });
+}
+function licDias(){
+  if(!LIC.datos||!LIC.datos.x)return -1;           // vitalicia
+  return Math.round((new Date(LIC.datos.x+'T23:59')-new Date())/86400000);
+}
+function licAvisarSiVence(){
+  if(!LIC.ok||!LIC.datos||!LIC.datos.x)return;
+  var d=licDias();
+  if(d<=7)T(d<0?'Licencia vencida':'Licencia por vencer',
+    d<0?'Renuévala para no perder la sincronización':'Quedan '+d+' días','⏳');
+}
+// ── CUPO DE PERSONAS ──────────────────────────────────────────
+// Toda licencia trae 4 puestos: el que compra y 3 personas más.
+// De la quinta persona en adelante se compran puestos sueltos, y
+// esos van sumados dentro de &quot;u&quot; cuando se firma la licencia.
+var LIC_BASE_USUARIOS = 4;
+function licCupoUsuarios(){
+  if(!LIC.ok)return 1;                       // sin licencia: solo tú
+  var u=(LIC.datos&amp;&amp;+LIC.datos.u)||0;
+  return u>0?u:LIC_BASE_USUARIOS;            // licencias viejas sin &quot;u&quot;
+}
+// Cuántos de esos puestos son adicionales pagados aparte
+function licExtras(){ return Math.max(0, licCupoUsuarios()-LIC_BASE_USUARIOS); }
+// ¿Puedo crear otro proyecto? En demostración hay tope.
+function licPuedeCrear(cuantos){
+  if(LIC.ok)return true;
+  if((cuantos||0)<LIC_TOPE_DEMO)return true;
+  licAbrir();
+  T('Modo demostración','Sin licencia solo se pueden crear '+LIC_TOPE_DEMO+' proyectos','🔒');
+  return false;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PANTALLA DE ACTIVACIÓN
+// ═══════════════════════════════════════════════════════════════
+function licAbrir(){
+  var d=document.getElementById('mo-lic');
+  if(!d){
+    d=document.createElement('div');d.className='mo';d.id='mo-lic';
+    d.innerHTML='<div class=&quot;md&quot; style=&quot;max-width:520px&quot;>'+
+      '<div class=&quot;mdh&quot;><i class=&quot;fa fa-key&quot; style=&quot;color:var(--warn)&quot;></i>'+
+      '<h3>Licencia</h3>'+
+      '<button class=&quot;xb&quot; onclick=&quot;closeModal(\'mo-lic\')&quot;><i class=&quot;fa fa-times&quot;></i></button></div>'+
+      '<div class=&quot;mdc&quot; id=&quot;lic-cuerpo&quot; style=&quot;max-height:70vh;overflow-y:auto&quot;></div></div>';
+    document.body.appendChild(d);
+    d.addEventListener('click',function(e){if(e.target===this)this.classList.remove('op');});
+  }
+  licPintarForm();
+  openModal('mo-lic');
+}
+function licPintarForm(){
+  var c=document.getElementById('lic-cuerpo'); if(!c)return;
+  var h='';
+  if(LIC.ok&amp;&amp;LIC.datos){
+    var d=LIC.datos, dias=licDias();
+    var col=(dias<0&amp;&amp;d.x)?'var(--danger)':(dias<=7&amp;&amp;d.x)?'var(--warn)':'var(--ok)';
+    h+='<div style=&quot;padding:14px;border-radius:var(--rs);border:1px solid '+col+'44;background:'+col+'11;margin-bottom:14px&quot;>'+
+      '<div style=&quot;font-size:14px;font-weight:700;color:'+col+';margin-bottom:8px&quot;>✅ Licencia activa</div>'+
+      '<div style=&quot;font-size:12px;color:var(--t2);line-height:1.9&quot;>'+
+        '<div><b>Empresa:</b> '+nnEsc(d.n||'')+'</div>'+
+        '<div><b>Administrador:</b> '+nnEsc(d.adm||'')+'</div>'+
+        '<div><b>Plan:</b> '+nnEsc(licNombrePlan(d.p))+'</div>'+
+        '<div><b>Vence:</b> '+(d.x?nnEsc(d.x)+' ('+dias+' días)':'nunca — vitalicia')+'</div>'+
+        '<div><b>Personas:</b> '+licCupoUsuarios()+' puestos — '+LIC_BASE_USUARIOS+' incluidos'+
+          (licExtras()?' + '+licExtras()+' adicional(es)':'')+'</div>'+
+        '<div><b>Licencia:</b> <span style=&quot;font-family:var(--mono)&quot;>'+nnEsc(d.id||'')+'</span></div>'+
+      '</div></div>';
+    h+='<button class=&quot;bs&quot; style=&quot;width:100%&quot; onclick=&quot;licSolicitar(true)&quot;>'+
+       '<i class=&quot;fab fa-whatsapp&quot; style=&quot;margin-right:6px;color:#25D366&quot;></i>Renovar por WhatsApp</button>';
+  }else{
+    h+='<div style=&quot;padding:13px;border-radius:var(--rs);border:1px solid rgba(255,184,0,.3);'+
+      'background:rgba(255,184,0,.07);margin-bottom:14px&quot;>'+
+      '<div style=&quot;font-size:13px;font-weight:600;color:var(--warn);margin-bottom:6px&quot;>🔒 Modo demostración</div>'+
+      '<div style=&quot;font-size:12px;color:var(--t2);line-height:1.7&quot;>'+
+      nnEsc(LIC_MOTIVOS[LIC.motivo]||LIC.motivo)+'<br>'+
+      'Puedes crear hasta <b>'+LIC_TOPE_DEMO+' proyectos</b> y trabajar en este equipo. '+
+      'Sin licencia no hay sincronización entre equipos, ni avisos, ni informes.<br><br>'+
+      '<b>La licencia trae 4 puestos:</b> tú y 3 personas más, con proyectos, '+
+      'calendario y disponibilidad compartidos. De la quinta persona en adelante '+
+      'se agregan puestos adicionales.</div></div>';
+
+    h+='<div class=&quot;fg&quot;><label class=&quot;fl&quot;>Correo del administrador</label>'+
+       '<input class=&quot;fi&quot; id=&quot;lic-correo&quot; type=&quot;email&quot; value=&quot;'+nnEsc((YO&amp;&amp;YO.correo)||'')+'&quot; placeholder=&quot;quien compra la licencia&quot;></div>'+
+       '<div class=&quot;fg&quot;><label class=&quot;fl&quot;>Empresa</label>'+
+       '<input class=&quot;fi&quot; id=&quot;lic-empresa&quot; value=&quot;'+nnEsc((MARCA&amp;&amp;MARCA.empresa)||(YO&amp;&amp;YO.empresa)||'')+'&quot;></div>'+
+       '<div class=&quot;fg&quot;><label class=&quot;fl&quot;>Plan que quieres</label>'+
+       '<select class=&quot;fi&quot; id=&quot;lic-plan&quot;>'+
+         '<option value=&quot;prueba&quot;>Prueba — 15 días</option>'+
+         '<option value=&quot;1m&quot;>1 mes</option><option value=&quot;3m&quot;>3 meses</option>'+
+         '<option value=&quot;6m&quot;>6 meses</option><option value=&quot;12m&quot; selected>12 meses</option>'+
+         '<option value=&quot;vit&quot;>Vitalicia</option></select></div>'+
+       '<div class=&quot;fg&quot;><label class=&quot;fl&quot;>¿Cuántas personas en total?</label>'+
+       '<select class=&quot;fi&quot; id=&quot;lic-personas&quot;>'+
+         '<option value=&quot;4&quot; selected>4 — tú y 3 más (incluidas)</option>'+
+         '<option value=&quot;5&quot;>5 personas (1 adicional)</option>'+
+         '<option value=&quot;6&quot;>6 personas (2 adicionales)</option>'+
+         '<option value=&quot;8&quot;>8 personas (4 adicionales)</option>'+
+         '<option value=&quot;10&quot;>10 personas (6 adicionales)</option>'+
+         '<option value=&quot;15&quot;>15 personas (11 adicionales)</option>'+
+       '</select>'+
+       '<div style=&quot;font-size:11px;color:var(--t3);margin-top:5px;line-height:1.6&quot;>'+
+       'Toda licencia trae 4 puestos. De la quinta persona en adelante se cobra un '+
+       'puesto adicional por persona.</div></div>'+
+       '<button class=&quot;bp&quot; style=&quot;width:100%;margin-bottom:16px&quot; onclick=&quot;licSolicitar(false)&quot;>'+
+       '<i class=&quot;fab fa-whatsapp&quot; style=&quot;margin-right:6px&quot;></i>Solicitar licencia por WhatsApp</button>'+
+       '<div style=&quot;border-top:1px solid var(--bd);margin:4px 0 14px&quot;></div>';
+  }
+  h+='<div class=&quot;fg&quot;><label class=&quot;fl&quot;>Pega aquí la clave que te envíen</label>'+
+     '<textarea class=&quot;ft&quot; id=&quot;lic-clave&quot; rows=&quot;3&quot; placeholder=&quot;EMS1....&quot; '+
+     'style=&quot;font-family:var(--mono);font-size:11px&quot;></textarea></div>'+
+     '<button class=&quot;bp&quot; style=&quot;width:100%&quot; onclick=&quot;licActivar()&quot;>Activar</button>'+
+     '<div id=&quot;lic-msg&quot; style=&quot;font-size:12px;margin-top:10px;line-height:1.6&quot;></div>';
+  c.innerHTML=h;
+}
+function licNombrePlan(p){
+  return {prueba:'Prueba 15 días','1m':'1 mes','3m':'3 meses','6m':'6 meses',
+          '12m':'12 meses',vit:'Vitalicia'}[p]||p||'';
+}
+
+// ── Pedir la licencia por WhatsApp ──
+// El mensaje lo arma el programa para que el proveedor no tenga que
+// preguntar los datos uno por uno.
+var LIC_WHATSAPP='TU_WHATSAPP';
+function licTextoSolicitud(renovar){
+  var g=function(i){var e=document.getElementById(i);return e?e.value.trim():'';};
+  var correo=renovar?((LIC.datos&amp;&amp;LIC.datos.adm)||''):g('lic-correo');
+  var emp=renovar?((LIC.datos&amp;&amp;LIC.datos.n)||''):g('lic-empresa');
+  var plan=renovar?((LIC.datos&amp;&amp;LIC.datos.p)||'12m'):g('lic-plan');
+  var l=[renovar?'Hola, quiero RENOVAR la licencia de EM Suite PRO.'
+                :'Hola, quiero ACTIVAR EM Suite PRO.',''];
+  l.push('Plan: '+licNombrePlan(plan)+(renovar&amp;&amp;LIC.datos?' (licencia '+LIC.datos.id+')':''));
+  l.push('Empresa: '+emp);
+  l.push('Administrador: '+((YO&amp;&amp;YO.nombre)||''));
+  l.push('Correo: '+correo);
+  l.push('Plantilla: '+((typeof MARCA!=='undefined'&amp;&amp;MARCA.plantilla)||'seguridad'));
+  var per=renovar?licCupoUsuarios():(+g('lic-personas')||LIC_BASE_USUARIOS);
+  if(per<LIC_BASE_USUARIOS)per=LIC_BASE_USUARIOS;
+  l.push('Personas: '+per+(per>LIC_BASE_USUARIOS
+      ? ' ('+LIC_BASE_USUARIOS+' incluidas + '+(per-LIC_BASE_USUARIOS)+' adicionales)'
+      : ' (las incluidas)'));
+  if(renovar&amp;&amp;LIC.datos&amp;&amp;LIC.datos.x)l.push('Vence: '+LIC.datos.x);
+  l.push('Version: v8');
+  return l.join('\n');
+}
+function licSolicitar(renovar){
+  var t=licTextoSolicitud(renovar);
+  if(!renovar){
+    var c=document.getElementById('lic-correo');
+    if(c&amp;&amp;!c.value.trim()){T('Falta el correo','Es a lo que queda atada la licencia','⚠️');return;}
+  }
+  window.open('https://wa.me/'+LIC_WHATSAPP.replace(/\D/g,'')+'?text='+encodeURIComponent(t),'_blank');
+}
+
+// ── Activar ──
+function licActivar(){
+  var e=document.getElementById('lic-clave');
+  var clave=(e?e.value:'').replace(/\s+/g,'');
+  var msg=document.getElementById('lic-msg');
+  var correo=(document.getElementById('lic-correo')||{}).value||((YO&amp;&amp;YO.correo)||'');
+  if(!clave){if(msg)msg.innerHTML='<span style=&quot;color:var(--warn)&quot;>Pega la clave primero.</span>';return;}
+  if(msg)msg.innerHTML='<span style=&quot;color:var(--t3)&quot;>Comprobando…</span>';
+  licVerificar(clave,correo).then(function(r){
+    if(!r.ok){
+      if(msg)msg.innerHTML='<span style=&quot;color:var(--danger)&quot;>❌ '+
+        nnEsc(LIC_MOTIVOS[r.motivo]||r.motivo)+'</span>';
+      return;
+    }
+    licGuardar(clave,r.datos);
+    // En escritorio manda el proceso principal: él la verifica otra
+    // vez y la escribe en la carpeta del usuario.
+    try{ if(typeof escGuardarLicencia==='function')escGuardarLicencia(clave); }catch(_e){}
+    // El espacio en la nube queda atado a esta licencia. Solo la
+    // primera vez: si ya tenía datos en otro espacio, se respeta.
+    if(nnEspacioFijar(r.datos)){
+      NN_SYNC_TS=0; NN_PERSONAL_TS=0;
+      try{nnCloudPull(true).then(function(){return nnPersonalPull();});}catch(_e){}
+    }
+    // la licencia trae la plantilla y la empresa
+    if(r.datos.t&amp;&amp;typeof PLANTILLAS!=='undefined'&amp;&amp;PLANTILLAS[r.datos.t])MARCA.plantilla=r.datos.t;
+    if(r.datos.n)MARCA.empresa=r.datos.n;
+    if(typeof marcaGuardar==='function')marcaGuardar();
+    // quien activa queda como administrador
+    if(YO&amp;&amp;r.datos.adm&amp;&amp;String(YO.correo||'').toLowerCase()===String(r.datos.adm).toLowerCase()){
+      YO.rol='jefe'; yoGuardar(YO);
+    }
+    licPintarEstado(); licPintarForm();
+    T('Licencia activada',r.datos.n||'','✅');
+    bitAnotar('activó la licencia',r.datos.n||'','licencia');
+    try{nnSave();}catch(_e){}
+  });
+}
+
+// ── El sello en la barra ──
+function licPintarEstado(){
+  var el=document.getElementById('lic-sello');
+  if(!el)return;
+  if(LIC.ok&amp;&amp;LIC.datos){
+    var d=licDias();
+    if(LIC.datos.x&amp;&amp;d<=7){
+      el.textContent='⏳ Licencia: '+d+' días';
+      el.style.color='var(--warn)';
+    }else{
+      el.textContent='✅ '+(LIC.datos.n||'Licencia activa');
+      el.style.color='var(--ok)';
+    }
+  }else{
+    el.textContent='🔒 Demostración';
+    el.style.color='var(--warn)';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EQUIPOS DE TRABAJO (como los tableros de Trello)
+//
+// El administrador —quien activó la licencia— crea equipos e
+// invita gente por correo. Cada proyecto pertenece a un equipo, y
+// quien está en el equipo lo ve; quien no, no.
+//
+// Cómo entra un invitado: escribe su correo al abrir el programa.
+// Si ese correo está en algún equipo, entra con el rol que le
+// pusieron.
+//
+// Hay que decirlo claro: esto es CONTROL INTERNO, no seguridad.
+// No hay contraseña; basta con saber el correo y tener el archivo.
+// Sirve para que cada quien vea lo suyo y para saber quién hizo
+// qué, no para defenderse de alguien que quiera colarse. Para eso
+// hace falta Firebase Auth con contraseña, que es el paso
+// siguiente.
+// ═══════════════════════════════════════════════════════════════
+
+var EQUIPOS;      // [{id,nombre,color,creado,miembros:[{correo,nombre,rol,estado}]}]
+                  // la llena INIT — ver la nota de EQUIPO
+
+var EQ_COLORES=['#00D4FF','#22C55E','#FF4D8D','#FFB800','#7B5EA7','#00B8A9','#FF6B00'];
+
+function eqBuscar(id){return (EQUIPOS||[]).filter(function(e){return String(e.id)===String(id);})[0]||null;}
+
+// ¿En qué equipos estoy?
+function eqMios(){
+  var c=String((YO&amp;&amp;YO.correo)||'').toLowerCase();
+  if(!c)return [];
+  return (EQUIPOS||[]).filter(function(e){
+    return (e.miembros||[]).some(function(m){return String(m.correo||'').toLowerCase()===c;});
+  });
+}
+function eqSoyMiembro(id){
+  var c=String((YO&amp;&amp;YO.correo)||'').toLowerCase();
+  var e=eqBuscar(id); if(!e)return false;
+  return (e.miembros||[]).some(function(m){return String(m.correo||'').toLowerCase()===c;});
+}
+// ¿Soy administrador? Lo es quien activó la licencia.
+function soyAdmin(){
+  if(!YO)return false;
+  if(LIC.ok&amp;&amp;LIC.datos&amp;&amp;LIC.datos.adm)
+    return String(YO.correo||'').toLowerCase()===String(LIC.datos.adm).toLowerCase();
+  return YO.rol==='jefe';       // sin licencia, el jefe manda
+}
+
+// ── Crear y editar equipos ──
+function eqCrear(nombre){
+  if(!soyAdmin()){T('Solo el administrador','Puede crear equipos quien activó la licencia','🔒');return null;}
+  var e={id:'eq'+Date.now(),nombre:nombre||'Equipo nuevo',
+    color:EQ_COLORES[EQUIPOS.length%EQ_COLORES.length],
+    creado:nnHoy(), miembros:[]};
+  // el administrador entra de una
+  if(YO&amp;&amp;YO.correo)e.miembros.push({correo:YO.correo,nombre:YO.nombre,rol:'jefe',estado:'activo'});
+  sellar(e,true);
+  EQUIPOS.push(e);
+  nnSave(); eqRender();
+  bitAnotar('creó el equipo',e.nombre,'equipo');
+  avEquipo('nuevo',e);
+  return e;
+}
+function eqBorrar(id){
+  if(!soyAdmin()){T('Solo el administrador','','🔒');return;}
+  var e=eqBuscar(id); if(!e)return;
+  var conProyectos=(PROJECTS||[]).filter(function(p){return String(p.equipoId||'')===String(id);}).length;
+  if(!confirm('¿Eliminar el equipo &quot;'+e.nombre+'&quot;?'+
+    (conProyectos?('\n\nTiene '+conProyectos+' proyecto(s). No se borran, quedan sin equipo.'):'')))return;
+  EQUIPOS=EQUIPOS.filter(function(x){return String(x.id)!==String(id);});
+  (PROJECTS||[]).forEach(function(p){if(String(p.equipoId||'')===String(id)){p.equipoId='';sellar(p);}});
+  nnSave(); eqRender(); renderProjects();
+  bitAnotar('eliminó el equipo',e.nombre,'equipo');
+  avEquipo('borrado',e);
+}
+
+// ── Invitar por correo ──
+function eqInvitar(id){
+  if(!soyAdmin()){T('Solo el administrador','','🔒');return;}
+  var e=eqBuscar(id); if(!e)return;
+  var correo=prompt('Correo de la persona que quieres invitar a &quot;'+e.nombre+'&quot;:','');
+  if(correo===null)return;
+  correo=String(correo).trim().toLowerCase();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)){T('Correo inválido',correo,'⚠️');return;}
+  if((e.miembros||[]).some(function(m){return String(m.correo||'').toLowerCase()===correo;})){
+    T('Ya está en el equipo',correo,'👥');return;
+  }
+  // ¿cabe? la licencia dice cuántos usuarios se pagaron
+  var total=eqUsuariosUnicos().length;
+  var cupo=licCupoUsuarios();
+  if(!LIC.ok){
+    T('Hace falta la licencia','Sin licencia el programa es de un solo usuario','🔒');
+    licAbrir(); return;
+  }
+  if(total>=cupo){
+    var ya=eqUsuariosUnicos().filter(function(c){return c!==correo;}).length;
+    nnModalInfo('No quedan puestos',
+      '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.8&quot;>'+
+      'Tu licencia cubre <b>'+cupo+' personas</b> y ya están las '+ya+' contadas '+
+      '(tú incluido). Para meter a <b>'+nnEsc(correo)+'</b> hace falta un puesto adicional.</p>'+
+      '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.8&quot;>Toda licencia trae <b>'+
+      LIC_BASE_USUARIOS+' puestos</b>: el titular y 3 personas más. De la quinta en '+
+      'adelante se compra un puesto por persona.</p>'+
+      '<p style=&quot;font-size:11px;color:var(--t3);line-height:1.6&quot;>Si alguien ya no trabaja '+
+      'contigo, sácalo del equipo y su puesto queda libre al instante.</p>'+
+      '<button class=&quot;bp&quot; style=&quot;width:100%;margin-top:10px&quot; onclick=&quot;closeModal(\'mo-info\');licSolicitar(true)&quot;>'+
+      '<i class=&quot;fab fa-whatsapp&quot; style=&quot;margin-right:6px&quot;></i>Pedir un puesto más</button>');
+    return;
+  }
+  var rol=prompt('Rol de '+correo+':\n\njefe · comercial · tecnico · admin','comercial');
+  if(rol===null)return;
+  rol=String(rol).trim().toLowerCase();
+  if(!ROLES[rol])rol='comercial';
+  e.miembros.push({correo:correo,nombre:'',rol:rol,estado:'invitado',desde:nnHoy()});
+  sellar(e);
+  nnSave(); eqRender();
+  bitAnotar('invitó a '+correo+' al equipo',e.nombre,'equipo');
+  eqAvisarInvitacion(e,correo,rol);
+}
+// Aviso al grupo + el texto listo para mandarle a la persona
+function eqAvisarInvitacion(e,correo,rol){
+  try{
+    nnTg('👥 '+nnB('Invitación a un equipo')+'\n━━━━━━━━━━━━━━━\n'+
+      '📂 '+nnB(e.nombre)+'\n📧 '+nnEsc(correo)+'\n'+
+      '🎭 '+nnEsc((ROLES[rol]||{}).n||rol)+'\n'+
+      '👤 Invitó: '+nnEsc(yoNombre())+'\n<i>EM Suite PRO</i>');
+  }catch(_){}
+  var texto='Te invité al equipo &quot;'+e.nombre+'&quot; en EM Suite PRO.\n\n'+
+    'Abre el programa, y cuando pregunte quién eres escribe este correo:\n'+correo+'\n\n'+
+    'Entrarás como '+((ROLES[rol]||{}).n||rol)+'.';
+  nnModalInfo('Invitación lista',
+    '<p style=&quot;font-size:12px;color:var(--t2);line-height:1.7&quot;>Mándale esto a <b>'+nnEsc(correo)+'</b>:</p>'+
+    '<pre style=&quot;background:var(--bg1);border:1px solid var(--bd);border-radius:var(--rs);padding:12px;'+
+    'font-size:12px;white-space:pre-wrap;line-height:1.6;color:var(--t2)&quot;>'+nnEsc(texto)+'</pre>'+
+    '<button class=&quot;bs&quot; style=&quot;margin-top:10px&quot; onclick=&quot;eqCopiar(\''+
+      encodeURIComponent(texto).replace(/'/g,&quot;%27&quot;)+'\')&quot;>Copiar</button> '+
+    '<button class=&quot;bs&quot; style=&quot;margin-top:10px&quot; onclick=&quot;window.open(\'https://wa.me/?text=\'+'+
+      '\''+encodeURIComponent(texto).replace(/'/g,&quot;%27&quot;)+'\',\'_blank\')&quot;>Mandar por WhatsApp</button>');
+}
+function eqCopiar(t){
+  try{navigator.clipboard.writeText(decodeURIComponent(t));T('Copiado','','📋');}catch(e){}
+}
+function eqSacar(id,correo){
+  var e=eqBuscar(id); if(!e)return;
+  if(!soyAdmin()){T('Solo el administrador','','🔒');return;}
+  if(!confirm('¿Sacar a '+correo+' del equipo &quot;'+e.nombre+'&quot;?'))return;
+  e.miembros=(e.miembros||[]).filter(function(m){return String(m.correo||'').toLowerCase()!==String(correo).toLowerCase();});
+  sellar(e); nnSave(); eqRender();
+  bitAnotar('sacó a '+correo+' del equipo',e.nombre,'equipo');
+}
+function eqCambiarRol(id,correo,rol){
+  var e=eqBuscar(id); if(!e||!soyAdmin())return;
+  (e.miembros||[]).forEach(function(m){
+    if(String(m.correo||'').toLowerCase()===String(correo).toLowerCase())m.rol=rol;
+  });
+  sellar(e); nnSave(); eqRender();
+  bitAnotar('cambió el rol de '+correo+' a',(ROLES[rol]||{}).n||rol,'equipo');
+}
+
+// Cuántas personas distintas hay en total (para el cupo de la licencia).
+// El titular de la licencia OCUPA UN PUESTO aunque no se haya metido en
+// ningún equipo: la licencia es &quot;él y 3 más&quot;, no &quot;él y 4&quot;.
+function eqUsuariosUnicos(){
+  var vistos={};
+  try{
+    var adm=LIC.ok&amp;&amp;LIC.datos&amp;&amp;LIC.datos.adm;
+    if(adm)vistos[String(adm).toLowerCase()]=1;
+  }catch(_){}
+  (EQUIPOS||[]).forEach(function(e){
+    (e.miembros||[]).forEach(function(m){
+      var c=String(m.correo||'').toLowerCase(); if(c)vistos[c]=1;
+    });
+  });
+  return Object.keys(vistos);
+}
+// Puestos que quedan libres
+function eqLibres(){ return Math.max(0, licCupoUsuarios()-eqUsuariosUnicos().length); }
+
+// Al escribir mi correo, si estoy invitado quedo dentro con mi rol
+function eqEngancharme(){
+  if(!YO||!YO.correo)return false;
+  var c=String(YO.correo).toLowerCase(), cambie=false;
+  (EQUIPOS||[]).forEach(function(e){
+    (e.miembros||[]).forEach(function(m){
+      if(String(m.correo||'').toLowerCase()!==c)return;
+      if(m.estado!=='activo'){m.estado='activo';m.nombre=YO.nombre;cambie=true;
+        bitAnotar('se unió al equipo',e.nombre,'equipo');}
+      if(m.rol&amp;&amp;YO.rol!==m.rol){YO.rol=m.rol;yoGuardar(YO);}
+    });
+  });
+  if(cambie){sellarLista(EQUIPOS);nnSave();}
+  return cambie;
+}
+
+// ── ¿Puedo ver este proyecto? ──
+// Se suma a lo de antes: además del dueño, manda el equipo.
+function eqPuedoVerProyecto(p){
+  if(!p)return false;
+  if(yoVeTodo())return true;
+  if(p.equipoId)return eqSoyMiembro(p.equipoId);
+  return puedoVer(p);
+}
+
+function avEquipo(acc,e){
+  nnAviso('👥','Equipo',acc,e&amp;&amp;e.nombre,[
+    {i:'🧑‍🤝‍🧑',v:e&amp;&amp;(e.miembros||[]).length?((e.miembros||[]).length+' miembros'):''}
+  ],'m');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PANTALLA
+// ═══════════════════════════════════════════════════════════════
+function eqAbrir(){
+  var d=document.getElementById('mo-eq');
+  if(!d){
+    d=document.createElement('div');d.className='mo';d.id='mo-eq';
+    d.innerHTML='<div class=&quot;md&quot; style=&quot;max-width:640px&quot;>'+
+      '<div class=&quot;mdh&quot;><i class=&quot;fa fa-users&quot; style=&quot;color:var(--ac)&quot;></i>'+
+      '<h3>Equipo</h3>'+
+      '<button class=&quot;xb&quot; onclick=&quot;closeModal(\'mo-eq\')&quot;><i class=&quot;fa fa-times&quot;></i></button></div>'+
+      '<div class=&quot;mdc&quot; style=&quot;max-height:72vh;overflow-y:auto&quot;>'+
+        '<div style=&quot;display:flex;gap:6px;margin-bottom:14px&quot;>'+
+          '<button class=&quot;bs&quot; id=&quot;eq-tab-eq&quot; onclick=&quot;eqPestana(\'eq\')&quot; style=&quot;flex:1&quot;>👥 Equipos</button>'+
+          '<button class=&quot;bs&quot; id=&quot;eq-tab-disp&quot; onclick=&quot;eqPestana(\'disp\')&quot; style=&quot;flex:1&quot;>🗓️ Disponibilidad</button>'+
+        '</div>'+
+        '<div id=&quot;eq-cuerpo&quot;></div>'+
+        '<div id=&quot;disp-cuerpo&quot; style=&quot;display:none&quot;></div>'+
+      '</div></div>';
+    document.body.appendChild(d);
+    d.addEventListener('click',function(e){if(e.target===this)this.classList.remove('op');});
+  }
+  eqPestana('eq'); openModal('mo-eq');
+}
+// Las dos caras del mismo asunto: quién está en el equipo, y qué
+// tiene encima cada uno.
+function eqPestana(cual){
+  var ve=cual==='disp';
+  var a=document.getElementById('eq-cuerpo'), b=document.getElementById('disp-cuerpo');
+  if(a)a.style.display=ve?'none':'';
+  if(b)b.style.display=ve?'':'none';
+  var ta=document.getElementById('eq-tab-eq'), tb=document.getElementById('eq-tab-disp');
+  if(ta)ta.style.borderColor=ve?'var(--bd)':'var(--ac)';
+  if(tb)tb.style.borderColor=ve?'var(--ac)':'var(--bd)';
+  if(ve)dispRender(); else eqRender();
+}
+function eqRender(){
+  var c=document.getElementById('eq-cuerpo'); if(!c)return;
+  var admin=soyAdmin();
+  var cupo=licCupoUsuarios(), usados=eqUsuariosUnicos().length;
+  var h='';
+
+  h+='<div style=&quot;display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap&quot;>'+
+     '<div style=&quot;flex:1;min-width:150px;font-size:12px;color:var(--t2)&quot;>'+
+       (admin?'Eres el <b style=&quot;color:var(--ac)&quot;>administrador</b>: puedes crear equipos e invitar.'
+             :'Ves los equipos en los que estás.')+'</div>'+
+     (LIC.ok?'<span style=&quot;font-size:11px;color:'+(usados>=cupo?'var(--warn)':'var(--t3)')+'&quot; '+
+       'title=&quot;'+LIC_BASE_USUARIOS+' puestos incluidos'+(licExtras()?' + '+licExtras()+' adicional(es)':'')+'&quot;>'+
+       usados+' de '+cupo+' personas'+(usados>=cupo?' · sin puestos libres':' · '+eqLibres()+' libre(s)')+
+       '</span>':'')+
+     (admin?'<button class=&quot;bp&quot; style=&quot;font-size:11px&quot; onclick=&quot;eqNuevoPedir()&quot;>✚ Nuevo equipo</button>':'')+
+     '</div>';
+
+  var lista=admin?EQUIPOS:eqMios();
+  if(!lista.length){
+    h+='<div class=&quot;card&quot; style=&quot;text-align:center;padding:30px 20px;color:var(--t3)&quot;>'+
+      '<i class=&quot;fa fa-users&quot; style=&quot;font-size:28px;display:block;margin-bottom:10px;opacity:.3&quot;></i>'+
+      '<p style=&quot;font-size:12px&quot;>'+(admin?'Sin equipos todavía. Crea el primero y empieza a invitar.'
+        :'No estás en ningún equipo. Pídele al administrador que te invite.')+'</p></div>';
+  }else{
+    h+=lista.map(function(e){
+      var proys=(PROJECTS||[]).filter(function(p){return String(p.equipoId||'')===String(e.id);}).length;
+      return '<div class=&quot;card&quot; style=&quot;margin-bottom:10px;border-left:3px solid '+e.color+'&quot;>'+
+        '<div style=&quot;display:flex;align-items:center;gap:8px;margin-bottom:8px&quot;>'+
+          '<h4 style=&quot;font-size:13px;font-weight:600;flex:1&quot;>'+nnEsc(e.nombre)+'</h4>'+
+          '<span style=&quot;font-size:10px;color:var(--t3);font-family:var(--mono)&quot;>'+proys+' proyectos</span>'+
+          (admin?'<button class=&quot;bi&quot; style=&quot;width:26px;height:26px;font-size:10px&quot; onclick=&quot;eqInvitar(\''+e.id+'\')&quot; title=&quot;Invitar&quot;><i class=&quot;fa fa-user-plus&quot;></i></button>'+
+                 '<button class=&quot;bi&quot; style=&quot;width:26px;height:26px;font-size:10px;color:var(--danger)&quot; onclick=&quot;eqBorrar(\''+e.id+'\')&quot;><i class=&quot;fa fa-trash&quot;></i></button>':'')+
+        '</div>'+
+        ((e.miembros||[]).length
+          ? e.miembros.map(function(m){
+              var r=ROLES[m.rol]||{n:m.rol,ico:'👤'};
+              var yo=String(m.correo||'').toLowerCase()===String((YO&amp;&amp;YO.correo)||'').toLowerCase();
+              return '<div style=&quot;display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--bd)&quot;>'+
+                '<span style=&quot;font-size:13px&quot;>'+r.ico+'</span>'+
+                '<div style=&quot;flex:1;min-width:0&quot;>'+
+                  '<div style=&quot;font-size:12px&quot;>'+nnEsc(m.nombre||m.correo)+
+                    (yo?' <span style=&quot;color:var(--ac)&quot;>(tú)</span>':'')+'</div>'+
+                  '<div style=&quot;font-size:10px;color:var(--t3);font-family:var(--mono)&quot;>'+nnEsc(m.correo)+'</div>'+
+                '</div>'+
+                '<span class=&quot;tag&quot; style=&quot;font-size:9px&quot;>'+nnEsc(r.n)+'</span>'+
+                (m.estado==='invitado'?'<span style=&quot;font-size:9px;color:var(--warn)&quot;>pendiente</span>':'')+
+                (admin&amp;&amp;!yo?'<button class=&quot;bi&quot; style=&quot;width:22px;height:22px;font-size:9px;color:var(--danger)&quot; '+
+                  'onclick=&quot;eqSacar(\''+e.id+'\',\''+m.correo+'\')&quot;><i class=&quot;fa fa-times&quot;></i></button>':'')+
+                '</div>';
+            }).join('')
+          : '<div style=&quot;font-size:11px;color:var(--t3);padding:8px 0&quot;>Sin miembros todavía</div>')+
+        '</div>';
+    }).join('');
+  }
+
+  h+='<div style=&quot;font-size:11px;color:var(--t3);line-height:1.6;margin-top:12px;'+
+     'background:var(--bg4);border-radius:var(--rs);padding:10px 12px&quot;>'+
+     '⚠️ Los equipos organizan quién ve qué, pero <b>no piden contraseña</b>: quien tenga el '+
+     'archivo y sepa un correo puede entrar. Sirve para el control interno del día a día, no '+
+     'para defenderse de alguien que quiera colarse.</div>';
+  c.innerHTML=h;
+}
+function eqNuevoPedir(){
+  var n=prompt('Nombre del equipo:\n\nEj: Comercial, Técnicos Bogotá, Proyecto Torres','');
+  if(n===null)return;
+  n=String(n).trim();
+  if(!n)return;
+  eqCrear(n);
+  T('Equipo creado',n,'👥');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MODO ESCRITORIO
+//
+// El mismo archivo sirve para web, Android y escritorio. Cuando
+// corre dentro de Electron aparece window.emDesktop, que es el
+// puente al proceso principal; si no está, todo sigue igual que
+// en el navegador.
+//
+// Lo que cambia en escritorio:
+//  · Los datos también se guardan en un ARCHIVO de la carpeta del
+//    usuario. El navegador solo tiene localStorage, que se borra
+//    al limpiar datos y no se puede copiar a una USB.
+//  · La licencia la guarda y la verifica el proceso principal.
+//    Que la página diga que es válida no basta: la página se edita.
+// ═══════════════════════════════════════════════════════════════
+
+var ESCRITORIO = false;
+var ESC_INFO = null;
+var ESC_T = null;
+
+function escHay(){ try{ return !!(window.emDesktop); }catch(e){ return false; } }
+
+function escIniciar(){
+  if(!escHay())return;
+  ESCRITORIO=true;
+  window.emDesktop.info().then(function(i){
+    ESC_INFO=i;
+    escPintarSello();
+  }).catch(function(){});
+
+  // La licencia manda la que guardó el programa, no la del navegador
+  window.emDesktop.leerLicencia().then(function(r){
+    if(r&amp;&amp;r.ok&amp;&amp;r.datos){
+      LIC.clave=r.clave; LIC.datos=r.datos; LIC.ok=true; LIC.motivo='ok'; LIC.demo=false;
+      if(r.datos.t&amp;&amp;PLANTILLAS[r.datos.t]){MARCA.plantilla=r.datos.t;}
+      if(r.datos.n&amp;&amp;!MARCA.empresa)MARCA.empresa=r.datos.n;
+      try{marcaGuardar();}catch(e){}
+      try{nnEspacioFijar(r.datos);}catch(e){}
+      licPintarEstado();
+    }
+  }).catch(function(){});
+
+  // Si el navegador quedó vacío pero hay respaldo en disco, se
+  // recupera: es justo el caso de &quot;se me borró todo&quot; tras limpiar
+  // datos del navegador o reinstalar.
+  escRecuperarSiHaceFalta();
+}
+
+function escRecuperarSiHaceFalta(){
+  var vacio=false;
+  try{
+    var raw=localStorage.getItem(NN_KEY);
+    var d=raw?JSON.parse(raw):null;
+    vacio=!d||((d.PROJECTS||[]).length===0&amp;&amp;(d.NOTES||[]).length===0&amp;&amp;
+               Object.keys(d.KB||{}).every(function(c){return !(d.KB[c]||[]).length;}));
+  }catch(e){vacio=true;}
+  if(!vacio)return;
+  window.emDesktop.restaurar().then(function(r){
+    if(!r||!r.ok||!r.json)return;
+    try{
+      var d=JSON.parse(r.json);
+      if(!d||!d.NN)return;
+      localStorage.setItem(NN_KEY,JSON.stringify(d.NN));
+      T('Datos recuperados','Del respaldo de este equipo','💾');
+      setTimeout(function(){location.reload();},1200);
+    }catch(e){}
+  }).catch(function(){});
+}
+
+// Se llama desde nnSave. Va con retardo para no escribir el archivo
+// en cada tecla.
+function escRespaldar(){
+  if(!ESCRITORIO)return;
+  clearTimeout(ESC_T);
+  ESC_T=setTimeout(function(){
+    try{
+      var paquete={ v:8, at:new Date().toISOString(),
+        NN:JSON.parse(localStorage.getItem(NN_KEY)||'{}'),
+        yo:(typeof YO!=='undefined')?YO:null,
+        marca:(typeof MARCA!=='undefined')?MARCA:null };
+      window.emDesktop.respaldar(JSON.stringify(paquete)).catch(function(){});
+    }catch(e){}
+  },4000);
+}
+
+// Activar la licencia pasando por el proceso principal
+function escGuardarLicencia(clave){
+  if(!ESCRITORIO)return Promise.resolve(null);
+  return window.emDesktop.guardarLicencia(clave);
+}
+
+function escPintarSello(){
+  var el=document.getElementById('esc-sello');
+  if(el&amp;&amp;ESC_INFO){
+    el.textContent='🖥️ Escritorio v'+ESC_INFO.version;
+    el.title='Datos en: '+ESC_INFO.datos;
+  }
+}
+function escAbrirCarpeta(){
+  if(!ESCRITORIO){T('Solo en escritorio','En el navegador los datos van en el propio navegador','ℹ️');return;}
+  window.emDesktop.abrirCarpeta();
+}
+function escImprimir(){
+  if(!ESCRITORIO){window.print();return;}
+  window.emDesktop.imprimir();
+}
+
+// Se arranca aquí, al final de su propio módulo. Si se llamara desde
+// el arranque común —que corre antes— este archivo se ejecutaría
+// después y el &quot;var ESCRITORIO = false&quot; de arriba borraría la marca.
+try{ escIniciar(); }catch(e){}
+
+// ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
+// DISPONIBILIDAD DEL EQUIPO
+//
+// Quién está libre y quién no, los próximos días. No inventa una
+// agenda nueva: lee lo que el equipo YA comparte por la nube
+// —reuniones, tareas con fecha y fases de proyecto— y lo reparte
+// por persona.
+//
+// A quién le cuenta cada compromiso:
+//   1. a quien esté asignado (asignado.id), si lo hay
+//   2. si no, a su dueño (_owner) o a quien lo creó (_by)
+// ═══════════════════════════════════════════════════════════════
+
+var DISP_DIAS = 7;            // cuántos días muestra el tablero
+var DISP_LLENO = 3;           // de aquí para arriba, el día está lleno
+
+function dispHoyISO(){
+  var d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+
+         '-'+String(d.getDate()).padStart(2,'0');
+}
+function dispMasDias(iso,n){
+  var p=String(iso).split('-'); var d=new Date(+p[0],+p[1]-1,+p[2],12);
+  d.setDate(d.getDate()+n);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+
+         '-'+String(d.getDate()).padStart(2,'0');
+}
+// Las reuniones viejas guardaban la fecha como &quot;dd/mm&quot;, sin año.
+// Se les pone el año en curso; si eso cae muy atrás, el siguiente.
+function dispIsoDe(r){
+  if(!r)return '';
+  if(r.iso)return r.iso;
+  if(/^\d{4}-\d{2}-\d{2}$/.test(r.date||''))return r.date;
+  var m=String(r.date||'').match(/^(\d{1,2})\/(\d{1,2})/);
+  if(!m)return '';
+  var hoy=new Date(), a=hoy.getFullYear();
+  var iso=a+'-'+String(+m[2]).padStart(2,'0')+'-'+String(+m[1]).padStart(2,'0');
+  if(iso<dispMasDias(dispHoyISO(),-180))iso=(a+1)+iso.slice(4);
+  return iso;
+}
+
+// ── Las personas del tablero ──
+// El directorio (EQUIPO) trae id y correo; los equipos traen el
+// correo de los invitados que todavía no han abierto el programa.
+function dispPersonas(){
+  var porCorreo={}, orden=[];
+  function meter(correo,nombre,id,rol,estado){
+    var c=String(correo||'').toLowerCase();
+    var k=c||('id:'+id);
+    if(!k||k==='id:')return;
+    if(!porCorreo[k]){ porCorreo[k]={correo:c,nombre:nombre||c,ids:{},rol:rol||'',estado:estado||'activo'}; orden.push(k); }
+    var p=porCorreo[k];
+    if(id)p.ids[id]=1;
+    if(nombre&amp;&amp;(!p.nombre||p.nombre===c))p.nombre=nombre;
+    if(rol&amp;&amp;!p.rol)p.rol=rol;
+    if(estado==='activo')p.estado='activo';
+  }
+  try{ if(YO)meter(YO.correo,YO.nombre,YO.id,YO.rol,'activo'); }catch(_){}
+  (EQUIPO||[]).forEach(function(u){ meter(u.correo,u.nombre,u.id,u.rol,'activo'); });
+  (EQUIPOS||[]).forEach(function(e){
+    (e.miembros||[]).forEach(function(m){ meter(m.correo,m.nombre,'',m.rol,m.estado); });
+  });
+  return orden.map(function(k){return porCorreo[k];});
+}
+
+// ── Los compromisos, repartidos por persona y por día ──
+// Devuelve { claveDePersona: { '2026-09-24': [ {hora,que,tipo} ] } }
+function dispCompromisos(){
+  var gente=dispPersonas();
+  var porId={}, porCorreo={};
+  gente.forEach(function(p){
+    porCorreo[p.correo]=p;
+    Object.keys(p.ids).forEach(function(i){porId[i]=p;});
+  });
+  var desde=dispHoyISO(), hasta=dispMasDias(desde,DISP_DIAS-1);
+  var mapa={};
+
+  function anotar(reg,iso,hora,que,tipo){
+    if(!iso||iso<desde||iso>hasta)return;
+    var p=null;
+    if(reg.asignado&amp;&amp;reg.asignado.id&amp;&amp;porId[reg.asignado.id])p=porId[reg.asignado.id];
+    if(!p&amp;&amp;reg.asignado&amp;&amp;reg.asignado.correo)p=porCorreo[String(reg.asignado.correo).toLowerCase()];
+    if(!p&amp;&amp;porId[reg._owner])p=porId[reg._owner];
+    if(!p&amp;&amp;porId[reg._by])p=porId[reg._by];
+    if(!p)return;                                   // de nadie conocido: no se cuenta
+    var k=p.correo||('id:'+Object.keys(p.ids)[0]);
+    if(!mapa[k])mapa[k]={};
+    if(!mapa[k][iso])mapa[k][iso]=[];
+    mapa[k][iso].push({hora:hora||'',que:que||'',tipo:tipo||'tarea'});
+  }
+
+  (MEETS||[]).forEach(function(m){
+    anotar(m,dispIsoDe(m),m.time,m.t||'Reunión','reunion');
+  });
+  try{
+    (KB_COLS||[]).forEach(function(col){
+      if(col==='Completado'||col==='Cancelado')return;  // lo cerrado no ocupa
+      (KB[col]||[]).forEach(function(t){
+        anotar(t,dispIsoDe(t),t.time,t.t||'Tarea',t.fase?'fase':'tarea');
+      });
+    });
+  }catch(_){}
+  Object.keys(mapa).forEach(function(k){
+    Object.keys(mapa[k]).forEach(function(iso){
+      mapa[k][iso].sort(function(a,b){return String(a.hora).localeCompare(String(b.hora));});
+    });
+  });
+  return mapa;
+}
+
+function dispEstado(n){
+  if(!n)return {t:'libre', c:'var(--ok)'};
+  if(n>=DISP_LLENO)return {t:'lleno', c:'var(--danger)'};
+  return {t:'ocupado', c:'var(--warn)'};
+}
+function dispDiaCorto(iso){
+  var p=String(iso).split('-'); var d=new Date(+p[0],+p[1]-1,+p[2],12);
+  var dias=['dom','lun','mar','mié','jue','vie','sáb'];
+  return dias[d.getDay()]+' '+d.getDate();
+}
+
+// ── El tablero ──
+function dispRender(){
+  var c=document.getElementById('disp-cuerpo'); if(!c)return;
+  var gente=dispPersonas(), mapa=dispCompromisos();
+  var desde=dispHoyISO();
+  var dias=[]; for(var i=0;i<DISP_DIAS;i++)dias.push(dispMasDias(desde,i));
+
+  if(!gente.length){
+    c.innerHTML='<div class=&quot;card&quot; style=&quot;text-align:center;padding:26px;color:var(--t3);font-size:12px&quot;>'+
+      'Todavía no hay nadie más. Invita a tu gente desde <b>Equipos</b>.</div>';
+    return;
+  }
+
+  var h='<div style=&quot;font-size:11px;color:var(--t3);line-height:1.6;margin-bottom:12px&quot;>'+
+    'Lo que cada quien tiene encima los próximos '+DISP_DIAS+' días, según las reuniones '+
+    'y tareas con fecha que ya comparte el equipo. Toca un día para ver qué es.</div>';
+
+  h+='<div style=&quot;overflow-x:auto&quot;><table style=&quot;width:100%;border-collapse:collapse;font-size:11px&quot;>'+
+     '<tr><th style=&quot;text-align:left;padding:6px 8px;color:var(--t3);font-weight:600&quot;>Persona</th>'+
+     dias.map(function(d){
+       var hoy=d===desde;
+       return '<th style=&quot;padding:6px 4px;color:'+(hoy?'var(--ac)':'var(--t3)')+';font-weight:600;'+
+         'white-space:nowrap&quot;>'+dispDiaCorto(d)+'</th>';
+     }).join('')+'</tr>';
+
+  gente.forEach(function(p){
+    var k=p.correo||('id:'+Object.keys(p.ids)[0]);
+    var mio=String(p.correo||'')===String((YO&amp;&amp;YO.correo)||'').toLowerCase();
+    var r=(typeof ROLES!=='undefined'&amp;&amp;ROLES[p.rol])||{n:p.rol||'',ico:'👤'};
+    h+='<tr style=&quot;border-top:1px solid var(--bd)&quot;>'+
+       '<td style=&quot;padding:7px 8px;white-space:nowrap&quot;>'+
+         '<span style=&quot;margin-right:5px&quot;>'+r.ico+'</span>'+
+         '<b>'+nnEsc((p.nombre||p.correo).split(' ')[0])+'</b>'+
+         (mio?' <span style=&quot;color:var(--ac)&quot;>(tú)</span>':'')+
+         (p.estado==='invitado'?' <span style=&quot;color:var(--warn);font-size:9px&quot;>pendiente</span>':'')+
+       '</td>';
+    dias.forEach(function(d){
+      var lista=(mapa[k]&amp;&amp;mapa[k][d])||[];
+      var e=dispEstado(lista.length);
+      h+='<td style=&quot;padding:5px 4px;text-align:center&quot;>'+
+        '<button onclick=&quot;dispDetalle(\''+encodeURIComponent(k)+'\',\''+d+'\')&quot; '+
+        'title=&quot;'+nnEsc(p.nombre||p.correo)+' · '+e.t+'&quot; '+
+        'style=&quot;width:30px;height:26px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;'+
+        'border:1px solid '+e.c+'55;background:'+e.c+'18;color:'+e.c+'&quot;>'+
+        (lista.length||'·')+'</button></td>';
+    });
+    h+='</tr>';
+  });
+  h+='</table></div>';
+
+  h+='<div style=&quot;display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:10px;color:var(--t3)&quot;>'+
+     '<span><b style=&quot;color:var(--ok)&quot;>·</b> libre</span>'+
+     '<span><b style=&quot;color:var(--warn)&quot;>1–'+(DISP_LLENO-1)+'</b> ocupado</span>'+
+     '<span><b style=&quot;color:var(--danger)&quot;>'+DISP_LLENO+'+</b> lleno</span></div>';
+
+  h+='<div style=&quot;font-size:11px;color:var(--t3);line-height:1.6;margin-top:12px;'+
+     'background:var(--bg4);border-radius:var(--rs);padding:10px 12px&quot;>'+
+     'Solo aparece lo que tiene <b>fecha</b>. Una tarea sin fecha no ocupa el día de nadie, '+
+     'y lo Completado o Cancelado tampoco.</div>';
+  c.innerHTML=h;
+}
+
+function dispDetalle(k,iso){
+  k=decodeURIComponent(k);
+  var mapa=dispCompromisos(), lista=(mapa[k]&amp;&amp;mapa[k][iso])||[];
+  var quien=dispPersonas().filter(function(p){
+    return (p.correo||('id:'+Object.keys(p.ids)[0]))===k; })[0];
+  var nombre=(quien&amp;&amp;(quien.nombre||quien.correo))||k;
+  var ico={reunion:'📅',fase:'🏗️',tarea:'✅'};
+  nnModalInfo(nnFechaLarga(iso),
+    '<div style=&quot;font-size:12px;color:var(--t2);margin-bottom:10px&quot;>'+nnEsc(nombre)+'</div>'+
+    (lista.length
+      ? lista.map(function(x){
+          return '<div style=&quot;display:flex;gap:8px;align-items:center;padding:7px 0;border-top:1px solid var(--bd)&quot;>'+
+            '<span>'+(ico[x.tipo]||'•')+'</span>'+
+            '<div style=&quot;flex:1;font-size:12px&quot;>'+nnEsc(x.que)+'</div>'+
+            '<span style=&quot;font-size:10px;color:var(--t3);font-family:var(--mono)&quot;>'+nnEsc(x.hora||'—')+'</span>'+
+            '</div>';
+        }).join('')
+      : '<div style=&quot;font-size:12px;color:var(--ok);padding:10px 0&quot;>Día libre 🎯</div>'));
+}
+
+
+
+// ═══════════════════════════════════════════════════════════════
+// FECHAS Y HORAS SIN TECLADO
+//
+// En tablet y celular, un <input type=&quot;date&quot;> o type=&quot;time&quot; es una
+// pared: sin teclado físico no hay forma de escribir, y el selector
+// del sistema no siempre abre. Esto le pone a CADA campo de fecha y
+// hora una fila de botones grandes y un selector propio, que se
+// maneja solo con el dedo.
+//
+// No reemplaza el campo: el que tenga teclado puede seguir
+// escribiendo igual. Solo agrega otra manera de llenarlo.
+// ═══════════════════════════════════════════════════════════════
+
+var TACTIL_MIN = 44;        // tamaño mínimo de un botón para el dedo
+
+// ── Utilidades de fecha ────────────────────────────────────────
+function tacISO(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+
+         '-'+String(d.getDate()).padStart(2,'0');
+}
+function tacHoy(){ return tacISO(new Date()); }
+function tacMas(iso,dias){
+  var p=String(iso||tacHoy()).split('-');
+  var d=new Date(+p[0],+p[1]-1,+p[2],12);
+  d.setDate(d.getDate()+dias);
+  return tacISO(d);
+}
+function tacNombreMes(y,m){
+  var n=new Date(y,m,1).toLocaleDateString('es-CO',{month:'long',year:'numeric'});
+  return n.charAt(0).toUpperCase()+n.slice(1);
+}
+function tacFechaCorta(iso){
+  var p=String(iso||'').split('-'); if(p.length!==3)return '';
+  var d=new Date(+p[0],+p[1]-1,+p[2],12);
+  return d.toLocaleDateString('es-CO',{weekday:'short',day:'numeric',month:'short'});
+}
+
+// Escribir el valor AVISANDO. Si solo se asigna .value, el resto del
+// programa no se entera y se pierde lo que dependa del cambio.
+function tacPoner(input,valor){
+  if(!input)return;
+  input.value=valor;
+  try{
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+    input.dispatchEvent(new Event('change',{bubbles:true}));
+  }catch(e){}
+}
+
+// ── Estilos, inyectados una sola vez ───────────────────────────
+function tacEstilos(){
+  if(document.getElementById('tac-css'))return;
+  var s=document.createElement('style'); s.id='tac-css';
+  s.textContent=
+  '.tac-fila{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}'+
+  '.tac-chip{min-height:34px;padding:6px 11px;border-radius:8px;cursor:pointer;'+
+    'font-size:12px;font-weight:600;line-height:1;'+
+    'background:var(--bg4,rgba(125,145,170,.12));color:var(--t2,#9FB3C8);'+
+    'border:1px solid var(--bd,rgba(125,145,170,.28));'+
+    'font-family:inherit;-webkit-tap-highlight-color:transparent}'+
+  '.tac-chip:active{transform:scale(.95)}'+
+  '.tac-chip.on{background:var(--ac,#00D4FF);color:#04121C;border-color:transparent}'+
+  '.tac-capa{position:fixed;inset:0;z-index:99998;background:rgba(3,8,16,.72);'+
+    'display:flex;align-items:center;justify-content:center;padding:14px}'+
+  '.tac-caja{width:100%;max-width:360px;max-height:92vh;overflow-y:auto;'+
+    'background:var(--bg2,#0F1826);border:1px solid var(--bd,rgba(125,145,170,.28));'+
+    'border-radius:16px;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.6)}'+
+  '.tac-cab{display:flex;align-items:center;gap:8px;margin-bottom:12px}'+
+  '.tac-cab h4{flex:1;margin:0;font-size:15px;font-weight:700;text-align:center;'+
+    'color:var(--t1,#E3EDF7);font-family:inherit}'+
+  '.tac-nav{width:'+TACTIL_MIN+'px;height:'+TACTIL_MIN+'px;border-radius:10px;cursor:pointer;'+
+    'background:var(--bg4,rgba(125,145,170,.12));color:var(--t2,#9FB3C8);font-size:18px;'+
+    'border:1px solid var(--bd,rgba(125,145,170,.28));font-family:inherit}'+
+  '.tac-rej{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}'+
+  '.tac-dl{text-align:center;font-size:10px;font-weight:700;color:var(--t3,#5C7186);'+
+    'padding:4px 0;text-transform:uppercase}'+
+  '.tac-d{min-height:'+TACTIL_MIN+'px;display:flex;align-items:center;justify-content:center;'+
+    'border-radius:9px;cursor:pointer;font-size:14px;font-weight:600;'+
+    'color:var(--t2,#9FB3C8);background:var(--bg4,rgba(125,145,170,.10));border:1px solid transparent;'+
+    '-webkit-tap-highlight-color:transparent}'+
+  '.tac-d:active{transform:scale(.93)}'+
+  '.tac-d.vacio{background:transparent;cursor:default}'+
+  '.tac-d.hoy{border-color:var(--ac,#00D4FF);color:var(--ac,#00D4FF)}'+
+  '.tac-d.on{background:var(--ac,#00D4FF);color:#04121C;font-weight:700}'+
+  '.tac-hrej{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}'+
+  '.tac-mrej{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}'+
+  '.tac-et{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;'+
+    'color:var(--t3,#5C7186);margin:14px 0 6px}'+
+  '.tac-vis{text-align:center;font-size:30px;font-weight:700;letter-spacing:.02em;'+
+    'color:var(--ac,#00D4FF);font-variant-numeric:tabular-nums;margin:2px 0 4px}'+
+  '.tac-pie{display:flex;gap:8px;margin-top:14px}'+
+  '.tac-btn{flex:1;min-height:46px;border-radius:11px;cursor:pointer;font-size:14px;'+
+    'font-weight:700;border:1px solid var(--bd,rgba(125,145,170,.28));font-family:inherit;'+
+    'background:var(--bg4,rgba(125,145,170,.12));color:var(--t2,#9FB3C8)}'+
+  '.tac-btn.pri{background:var(--ac,#00D4FF);color:#04121C;border-color:transparent}';
+  document.head.appendChild(s);
+}
+
+// ── La capa del selector ───────────────────────────────────────
+function tacCerrar(){
+  var c=document.getElementById('tac-capa');
+  if(c)c.parentNode.removeChild(c);
+}
+function tacAbrir(html){
+  tacCerrar(); tacEstilos();
+  var c=document.createElement('div');
+  c.className='tac-capa'; c.id='tac-capa';
+  c.innerHTML='<div class=&quot;tac-caja&quot; id=&quot;tac-caja&quot;>'+html+'</div>';
+  c.addEventListener('click',function(e){ if(e.target===c)tacCerrar(); });
+  document.body.appendChild(c);
+  return document.getElementById('tac-caja');
+}
+
+// ── Selector de FECHA ──────────────────────────────────────────
+var TAC_OBJ=null, TAC_MES=null, TAC_SEL='';
+
+function tacFechaAbrir(id){
+  TAC_OBJ=document.getElementById(id); if(!TAC_OBJ)return;
+  TAC_SEL=TAC_OBJ.value||tacHoy();
+  var p=TAC_SEL.split('-');
+  TAC_MES=new Date(+p[0],+p[1]-1,1);
+  tacAbrir(''); tacFechaPintar();
+}
+function tacFechaMes(dir){
+  TAC_MES=new Date(TAC_MES.getFullYear(),TAC_MES.getMonth()+dir,1);
+  tacFechaPintar();
+}
+function tacFechaDia(iso){ TAC_SEL=iso; tacFechaPintar(); }
+function tacFechaPintar(){
+  var caja=document.getElementById('tac-caja'); if(!caja)return;
+  var y=TAC_MES.getFullYear(), m=TAC_MES.getMonth(), hoy=tacHoy();
+  var first=new Date(y,m,1).getDay(), total=new Date(y,m+1,0).getDate();
+
+  var h='<div class=&quot;tac-cab&quot;>'+
+    '<button class=&quot;tac-nav&quot; onclick=&quot;tacFechaMes(-1)&quot;>&amp;lsaquo;</button>'+
+    '<h4>'+tacNombreMes(y,m)+'</h4>'+
+    '<button class=&quot;tac-nav&quot; onclick=&quot;tacFechaMes(1)&quot;>&amp;rsaquo;</button></div>';
+
+  h+='<div class=&quot;tac-rej&quot;>'+
+     ['D','L','M','X','J','V','S'].map(function(d){return'<div class=&quot;tac-dl&quot;>'+d+'</div>';}).join('');
+  for(var i=0;i<first;i++)h+='<div class=&quot;tac-d vacio&quot;></div>';
+  for(var d=1;d<=total;d++){
+    var iso=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var cls='tac-d'+(iso===hoy?' hoy':'')+(iso===TAC_SEL?' on':'');
+    h+='<div class=&quot;'+cls+'&quot; onclick=&quot;tacFechaDia(\''+iso+'\')&quot;>'+d+'</div>';
+  }
+  h+='</div>';
+
+  h+='<div class=&quot;tac-fila&quot; style=&quot;margin-top:12px&quot;>'+
+     '<button class=&quot;tac-chip&quot; onclick=&quot;tacFechaDia(\''+hoy+'\')&quot;>Hoy</button>'+
+     '<button class=&quot;tac-chip&quot; onclick=&quot;tacFechaDia(\''+tacMas(hoy,1)+'\')&quot;>Mañana</button>'+
+     '<button class=&quot;tac-chip&quot; onclick=&quot;tacFechaDia(\''+tacMas(hoy,7)+'\')&quot;>En 1 semana</button>'+
+     '</div>';
+
+  h+='<div class=&quot;tac-pie&quot;>'+
+     '<button class=&quot;tac-btn&quot; onclick=&quot;tacCerrar()&quot;>Cancelar</button>'+
+     '<button class=&quot;tac-btn pri&quot; onclick=&quot;tacFechaListo()&quot;>'+tacFechaCorta(TAC_SEL)+'</button>'+
+     '</div>';
+  caja.innerHTML=h;
+}
+function tacFechaListo(){ tacPoner(TAC_OBJ,TAC_SEL); tacCerrar(); }
+
+// ── Selector de HORA ───────────────────────────────────────────
+var TAC_H=9, TAC_M=0;
+
+function tacHoraAbrir(id){
+  TAC_OBJ=document.getElementById(id); if(!TAC_OBJ)return;
+  var v=(TAC_OBJ.value||'09:00').split(':');
+  TAC_H=Math.min(23,Math.max(0,parseInt(v[0],10)||9));
+  TAC_M=Math.min(59,Math.max(0,parseInt(v[1],10)||0));
+  tacAbrir(''); tacHoraPintar();
+}
+function tacHoraH(h){ TAC_H=h; tacHoraPintar(); }
+function tacHoraM(m){ TAC_M=m; tacHoraPintar(); }
+function tacHoraTxt(){
+  return String(TAC_H).padStart(2,'0')+':'+String(TAC_M).padStart(2,'0');
+}
+function tacHoraPintar(){
+  var caja=document.getElementById('tac-caja'); if(!caja)return;
+  var ampm=(TAC_H===0?12:TAC_H>12?TAC_H-12:TAC_H)+':'+String(TAC_M).padStart(2,'0')+
+           ' '+(TAC_H<12?'a. m.':'p. m.');
+
+  var h='<div class=&quot;tac-vis&quot;>'+tacHoraTxt()+'</div>'+
+        '<div style=&quot;text-align:center;font-size:12px;color:var(--t3,#5C7186);margin-bottom:6px&quot;>'+ampm+'</div>';
+
+  h+='<div class=&quot;tac-et&quot;>Hora</div><div class=&quot;tac-hrej&quot;>';
+  for(var i=0;i<24;i++){
+    h+='<div class=&quot;tac-d'+(i===TAC_H?' on':'')+'&quot; onclick=&quot;tacHoraH('+i+')&quot;>'+
+       String(i).padStart(2,'0')+'</div>';
+  }
+  h+='</div>';
+
+  h+='<div class=&quot;tac-et&quot;>Minutos</div><div class=&quot;tac-mrej&quot;>';
+  [0,15,30,45].forEach(function(m){
+    h+='<div class=&quot;tac-d'+(m===TAC_M?' on':'')+'&quot; onclick=&quot;tacHoraM('+m+')&quot;>'+
+       String(m).padStart(2,'0')+'</div>';
+  });
+  h+='</div>';
+
+  h+='<div class=&quot;tac-pie&quot;>'+
+     '<button class=&quot;tac-btn&quot; onclick=&quot;tacCerrar()&quot;>Cancelar</button>'+
+     '<button class=&quot;tac-btn pri&quot; onclick=&quot;tacHoraListo()&quot;>Usar '+tacHoraTxt()+'</button>'+
+     '</div>';
+  caja.innerHTML=h;
+}
+function tacHoraListo(){ tacPoner(TAC_OBJ,tacHoraTxt()); tacCerrar(); }
+
+// ── Atajos rápidos (los que evitan abrir el selector) ──────────
+function tacRapido(id,dias){
+  var e=document.getElementById(id); if(!e)return;
+  tacPoner(e,tacMas(tacHoy(),dias));
+}
+function tacHoraRapida(id,hhmm){
+  var e=document.getElementById(id); if(!e)return;
+  tacPoner(e,hhmm);
+}
+
+// ── Enganchar los campos ───────────────────────────────────────
+// Se le pone la fila a cada campo de fecha/hora que todavía no la
+// tenga. Se vuelve a llamar cuando cambia la pantalla, porque las
+// vistas y los modales se arman sobre la marcha.
+var TAC_N=0;
+function tacMontar(){
+  tacEstilos();
+  var campos=document.querySelectorAll('input[type=date],input[type=time]');
+  for(var i=0;i<campos.length;i++){
+    var c=campos[i];
+    if(c.getAttribute('data-tac'))continue;
+    if(!c.id)c.id='tac-auto-'+(++TAC_N);
+    c.setAttribute('data-tac','1');
+
+    var fila=document.createElement('div');
+    fila.className='tac-fila';
+    var esFecha=(c.type==='date');
+    if(esFecha){
+      fila.innerHTML=
+        '<button type=&quot;button&quot; class=&quot;tac-chip&quot; onclick=&quot;tacRapido(\''+c.id+'\',0)&quot;>Hoy</button>'+
+        '<button type=&quot;button&quot; class=&quot;tac-chip&quot; onclick=&quot;tacRapido(\''+c.id+'\',1)&quot;>Mañana</button>'+
+        '<button type=&quot;button&quot; class=&quot;tac-chip&quot; onclick=&quot;tacRapido(\''+c.id+'\',7)&quot;>+1 sem</button>'+
+        '<button type=&quot;button&quot; class=&quot;tac-chip&quot; onclick=&quot;tacFechaAbrir(\''+c.id+'\')&quot;>📅 Elegir</button>';
+    }else{
+      fila.innerHTML=
+        '<button type=&quot;button&quot; class=&quot;tac-chip&quot; onclick=&quot;tacHoraRapida(\''+c.id+'\',\'08:00\')&quot;>8 am</button>'+
+        '<button type=&quot;button&quot; class=&quot;tac-chip&quot; onclick=&quot;tacHoraRapida(\''+c.id+'\',\'10:00\')&quot;>10 am</button>'+
+        '<button type=&quot;button&quot; class=&quot;tac-chip&quot; onclick=&quot;tacHoraRapida(\''+c.id+'\',\'14:00\')&quot;>2 pm</button>'+
+        '<button type=&quot;button&quot; class=&quot;tac-chip&quot; onclick=&quot;tacHoraRapida(\''+c.id+'\',\'16:00\')&quot;>4 pm</button>'+
+        '<button type=&quot;button&quot; class=&quot;tac-chip&quot; onclick=&quot;tacHoraAbrir(\''+c.id+'\')&quot;>🕐 Otra</button>';
+    }
+    if(c.parentNode)c.parentNode.insertBefore(fila,c.nextSibling);
+  }
+}
+
+// Las vistas se arman sobre la marcha, así que hay que volver a
+// mirar cuando el documento cambia. Con retardo, para no hacerlo
+// en cada nodo que se agrega.
+var TAC_T=null;
+function tacVigilar(){
+  try{
+    var obs=new MutationObserver(function(){
+      clearTimeout(TAC_T);
+      TAC_T=setTimeout(tacMontar,220);
+    });
+    obs.observe(document.body,{childList:true,subtree:true});
+  }catch(e){}
+}
+function tacIniciar(){
+  try{ tacMontar(); tacVigilar(); }catch(e){}
+}
+if(document.readyState==='loading')
+  document.addEventListener('DOMContentLoaded',tacIniciar);
+else tacIniciar();
+
+
 // TÉCNICOS Y ASIGNACIÓN
 // Cada técnico tiene su correo corporativo. Al asignarle una tarea
 // o una visita se le manda: el correo con invitación de calendario
@@ -11614,6 +13571,14 @@ function toast(msg,type){
         <button class="abtn" style="flex:1" onclick="apToggleCfg()">Cerrar</button>
         <button class="abtn prim" style="flex:2" onclick="apSaveCfg()">&#128190; Guardar configuraci&oacute;n</button>
       </div>
+      <div class="ff" style="margin-top:8px;">
+        <button class="abtn" style="flex:1;font-size:11px" onclick="apCfgCopiar()">&#128203; Copiar configuraci&oacute;n</button>
+        <button class="abtn" style="flex:1;font-size:11px" onclick="apCfgPegar()">&#128229; Pegar configuraci&oacute;n</button>
+      </div>
+      <div style="font-size:11px;color:#61748F;line-height:1.6;margin-top:8px;">
+        Sirve para dejar listo otro equipo sin dictar campo por campo: copias aqu&iacute;, mandas
+        el texto por WhatsApp y all&aacute; se pega. <b>No lo publiques</b>: lleva tu token.
+      </div>
     </div>
 
     <div class="form-box" id="ap-form">
@@ -11698,10 +13663,10 @@ function toast(msg,type){
  ************************************************************/
 
 var CFG = {
-  TG_TOKEN : &#x27;8911619631:AAE6QNA4FzdQcKjjpG5BR5Go-skl1nnvQH0&#x27;,
-  TG_CHAT  : &#x27;8995621093&#x27;,
-  FB_PROJECT : &#x27;em-suite-pro&#x27;,
-  FB_KEY     : &#x27;AIzaSyCr4pZxUEU8BftysPDOZuVClamqXMIGooQ&#x27;,
+  TG_TOKEN : &#x27;TU_TOKEN_DE_TELEGRAM&#x27;,
+  TG_CHAT  : &#x27;TU_CHAT_ID&#x27;,
+  FB_PROJECT : &#x27;EL_PROYECTO_DEL_CLIENTE&#x27;,
+  FB_KEY     : &#x27;TU_API_KEY_DE_FIREBASE&#x27;,
   TZ         : &#x27;America/Bogota&#x27;,
   RECORDATORIOS : [1440, 60, 15, 0],   // minutos antes del evento
   HORA_RESUMEN  : 7,                   // resumen diario 7:00 a.m.
@@ -12049,14 +14014,287 @@ function utc(d) {
 // ═══════════════════════════════════════════════════════════════
 
 // ── Configuración persistente ──────────────────────────────────
+
+// ═══════════════════════════════════════════════════════════════
+// FECHAS Y HORAS SIN TECLADO
+//
+// En tablet y celular, un <input type="date"> o type="time" es una
+// pared: sin teclado físico no hay forma de escribir, y el selector
+// del sistema no siempre abre. Esto le pone a CADA campo de fecha y
+// hora una fila de botones grandes y un selector propio, que se
+// maneja solo con el dedo.
+//
+// No reemplaza el campo: el que tenga teclado puede seguir
+// escribiendo igual. Solo agrega otra manera de llenarlo.
+// ═══════════════════════════════════════════════════════════════
+
+var TACTIL_MIN = 44;        // tamaño mínimo de un botón para el dedo
+
+// ── Utilidades de fecha ────────────────────────────────────────
+function tacISO(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+
+         '-'+String(d.getDate()).padStart(2,'0');
+}
+function tacHoy(){ return tacISO(new Date()); }
+function tacMas(iso,dias){
+  var p=String(iso||tacHoy()).split('-');
+  var d=new Date(+p[0],+p[1]-1,+p[2],12);
+  d.setDate(d.getDate()+dias);
+  return tacISO(d);
+}
+function tacNombreMes(y,m){
+  var n=new Date(y,m,1).toLocaleDateString('es-CO',{month:'long',year:'numeric'});
+  return n.charAt(0).toUpperCase()+n.slice(1);
+}
+function tacFechaCorta(iso){
+  var p=String(iso||'').split('-'); if(p.length!==3)return '';
+  var d=new Date(+p[0],+p[1]-1,+p[2],12);
+  return d.toLocaleDateString('es-CO',{weekday:'short',day:'numeric',month:'short'});
+}
+
+// Escribir el valor AVISANDO. Si solo se asigna .value, el resto del
+// programa no se entera y se pierde lo que dependa del cambio.
+function tacPoner(input,valor){
+  if(!input)return;
+  input.value=valor;
+  try{
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+    input.dispatchEvent(new Event('change',{bubbles:true}));
+  }catch(e){}
+}
+
+// ── Estilos, inyectados una sola vez ───────────────────────────
+function tacEstilos(){
+  if(document.getElementById('tac-css'))return;
+  var s=document.createElement('style'); s.id='tac-css';
+  s.textContent=
+  '.tac-fila{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}'+
+  '.tac-chip{min-height:34px;padding:6px 11px;border-radius:8px;cursor:pointer;'+
+    'font-size:12px;font-weight:600;line-height:1;'+
+    'background:var(--bg4,rgba(125,145,170,.12));color:var(--t2,#9FB3C8);'+
+    'border:1px solid var(--bd,rgba(125,145,170,.28));'+
+    'font-family:inherit;-webkit-tap-highlight-color:transparent}'+
+  '.tac-chip:active{transform:scale(.95)}'+
+  '.tac-chip.on{background:var(--ac,#00D4FF);color:#04121C;border-color:transparent}'+
+  '.tac-capa{position:fixed;inset:0;z-index:99998;background:rgba(3,8,16,.72);'+
+    'display:flex;align-items:center;justify-content:center;padding:14px}'+
+  '.tac-caja{width:100%;max-width:360px;max-height:92vh;overflow-y:auto;'+
+    'background:var(--bg2,#0F1826);border:1px solid var(--bd,rgba(125,145,170,.28));'+
+    'border-radius:16px;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.6)}'+
+  '.tac-cab{display:flex;align-items:center;gap:8px;margin-bottom:12px}'+
+  '.tac-cab h4{flex:1;margin:0;font-size:15px;font-weight:700;text-align:center;'+
+    'color:var(--t1,#E3EDF7);font-family:inherit}'+
+  '.tac-nav{width:'+TACTIL_MIN+'px;height:'+TACTIL_MIN+'px;border-radius:10px;cursor:pointer;'+
+    'background:var(--bg4,rgba(125,145,170,.12));color:var(--t2,#9FB3C8);font-size:18px;'+
+    'border:1px solid var(--bd,rgba(125,145,170,.28));font-family:inherit}'+
+  '.tac-rej{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}'+
+  '.tac-dl{text-align:center;font-size:10px;font-weight:700;color:var(--t3,#5C7186);'+
+    'padding:4px 0;text-transform:uppercase}'+
+  '.tac-d{min-height:'+TACTIL_MIN+'px;display:flex;align-items:center;justify-content:center;'+
+    'border-radius:9px;cursor:pointer;font-size:14px;font-weight:600;'+
+    'color:var(--t2,#9FB3C8);background:var(--bg4,rgba(125,145,170,.10));border:1px solid transparent;'+
+    '-webkit-tap-highlight-color:transparent}'+
+  '.tac-d:active{transform:scale(.93)}'+
+  '.tac-d.vacio{background:transparent;cursor:default}'+
+  '.tac-d.hoy{border-color:var(--ac,#00D4FF);color:var(--ac,#00D4FF)}'+
+  '.tac-d.on{background:var(--ac,#00D4FF);color:#04121C;font-weight:700}'+
+  '.tac-hrej{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}'+
+  '.tac-mrej{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}'+
+  '.tac-et{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;'+
+    'color:var(--t3,#5C7186);margin:14px 0 6px}'+
+  '.tac-vis{text-align:center;font-size:30px;font-weight:700;letter-spacing:.02em;'+
+    'color:var(--ac,#00D4FF);font-variant-numeric:tabular-nums;margin:2px 0 4px}'+
+  '.tac-pie{display:flex;gap:8px;margin-top:14px}'+
+  '.tac-btn{flex:1;min-height:46px;border-radius:11px;cursor:pointer;font-size:14px;'+
+    'font-weight:700;border:1px solid var(--bd,rgba(125,145,170,.28));font-family:inherit;'+
+    'background:var(--bg4,rgba(125,145,170,.12));color:var(--t2,#9FB3C8)}'+
+  '.tac-btn.pri{background:var(--ac,#00D4FF);color:#04121C;border-color:transparent}';
+  document.head.appendChild(s);
+}
+
+// ── La capa del selector ───────────────────────────────────────
+function tacCerrar(){
+  var c=document.getElementById('tac-capa');
+  if(c)c.parentNode.removeChild(c);
+}
+function tacAbrir(html){
+  tacCerrar(); tacEstilos();
+  var c=document.createElement('div');
+  c.className='tac-capa'; c.id='tac-capa';
+  c.innerHTML='<div class="tac-caja" id="tac-caja">'+html+'</div>';
+  c.addEventListener('click',function(e){ if(e.target===c)tacCerrar(); });
+  document.body.appendChild(c);
+  return document.getElementById('tac-caja');
+}
+
+// ── Selector de FECHA ──────────────────────────────────────────
+var TAC_OBJ=null, TAC_MES=null, TAC_SEL='';
+
+function tacFechaAbrir(id){
+  TAC_OBJ=document.getElementById(id); if(!TAC_OBJ)return;
+  TAC_SEL=TAC_OBJ.value||tacHoy();
+  var p=TAC_SEL.split('-');
+  TAC_MES=new Date(+p[0],+p[1]-1,1);
+  tacAbrir(''); tacFechaPintar();
+}
+function tacFechaMes(dir){
+  TAC_MES=new Date(TAC_MES.getFullYear(),TAC_MES.getMonth()+dir,1);
+  tacFechaPintar();
+}
+function tacFechaDia(iso){ TAC_SEL=iso; tacFechaPintar(); }
+function tacFechaPintar(){
+  var caja=document.getElementById('tac-caja'); if(!caja)return;
+  var y=TAC_MES.getFullYear(), m=TAC_MES.getMonth(), hoy=tacHoy();
+  var first=new Date(y,m,1).getDay(), total=new Date(y,m+1,0).getDate();
+
+  var h='<div class="tac-cab">'+
+    '<button class="tac-nav" onclick="tacFechaMes(-1)">&lsaquo;</button>'+
+    '<h4>'+tacNombreMes(y,m)+'</h4>'+
+    '<button class="tac-nav" onclick="tacFechaMes(1)">&rsaquo;</button></div>';
+
+  h+='<div class="tac-rej">'+
+     ['D','L','M','X','J','V','S'].map(function(d){return'<div class="tac-dl">'+d+'</div>';}).join('');
+  for(var i=0;i<first;i++)h+='<div class="tac-d vacio"></div>';
+  for(var d=1;d<=total;d++){
+    var iso=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var cls='tac-d'+(iso===hoy?' hoy':'')+(iso===TAC_SEL?' on':'');
+    h+='<div class="'+cls+'" onclick="tacFechaDia(\''+iso+'\')">'+d+'</div>';
+  }
+  h+='</div>';
+
+  h+='<div class="tac-fila" style="margin-top:12px">'+
+     '<button class="tac-chip" onclick="tacFechaDia(\''+hoy+'\')">Hoy</button>'+
+     '<button class="tac-chip" onclick="tacFechaDia(\''+tacMas(hoy,1)+'\')">Mañana</button>'+
+     '<button class="tac-chip" onclick="tacFechaDia(\''+tacMas(hoy,7)+'\')">En 1 semana</button>'+
+     '</div>';
+
+  h+='<div class="tac-pie">'+
+     '<button class="tac-btn" onclick="tacCerrar()">Cancelar</button>'+
+     '<button class="tac-btn pri" onclick="tacFechaListo()">'+tacFechaCorta(TAC_SEL)+'</button>'+
+     '</div>';
+  caja.innerHTML=h;
+}
+function tacFechaListo(){ tacPoner(TAC_OBJ,TAC_SEL); tacCerrar(); }
+
+// ── Selector de HORA ───────────────────────────────────────────
+var TAC_H=9, TAC_M=0;
+
+function tacHoraAbrir(id){
+  TAC_OBJ=document.getElementById(id); if(!TAC_OBJ)return;
+  var v=(TAC_OBJ.value||'09:00').split(':');
+  TAC_H=Math.min(23,Math.max(0,parseInt(v[0],10)||9));
+  TAC_M=Math.min(59,Math.max(0,parseInt(v[1],10)||0));
+  tacAbrir(''); tacHoraPintar();
+}
+function tacHoraH(h){ TAC_H=h; tacHoraPintar(); }
+function tacHoraM(m){ TAC_M=m; tacHoraPintar(); }
+function tacHoraTxt(){
+  return String(TAC_H).padStart(2,'0')+':'+String(TAC_M).padStart(2,'0');
+}
+function tacHoraPintar(){
+  var caja=document.getElementById('tac-caja'); if(!caja)return;
+  var ampm=(TAC_H===0?12:TAC_H>12?TAC_H-12:TAC_H)+':'+String(TAC_M).padStart(2,'0')+
+           ' '+(TAC_H<12?'a. m.':'p. m.');
+
+  var h='<div class="tac-vis">'+tacHoraTxt()+'</div>'+
+        '<div style="text-align:center;font-size:12px;color:var(--t3,#5C7186);margin-bottom:6px">'+ampm+'</div>';
+
+  h+='<div class="tac-et">Hora</div><div class="tac-hrej">';
+  for(var i=0;i<24;i++){
+    h+='<div class="tac-d'+(i===TAC_H?' on':'')+'" onclick="tacHoraH('+i+')">'+
+       String(i).padStart(2,'0')+'</div>';
+  }
+  h+='</div>';
+
+  h+='<div class="tac-et">Minutos</div><div class="tac-mrej">';
+  [0,15,30,45].forEach(function(m){
+    h+='<div class="tac-d'+(m===TAC_M?' on':'')+'" onclick="tacHoraM('+m+')">'+
+       String(m).padStart(2,'0')+'</div>';
+  });
+  h+='</div>';
+
+  h+='<div class="tac-pie">'+
+     '<button class="tac-btn" onclick="tacCerrar()">Cancelar</button>'+
+     '<button class="tac-btn pri" onclick="tacHoraListo()">Usar '+tacHoraTxt()+'</button>'+
+     '</div>';
+  caja.innerHTML=h;
+}
+function tacHoraListo(){ tacPoner(TAC_OBJ,tacHoraTxt()); tacCerrar(); }
+
+// ── Atajos rápidos (los que evitan abrir el selector) ──────────
+function tacRapido(id,dias){
+  var e=document.getElementById(id); if(!e)return;
+  tacPoner(e,tacMas(tacHoy(),dias));
+}
+function tacHoraRapida(id,hhmm){
+  var e=document.getElementById(id); if(!e)return;
+  tacPoner(e,hhmm);
+}
+
+// ── Enganchar los campos ───────────────────────────────────────
+// Se le pone la fila a cada campo de fecha/hora que todavía no la
+// tenga. Se vuelve a llamar cuando cambia la pantalla, porque las
+// vistas y los modales se arman sobre la marcha.
+var TAC_N=0;
+function tacMontar(){
+  tacEstilos();
+  var campos=document.querySelectorAll('input[type=date],input[type=time]');
+  for(var i=0;i<campos.length;i++){
+    var c=campos[i];
+    if(c.getAttribute('data-tac'))continue;
+    if(!c.id)c.id='tac-auto-'+(++TAC_N);
+    c.setAttribute('data-tac','1');
+
+    var fila=document.createElement('div');
+    fila.className='tac-fila';
+    var esFecha=(c.type==='date');
+    if(esFecha){
+      fila.innerHTML=
+        '<button type="button" class="tac-chip" onclick="tacRapido(\''+c.id+'\',0)">Hoy</button>'+
+        '<button type="button" class="tac-chip" onclick="tacRapido(\''+c.id+'\',1)">Mañana</button>'+
+        '<button type="button" class="tac-chip" onclick="tacRapido(\''+c.id+'\',7)">+1 sem</button>'+
+        '<button type="button" class="tac-chip" onclick="tacFechaAbrir(\''+c.id+'\')">📅 Elegir</button>';
+    }else{
+      fila.innerHTML=
+        '<button type="button" class="tac-chip" onclick="tacHoraRapida(\''+c.id+'\',\'08:00\')">8 am</button>'+
+        '<button type="button" class="tac-chip" onclick="tacHoraRapida(\''+c.id+'\',\'10:00\')">10 am</button>'+
+        '<button type="button" class="tac-chip" onclick="tacHoraRapida(\''+c.id+'\',\'14:00\')">2 pm</button>'+
+        '<button type="button" class="tac-chip" onclick="tacHoraRapida(\''+c.id+'\',\'16:00\')">4 pm</button>'+
+        '<button type="button" class="tac-chip" onclick="tacHoraAbrir(\''+c.id+'\')">🕐 Otra</button>';
+    }
+    if(c.parentNode)c.parentNode.insertBefore(fila,c.nextSibling);
+  }
+}
+
+// Las vistas se arman sobre la marcha, así que hay que volver a
+// mirar cuando el documento cambia. Con retardo, para no hacerlo
+// en cada nodo que se agrega.
+var TAC_T=null;
+function tacVigilar(){
+  try{
+    var obs=new MutationObserver(function(){
+      clearTimeout(TAC_T);
+      TAC_T=setTimeout(tacMontar,220);
+    });
+    obs.observe(document.body,{childList:true,subtree:true});
+  }catch(e){}
+}
+function tacIniciar(){
+  try{ tacMontar(); tacVigilar(); }catch(e){}
+}
+if(document.readyState==='loading')
+  document.addEventListener('DOMContentLoaded',tacIniciar);
+else tacIniciar();
+
+
 var EM_CFG_KEY='em_suite_cfg_v1';
 var EM_DEFAULTS={
-  tgToken:'8911619631:AAE6QNA4FzdQcKjjpG5BR5Go-skl1nnvQH0',
-  tgChat:'8995621093',
-  fbProject:'em-suite-pro',
-  fbKey:'AIzaSyCr4pZxUEU8BftysPDOZuVClamqXMIGooQ',
+  tgToken:'',
+  tgChat:'',
+  fbProject:'',
+  fbKey:'',
   gasUrl:'',
-  correos:['edissonm60@gmail.com','academiatecnicadelhogar@gmail.com'],
+  correos:['tu.correo@empresa.com','segundo.correo@empresa.com'],
   remind:[1440,60,15,0],   // minutos antes: 1 día, 1 hora, 15 min, a la hora
   digest:'07:00',          // resumen de la mañana
   digestPm:'18:00',        // resumen de la tarde: qué quedó pendiente
@@ -12064,6 +14302,24 @@ var EM_DEFAULTS={
   avisarTodo:true,         // avisar a Telegram cualquier movimiento
   tgOn:true
 };
+// Si el archivo se armó CON llaves, se marca. El público sale con
+// EM_DEFAULTS vacío y esto no se enciende nunca.
+try{
+  if(EM_DEFAULTS.tgToken||EM_DEFAULTS.fbKey){
+    document.addEventListener('DOMContentLoaded',function(){
+      var e=document.getElementById('em-privado'); if(!e)return;
+      e.style.display='block';
+      e.onclick=function(){
+        alert('Este archivo tiene tus llaves escritas adentro:\n\n'+
+          '  · tu token de Telegram\n  · tu clave de Firebase\n\n'+
+          'Por eso al abrirlo aparecen TUS proyectos.\n\n'+
+          'NO se lo mandes a un cliente ni lo subas a internet. El archivo '+
+          'para entregar es el que dice PUBLICO: ese sale sin llaves y abre vacío.');
+      };
+    });
+  }
+}catch(_e){}
+
 var EMC=(function(){
   var c={};
   for(var k in EM_DEFAULTS)c[k]=EM_DEFAULTS[k];
@@ -12229,7 +14485,13 @@ var _fbRetryTimer=null, _fbRetryCount=0, _fbLastErr='';
 function fbCacheSave(evs){try{localStorage.setItem(_FB_CACHE_KEY,JSON.stringify(evs));}catch(e){}}
 function fbCacheLoad(){try{var r=localStorage.getItem(_FB_CACHE_KEY);return r?JSON.parse(r):[];}catch(e){return[];}}
 
+// Sin proyecto o sin clave NO hay URL. Antes caía en el proyecto de
+// Edisson por defecto, así que el panel de Alertas de un cliente le
+// escribía a él sin que nadie se enterara. Ahora devuelve vacío y el
+// que llama no sale a la red.
+function fbHay(){ return !!(_FB_PROJECT && _FB_API_KEY); }
 function fbUrl(path){
+  if(!fbHay())return '';
   return 'https://firestore.googleapis.com/v1/projects/'+_FB_PROJECT+
          '/databases/(default)/documents/'+path+(path.indexOf('?')>=0?'&':'?')+'key='+_FB_API_KEY;
 }
@@ -12256,6 +14518,10 @@ function fbSetStatus(icon,msg){
 }
 
 function fbLoadAll(callback){
+  // Sin Firebase configurado no se sale a la red: se devuelve lo que
+  // haya en la copia local y ya. ("silent" no existe en esta función;
+  // el aviso al usuario lo da quien llama.)
+  if(!fbHay()){ try{ if(callback)callback(fbCacheLoad()); }catch(e){} return; }
   fetch(fbUrl('events?pageSize=500'))
     .then(function(r){
       return r.json().catch(function(){return{};}).then(function(j){
@@ -12308,6 +14574,7 @@ function fbWrite(ev){
   var ci=cached.findIndex(function(e){return e.id===ev.id;});
   if(ci>=0)cached[ci]=ev;else cached.push(ev);
   fbCacheSave(cached);
+  if(!fbHay())return Promise.resolve(false);
   return fetch(fbUrl('events/'+encodeURIComponent(ev.id)),{
       method:'PATCH',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({fields:fields})})
@@ -12334,6 +14601,7 @@ function emPending(ev){
   }catch(e){}
 }
 function fbDelete(id){
+  if(!fbHay())return Promise.resolve(false);
   return fetch(fbUrl('events/'+encodeURIComponent(id)),{method:'DELETE'})
     .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return true;});
 }
@@ -12365,12 +14633,14 @@ function fbRefresh(silent){
     }catch(e){}
   });
   emGasHeartbeat();
+  apAvisarConfig();
 }
 
 // Latido del Apps Script: si el robot 24/7 está vivo, el navegador
 // no duplica los recordatorios de Telegram.
 var _gasAlive=0;
 function emGasHeartbeat(){
+  if(!fbHay())return;
   fetch(fbUrl('meta/gas'))
     .then(function(r){return r.ok?r.json():null;})
     .then(function(j){
@@ -12915,6 +15185,7 @@ function apDiag(){
         .catch(function(){add('📨','Envío de mensaje',false,'Sin conexión');});
     })
     .then(function(){
+      if(!fbHay())return Promise.resolve(false);
       return fetch(fbUrl('events?pageSize=1')).then(function(r){
         return r.json().catch(function(){return{};}).then(function(j){
           if(r.ok)add('🔥','Firebase — lectura',true,'OK');
@@ -13119,6 +15390,52 @@ function apSaveCfg(){
   apToast('Configuración guardada','ok');
   fbRefresh(true);
 }
+// La configuración cabe en un texto: así se prepara otro equipo sin
+// dictar el token por teléfono. OJO: ese texto lleva las llaves, así
+// que se manda por privado, nunca se publica.
+function apCfgCopiar(){
+  var d={t:EMC.tgToken,c:EMC.tgChat,p:EMC.fbProject,k:EMC.fbKey,g:EMC.gasUrl,
+         m:EMC.correos,r:EMC.remind,d1:EMC.digest,d2:EMC.digestPm};
+  var txt='EMCFG1.'+btoa(unescape(encodeURIComponent(JSON.stringify(d))));
+  try{
+    navigator.clipboard.writeText(txt);
+    apToast('Configuración copiada — mándala por privado','ok');
+  }catch(e){ prompt('Copia este texto:',txt); }
+}
+function apCfgPegar(){
+  var txt=prompt('Pega aquí la configuración que te enviaron (empieza con EMCFG1.):','');
+  if(!txt)return;
+  txt=String(txt).trim();
+  if(txt.indexOf('EMCFG1.')!==0){apToast('Ese texto no es una configuración','warn');return;}
+  try{
+    var d=JSON.parse(decodeURIComponent(escape(atob(txt.slice(7)))));
+    if(d.t)EMC.tgToken=d.t; if(d.c)EMC.tgChat=d.c;
+    if(d.p)EMC.fbProject=d.p; if(d.k)EMC.fbKey=d.k;
+    if(d.g)EMC.gasUrl=d.g; if(d.m)EMC.correos=d.m;
+    if(d.r)EMC.remind=d.r; if(d.d1)EMC.digest=d.d1; if(d.d2)EMC.digestPm=d.d2;
+    _AT=EMC.tgToken;_AC=EMC.tgChat;_FB_PROJECT=EMC.fbProject;_FB_API_KEY=EMC.fbKey;
+    emCfgSave();
+    if(typeof apToggleCfg==='function'){apToggleCfg();apToggleCfg();}
+    apToast('Configuración cargada','ok');
+    fbRefresh(true);
+  }catch(e){ apToast('No pude leer esa configuración','warn'); }
+}
+
+// Si el archivo se publicó sin llaves, hay que pedirlas una vez
+function apFaltaConfig(){
+  return !(EMC.tgToken&&EMC.fbKey);
+}
+function apAvisarConfig(){
+  if(!apFaltaConfig())return;
+  var el=document.getElementById('ap-gas-state');
+  if(el){
+    el.innerHTML='⚙️ <b style="color:#f59e0b">Falta configurar</b> — este archivo se publicó sin llaves. '+
+      '<span style="text-decoration:underline;cursor:pointer" onclick="apToggleCfg()">Abrir configuración</span> '+
+      'y pegar la que te entregaron.';
+    el.style.color='#8899BB';
+  }
+}
+
 function apCopyGas(){
   var el=document.getElementById('gas-code');
   if(!el)return;
