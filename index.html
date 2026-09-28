@@ -13954,26 +13954,17 @@ parCuando(
       apToast('✓ '+sobran.length+' duplicado(s) eliminado(s)','ok');
     };
 
-    // Botón, para no tener que abrir la consola. Solo se ve cuando
-    // estás EN la pestaña de Alertas: flotando sobre todo el programa
-    // estorbaba en las demás.
-    parCuando(function(){ return !!document.body; },
+    // Botón, para no tener que abrir la consola
+    parCuando(function(){ return !!document.querySelector('#ap-list,.ap-list,#ap-toolbar,body'); },
       function(){
         if(document.getElementById('ap-btn-dup'))return;
         var b=document.createElement('button');
         b.id='ap-btn-dup'; b.textContent='🧹 Quitar duplicados';
-        b.style.cssText='position:fixed;right:12px;bottom:12px;z-index:9999;display:none;'+
+        b.style.cssText='position:fixed;right:12px;bottom:12px;z-index:9999;'+
           'padding:10px 14px;border-radius:10px;cursor:pointer;font:600 12px system-ui,sans-serif;'+
           'background:#1E2E44;color:#9FB3C8;border:1px solid #2C4159';
         b.onclick=function(){ apLimpiarDuplicados(); };
         document.body.appendChild(b);
-
-        // "cur" es la pestaña abierta; la 4 es Alertas.
-        setInterval(function(){
-          var enAlertas=false;
-          try{ enAlertas=(typeof cur!=='undefined'&&cur===4); }catch(e){}
-          b.style.display=enAlertas?'block':'none';
-        },700);
       },'boton duplicados');
   },'limpiador');
 
@@ -13983,6 +13974,7 @@ parCuando(
   var f=document.getElementById('em-parches-fuente');
   if(!f)return;
   var codigo=f.textContent;
+
   function meter(doc){
     try{
       if(!doc||!doc.head||doc.getElementById('em-parches'))return;
@@ -13992,6 +13984,9 @@ parCuando(
     }catch(e){}
   }
   meter(document);
+
+  // Los iframes van por srcdoc: mismo origen, se puede entrar. Se
+  // reintenta un rato largo porque en tablet cargan lento.
   var n=0;
   (function recorrer(){
     var fr=document.getElementsByTagName('iframe');
