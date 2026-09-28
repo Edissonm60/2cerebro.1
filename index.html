@@ -13833,6 +13833,117 @@ if(typeof window!=='undefined'){
   });
 }
 
+
+
+// ═══════════════════════════════════════════════════════════════
+// EL EVENTO DUPLICADO
+//
+// Al crear una REUNIÓN desde el calendario, el formulario hacía dos
+// cosas a la vez:
+//
+//   1. mandaba un aviso directo a Alertas   → id nn_cal_<hora>
+//   2. creaba la reunión en NeuroNotes, y   → id nn_meet_<hora>
+//      la importación la convertía en OTRO aviso
+//
+// Por eso salía dos veces, una con prioridad Media y otra con Alta.
+// No era un doble clic: eran dos caminos distintos.
+//
+// Ahora la reunión se crea primero y el aviso se manda con EL MISMO
+// id que va a usar la importación. Así, cuando esta corra, actualiza
+// el que ya está en vez de agregar otro. Los demás tipos —visita,
+// tarea, límite, llamada— nunca tuvieron el problema y siguen igual.
+// ═══════════════════════════════════════════════════════════════
+
+if(typeof calAdd==='function' && typeof MEETS!=='undefined'){
+
+  calAdd = function(){
+    var g=function(id){var e=document.getElementById(id);return e?e.value.trim():'';};
+    var t=g('cal-new-title');
+    if(!t){T('Error','Escribe el título del evento','⚠️');return;}
+
+    var fecha=g('cal-new-date')||calSel, hora=g('cal-new-time')||'09:00';
+    var tipo=g('cal-new-type')||'meet';
+    var projId=g('cal-new-proj');
+    var p=projId?projFind(projId):null;
+
+    var ev={ id:'nn_cal_'+Date.now(), title:t, type:tipo, prio:'media',
+             date:fecha, time:hora, project:p?p.name:'', projId:projId||'',
+             notes:g('cal-new-notes'), link:g('cal-new-link'),
+             recur:'', recurEnd:'', sent:'', done:false };
+
+    if(tipo==='meet'){
+      // Primero la reunión, para saber su id.
+      var mid=Date.now();
+      MEETS.unshift({ id:mid, t:t, time:hora, date:nnCorto(fecha), plat:'teams',
+        parts:['Yo'], agenda:g('cal-new-notes'), link:g('cal-new-link'),
+        projId:projId||'',                       // que no se pierda el proyecto
+        when:fecha===nnHoy()?'today':'upcoming' });
+      nnSave();
+
+      // Y el aviso va con el id, la prioridad y el proyecto que la
+      // importación le va a poner. Si no coinciden, al rato lo
+      // reescribe y parece que el evento "cambió solo".
+      ev.id      = 'nn_meet_'+mid;
+      ev.prio    = 'alta';
+      ev.project = 'teams';
+    }
+
+    nnEvent(ev,true);          // UNA sola vez, en los dos casos
+
+    ['cal-new-title','cal-new-notes','cal-new-link'].forEach(function(i){
+      var e=document.getElementById(i); if(e)e.value='';
+    });
+    try{ renderCalFull(); }catch(e){}
+    try{ renderDash(); }catch(e){}
+    try{ renderMeets(); }catch(e){}
+    try{ avEvento('nuevo',ev); }catch(e){}
+    T('Evento creado','Agendado y enviado a tus recordatorios','📅');
+
+    try{
+      var chk=document.getElementById('cal-new-teams');
+      if(chk&&chk.checked)window.open(calTeamsLink(ev),'_blank');
+    }catch(e){}
+  };
+}
+
+// ── Limpiar los duplicados que ya quedaron creados ─────────────
+// Los que se crearon antes del arreglo siguen ahí, por pares. Este
+// botón se encarga: para cada reunión con dos avisos, deja el que
+// viene de la reunión (nn_meet_) y borra la copia suelta (nn_cal_).
+if(typeof apDelete==='function' && typeof _events!=='undefined'){
+
+  window.apLimpiarDuplicados = function(){
+    var porClave={}, sobran=[];
+    _events.forEach(function(e){
+      var k=(e.title||'')+'|'+(e.date||'')+'|'+(e.time||'');
+      (porClave[k]=porClave[k]||[]).push(e);
+    });
+    Object.keys(porClave).forEach(function(k){
+      var lista=porClave[k];
+      if(lista.length<2)return;
+      // se conserva el que nace de la reunión; se van las copias sueltas
+      var deReunion=lista.filter(function(e){return /^nn_meet_/.test(e.id);});
+      var copias   =lista.filter(function(e){return /^nn_cal_/.test(e.id);});
+      if(deReunion.length&&copias.length)sobran=sobran.concat(copias);
+      else sobran=sobran.concat(lista.slice(1));   // repetidos del mismo tipo
+    });
+
+    if(!sobran.length){ apToast('No hay duplicados','ok'); return; }
+    if(!confirm('Se encontraron '+sobran.length+' aviso(s) repetido(s):\n\n'+
+        sobran.slice(0,8).map(function(e){return '· '+e.title;}).join('\n')+
+        (sobran.length>8?'\n· …':'')+
+        '\n\nSe borra la copia y se conserva el original. ¿Seguir?'))return;
+
+    var fuera={}; sobran.forEach(function(e){ fuera[e.id]=1; borAnotar(e.id); });
+    _events=_events.filter(function(e){ return !fuera[e.id]; });
+    try{ apRender(); emBroadcast(); }catch(e){}
+    Object.keys(fuera).forEach(function(id){
+      try{ fbDelete(id).catch(function(){}); }catch(e){}
+    });
+    apToast('✓ '+sobran.length+' duplicado(s) eliminado(s)','ok');
+  };
+}
+
 </script>
 <script>
 (function(){
