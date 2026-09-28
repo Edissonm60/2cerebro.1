@@ -13707,6 +13707,132 @@ if(document.readyState==='loading')
   document.addEventListener('DOMContentLoaded',tacIniciar);
 else tacIniciar();
 
+
+
+// ═══════════════════════════════════════════════════════════════
+// BORRAR DE VERDAD
+//
+// El panel de Alertas no es el dueño de los eventos: cada tanto los
+// vuelve a leer de NeuroNotes. Por eso, al borrar una reunión desde
+// Alertas se borraba solo la copia, y a los segundos volvía a salir
+// —la reunión seguía viva en NeuroNotes → Reuniones—.
+//
+// Ahora, cuando lo que se borra viene de NeuroNotes (el id empieza
+// por "nn_"), se borra TAMBIÉN en el origen. Y por si acaso queda
+// anotado en una lista de borrados, para que la importación no lo
+// resucite aunque el mensaje no llegue.
+//
+// Excepción: las entregas de proyecto (nn_proj_) NO borran el
+// proyecto. Quitar un proyecto entero por descartar un recordatorio
+// sería una pérdida grave. Esas solo se ocultan.
+// ═══════════════════════════════════════════════════════════════
+
+var BORRADOS_KEY = 'em_ap_borrados_v1';
+
+function borLeer(){
+  try{ return JSON.parse(localStorage.getItem(BORRADOS_KEY)||'[]')||[]; }
+  catch(e){ return []; }
+}
+function borAnotar(id){
+  try{
+    var l=borLeer();
+    if(l.indexOf(id)<0){ l.push(id); }
+    if(l.length>400)l=l.slice(-400);       // que no crezca para siempre
+    localStorage.setItem(BORRADOS_KEY,JSON.stringify(l));
+  }catch(e){}
+}
+function borOlvidar(id){
+  try{
+    localStorage.setItem(BORRADOS_KEY,
+      JSON.stringify(borLeer().filter(function(x){return x!==id;})));
+  }catch(e){}
+}
+
+// ── LADO DEL PANEL DE ALERTAS ──────────────────────────────────
+if(typeof apDelete==='function' && typeof emToNN==='function'){
+
+  var _apDeleteOriginal = apDelete;
+
+  apDelete = function(id){
+    var esDeNN = /^nn_/.test(String(id));
+    if(!esDeNN)return _apDeleteOriginal(id);
+
+    var ev=null;
+    try{ ev=_events.filter(function(e){return e.id===id;})[0]; }catch(e){}
+    var nombre=(ev&&ev.title)||'este recordatorio';
+
+    if(/^nn_proj_/.test(id)){
+      if(!confirm('«'+nombre+'» es la fecha de entrega de un proyecto.\n\n'+
+                  'Se quita de los recordatorios, pero el proyecto NO se borra.\n'+
+                  'Para cambiar la fecha, entra al proyecto en NeuroNotes.'))return;
+    }else{
+      var que=/^nn_meet_/.test(id)?'la reunión':'la tarea';
+      if(!confirm('¿Borrar «'+nombre+'»?\n\n'+
+                  'Se borra aquí y también '+que+' en NeuroNotes.\n'+
+                  'Esto no se puede deshacer.'))return;
+    }
+
+    borAnotar(id);
+    try{ _events=_events.filter(function(e){return e.id!==id;}); }catch(e){}
+    try{ apRender(); emBroadcast(); }catch(e){}
+    try{ emToNN({type:'EM_NN_BORRAR', id:id}); }catch(e){}
+    try{
+      fbDelete(id).then(function(){ apToast('✓ Eliminado','warn'); })
+        .catch(function(){ apToast('Borrado aquí; en la nube no se pudo','err'); });
+    }catch(e){}
+  };
+
+  // La importación no debe resucitar lo borrado.
+  if(typeof emImportNN==='function'){
+    var _importOriginal = emImportNN;
+    emImportNN = function(manual){
+      var r=_importOriginal(manual);
+      try{
+        var muertos=borLeer();
+        if(muertos.length){
+          var antes=_events.length;
+          _events=_events.filter(function(e){ return muertos.indexOf(e.id)<0; });
+          if(_events.length!==antes){ apRender(); emBroadcast(); }
+        }
+      }catch(e){}
+      return r;
+    };
+  }
+}
+
+// ── LADO DE NEURONOTES ─────────────────────────────────────────
+// Recibe la orden y borra el registro de verdad.
+if(typeof window!=='undefined'){
+  window.addEventListener('message',function(e){
+    if(!e.data||e.data.type!=='EM_NN_BORRAR')return;
+    if(typeof MEETS==='undefined')return;      // no es este documento
+    var id=String(e.data.id||''), borrado=false, nombre='';
+
+    try{
+      if(id.indexOf('nn_meet_')===0){
+        var mid=id.slice(8);
+        var m=(MEETS||[]).filter(function(x){return String(x.id)===mid;})[0];
+        if(m){ nombre=m.t||''; MEETS=MEETS.filter(function(x){return String(x.id)!==mid;}); borrado=true; }
+      }else if(id.indexOf('nn_task_')===0){
+        var tid=id.slice(8);
+        Object.keys(KB||{}).forEach(function(col){
+          var t=(KB[col]||[]).filter(function(x){return String(x.id)===tid;})[0];
+          if(t){ nombre=t.t||''; KB[col]=KB[col].filter(function(x){return String(x.id)!==tid;}); borrado=true; }
+        });
+      }
+      // nn_proj_ no se toca a propósito: el proyecto se queda.
+    }catch(err){}
+
+    if(!borrado)return;
+    try{ nnSave(); }catch(err){}
+    try{ renderMeets(); }catch(err){}
+    try{ renderKB(); }catch(err){}
+    try{ renderDash(); }catch(err){}
+    try{ if(typeof renderCalFull==='function')renderCalFull(); }catch(err){}
+    try{ T('Borrado', nombre||'', '🗑️'); }catch(err){}
+  });
+}
+
 </script>
 <script>
 (function(){
