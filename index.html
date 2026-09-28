@@ -13433,6 +13433,7 @@ window.addEventListener("appinstalled",function(){
      2. Arreglo del evento doble al crear una reunión
      3. Borrar de verdad lo que vive en NeuroNotes
      4. Tipo nuevo: Capacitación / clase
+     5. Reproductor de música en el dashboard
      Nada más del programa fue modificado.
      ═════════════════════════════════════════════════════════ -->
 <script type="text/plain" id="em-parches-fuente">
@@ -13954,19 +13955,229 @@ parCuando(
       apToast('✓ '+sobran.length+' duplicado(s) eliminado(s)','ok');
     };
 
-    // Botón, para no tener que abrir la consola
-    parCuando(function(){ return !!document.querySelector('#ap-list,.ap-list,#ap-toolbar,body'); },
+    // Botón, para no tener que abrir la consola. Solo se ve cuando
+    // estás EN la pestaña de Alertas: flotando sobre todo el programa
+    // estorbaba en las demás.
+    parCuando(function(){ return !!document.body; },
       function(){
         if(document.getElementById('ap-btn-dup'))return;
         var b=document.createElement('button');
         b.id='ap-btn-dup'; b.textContent='🧹 Quitar duplicados';
-        b.style.cssText='position:fixed;right:12px;bottom:12px;z-index:9999;'+
+        b.style.cssText='position:fixed;right:12px;bottom:12px;z-index:9999;display:none;'+
           'padding:10px 14px;border-radius:10px;cursor:pointer;font:600 12px system-ui,sans-serif;'+
           'background:#1E2E44;color:#9FB3C8;border:1px solid #2C4159';
         b.onclick=function(){ apLimpiarDuplicados(); };
         document.body.appendChild(b);
+
+        // "cur" es la pestaña abierta; la 4 es Alertas.
+        setInterval(function(){
+          var enAlertas=false;
+          try{ enAlertas=(typeof cur!=='undefined'&&cur===4); }catch(e){}
+          b.style.display=enAlertas?'block':'none';
+        },700);
       },'boton duplicados');
   },'limpiador');
+
+
+
+// ═══════════════════════════════════════════════════════════════
+// MÚSICA EN EL DASHBOARD
+//
+// Usa el reproductor OFICIAL de Spotify (open.spotify.com/embed).
+// No hace falta clave, ni registro de aplicación, ni permisos.
+//
+// Sobre "enlazar la cuenta": este reproductor no pide tu usuario ni
+// tu contraseña. Usa la sesión de Spotify que YA tengas abierta en
+// este mismo navegador:
+//
+//   · con sesión iniciada y Premium → suena la canción completa
+//   · sin sesión                    → suenan 30 segundos de muestra
+//
+// Por eso el botón "Iniciar sesión" solo abre Spotify en otra
+// pestaña: una vez entras ahí, este reproductor lo aprovecha.
+//
+// También acepta enlaces de YouTube, y ahí sí se ve el video —
+// para eso está el recuadro grande.
+// ═══════════════════════════════════════════════════════════════
+
+var MUS_KEY = 'em_musica_v1';
+
+function musCargar(){
+  try{
+    var d=JSON.parse(localStorage.getItem(MUS_KEY)||'{}');
+    return { url:d.url||'', abierto:d.abierto!==false, grande:!!d.grande,
+             guardados:d.guardados||[] };
+  }catch(e){ return {url:'',abierto:true,grande:false,guardados:[]}; }
+}
+function musGuardar(d){
+  try{ localStorage.setItem(MUS_KEY,JSON.stringify(d)); }catch(e){}
+}
+
+// ── Entender el enlace pegado ──────────────────────────────────
+// Devuelve {src, alto, tipo, nombre} o null si no se reconoce.
+function musLeerEnlace(txt){
+  txt=String(txt||'').trim();
+  if(!txt)return null;
+
+  // spotify:playlist:37i9dQ... (el que copia la app de escritorio)
+  var uri=txt.match(/^spotify:([a-z]+):([A-Za-z0-9]+)/);
+  if(uri)return musSpotify(uri[1],uri[2]);
+
+  // https://open.spotify.com/playlist/37i9dQ...  (con o sin /intl-es/)
+  var sp=txt.match(/open\.spotify\.com\/(?:intl-[a-z-]+\/)?([a-z]+)\/([A-Za-z0-9]+)/);
+  if(sp)return musSpotify(sp[1],sp[2]);
+
+  // YouTube en sus varias formas
+  var yt=txt.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/);
+  if(yt)return {src:'https://www.youtube.com/embed/'+yt[1],
+                alto:0, tipo:'youtube', nombre:'YouTube'};
+  var pl=txt.match(/youtube\.com\/playlist\?(?:.*&)?list=([\w-]+)/);
+  if(pl)return {src:'https://www.youtube.com/embed/videoseries?list='+pl[1],
+                alto:0, tipo:'youtube', nombre:'Lista de YouTube'};
+
+  return null;
+}
+function musSpotify(tipo,id){
+  var nombres={track:'Canción',album:'Álbum',playlist:'Lista',artist:'Artista',
+               show:'Pódcast',episode:'Episodio'};
+  if(!nombres[tipo])return null;
+  // Los pódcast y episodios pueden traer video: esos van más altos.
+  var conVideo=(tipo==='show'||tipo==='episode');
+  return { src:'https://open.spotify.com/embed/'+tipo+'/'+id,
+           alto:conVideo?352:0, tipo:'spotify', nombre:nombres[tipo] };
+}
+
+// ── Pintar ─────────────────────────────────────────────────────
+function musRender(){
+  var caja=document.getElementById('mus-caja'); if(!caja)return;
+  var d=musCargar();
+  var info=musLeerEnlace(d.url);
+
+  var cuerpo='';
+  if(!d.abierto){ caja.querySelector('#mus-cuerpo').style.display='none'; }
+  else{
+    var c=caja.querySelector('#mus-cuerpo');
+    c.style.display='';
+
+    var marco='';
+    if(info){
+      var alto = info.tipo==='youtube' ? 0 : (info.alto || (d.grande?352:152));
+      if(info.tipo==='youtube'){
+        marco='<div style="position:relative;width:100%;aspect-ratio:16/9;'+
+          'border-radius:10px;overflow:hidden;background:#000">'+
+          '<iframe src="'+info.src+'" style="position:absolute;inset:0;width:100%;height:100%;border:0"'+
+          ' allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture"'+
+          ' allowfullscreen loading="lazy"></iframe></div>';
+      }else{
+        marco='<iframe src="'+info.src+'" style="width:100%;height:'+alto+'px;border:0;'+
+          'border-radius:12px" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"'+
+          ' loading="lazy"></iframe>';
+      }
+    }else if(d.url){
+      marco='<div style="font-size:12px;color:var(--warn,#FFB800);padding:10px 0;line-height:1.6">'+
+        'No reconozco ese enlace. Pega uno de <b>Spotify</b> (Compartir → Copiar enlace) '+
+        'o de <b>YouTube</b>.</div>';
+    }else{
+      marco='<div style="font-size:12px;color:var(--t3,#5C7186);padding:14px 0;line-height:1.7;text-align:center">'+
+        '🎧 Pega el enlace de una lista, un álbum o un pódcast.<br>'+
+        '<span style="font-size:11px">En Spotify: <b>Compartir → Copiar enlace</b></span></div>';
+    }
+
+    var chips=(d.guardados||[]).map(function(g,i){
+      return '<button class="mus-chip" onclick="musPoner('+i+')" title="'+
+        (g.url||'').replace(/"/g,'')+'">'+
+        (g.nombre||'Guardado')+'</button>';
+    }).join('');
+
+    c.innerHTML=
+      '<div style="display:flex;gap:6px;margin-bottom:8px">'+
+        '<input id="mus-url" class="fi" placeholder="Pega aquí el enlace de Spotify o YouTube" '+
+          'style="flex:1;min-width:0" value="'+String(d.url||'').replace(/"/g,'&quot;')+'">'+
+        '<button class="mus-btn" onclick="musUsar()">Poner</button>'+
+      '</div>'+
+      marco+
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:9px">'+
+        (info&&info.tipo==='spotify'&&!info.alto
+          ? '<button class="mus-chip" onclick="musTamano()">'+(d.grande?'▬ Compacto':'▭ Grande')+'</button>'
+          : '')+
+        (info?'<button class="mus-chip" onclick="musArchivar()">★ Guardar</button>':'')+
+        chips+
+        '<a class="mus-chip" href="https://open.spotify.com" target="_blank" rel="noopener" '+
+          'style="margin-left:auto;text-decoration:none">Iniciar sesión en Spotify ↗</a>'+
+      '</div>'+
+      '<div style="font-size:10px;color:var(--t3,#5C7186);margin-top:7px;line-height:1.6">'+
+        'Con tu sesión de Spotify abierta en este navegador y cuenta Premium suenan las '+
+        'canciones completas. Sin sesión, solo 30 segundos de muestra.</div>';
+  }
+
+  var btn=caja.querySelector('#mus-toggle');
+  if(btn)btn.textContent=d.abierto?'−':'+';
+}
+
+// ── Acciones ───────────────────────────────────────────────────
+function musUsar(){
+  var e=document.getElementById('mus-url'); if(!e)return;
+  var d=musCargar(); d.url=e.value.trim(); musGuardar(d); musRender();
+}
+function musTamano(){ var d=musCargar(); d.grande=!d.grande; musGuardar(d); musRender(); }
+function musAbrirCerrar(){ var d=musCargar(); d.abierto=!d.abierto; musGuardar(d); musRender(); }
+function musPoner(i){
+  var d=musCargar(); var g=(d.guardados||[])[i]; if(!g)return;
+  d.url=g.url; musGuardar(d); musRender();
+}
+function musArchivar(){
+  var d=musCargar();
+  var info=musLeerEnlace(d.url); if(!info)return;
+  var n=prompt('¿Con qué nombre lo guardo?', info.nombre);
+  if(n===null)return;
+  d.guardados=(d.guardados||[]).filter(function(g){return g.url!==d.url;});
+  d.guardados.unshift({url:d.url, nombre:(n||info.nombre).slice(0,22)});
+  if(d.guardados.length>6)d.guardados=d.guardados.slice(0,6);
+  musGuardar(d); musRender();
+  try{ T('Guardado', n||info.nombre, '🎵'); }catch(e){}
+}
+
+// ── Montar la tarjeta en el dashboard ──────────────────────────
+function musMontar(){
+  var dash=document.getElementById('v-dash');
+  if(!dash || document.getElementById('mus-caja'))return;
+
+  if(!document.getElementById('mus-css')){
+    var st=document.createElement('style'); st.id='mus-css';
+    st.textContent=
+      '.mus-chip{padding:6px 11px;border-radius:8px;cursor:pointer;font-size:11px;'+
+        'font-weight:600;font-family:inherit;background:var(--bg4,rgba(125,145,170,.12));'+
+        'color:var(--t2,#9FB3C8);border:1px solid var(--bd,rgba(125,145,170,.28))}'+
+      '.mus-chip:active{transform:scale(.96)}'+
+      '.mus-btn{padding:8px 14px;border-radius:9px;cursor:pointer;font-size:12px;'+
+        'font-weight:700;font-family:inherit;border:0;background:#1DB954;color:#04160B}';
+    document.head.appendChild(st);
+  }
+
+  var card=document.createElement('div');
+  card.className='card'; card.id='mus-caja';
+  card.style.cssText='margin-top:16px';
+  card.innerHTML=
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'+
+      '<span style="font-size:15px">🎵</span>'+
+      '<h4 style="flex:1;font-size:13px;font-weight:600;margin:0">Música</h4>'+
+      '<button id="mus-toggle" class="mus-chip" onclick="musAbrirCerrar()" '+
+        'style="width:30px;padding:6px 0;text-align:center">−</button>'+
+    '</div><div id="mus-cuerpo"></div>';
+
+  // Al final del dashboard: es un extra, no debe empujar el trabajo.
+  dash.appendChild(card);
+  musRender();
+}
+
+// El dashboard se repinta, así que se vuelve a mirar cada tanto.
+(function(){
+  var n=0;
+  (function mirar(){
+    try{ musMontar(); }catch(e){}
+    if(++n<80)setTimeout(mirar, n<20?400:2500);
+  })();
+})();
 
 </script>
 <script>
@@ -13974,7 +14185,6 @@ parCuando(
   var f=document.getElementById('em-parches-fuente');
   if(!f)return;
   var codigo=f.textContent;
-
   function meter(doc){
     try{
       if(!doc||!doc.head||doc.getElementById('em-parches'))return;
@@ -13984,9 +14194,6 @@ parCuando(
     }catch(e){}
   }
   meter(document);
-
-  // Los iframes van por srcdoc: mismo origen, se puede entrar. Se
-  // reintenta un rato largo porque en tablet cargan lento.
   var n=0;
   (function recorrer(){
     var fr=document.getElementsByTagName('iframe');
