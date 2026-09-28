@@ -13428,13 +13428,14 @@ window.addEventListener("appinstalled",function(){
 });
 </script>
 
-<!-- ═══ CONTROLES TACTILES DE FECHA Y HORA ═══════════════════════
-     Lo unico que se agrego. El resto del programa quedo igual, byte
-     por byte. El codigo va aqui como texto y se inyecta en esta
-     pagina y dentro de cada iframe, porque los botones tienen que
-     existir en el window de cada documento.
-     ════════════════════════════════════════════════════════════ -->
-<script type="text/plain" id="tac-fuente">
+<!-- ═══ AGREGADO A TU VERSIÓN ══════════════════════════════════
+     1. Controles táctiles de fecha y hora (tablet sin teclado)
+     2. Arreglo del evento doble al crear una reunión
+     3. Borrar de verdad lo que vive en NeuroNotes
+     4. Tipo nuevo: Capacitación / clase
+     Nada más del programa fue modificado.
+     ═════════════════════════════════════════════════════════ -->
+<script type="text/plain" id="em-parches-fuente">
 
 // ═══════════════════════════════════════════════════════════════
 // FECHAS Y HORAS SIN TECLADO
@@ -13710,104 +13711,133 @@ else tacIniciar();
 
 
 // ═══════════════════════════════════════════════════════════════
-// BORRAR DE VERDAD
+// PARCHES — se instalan cuando el programa ya está listo
 //
-// El panel de Alertas no es el dueño de los eventos: cada tanto los
-// vuelve a leer de NeuroNotes. Por eso, al borrar una reunión desde
-// Alertas se borraba solo la copia, y a los segundos volvía a salir
-// —la reunión seguía viva en NeuroNotes → Reuniones—.
+// IMPORTANTE: este código se inyecta apenas existe el documento,
+// que puede ser ANTES de que el programa haya definido sus
+// funciones. Por eso nada se hace de una: se espera a que cada
+// pieza exista y recién ahí se reemplaza. La versión anterior
+// comprobaba una sola vez y, si llegaba temprano, no instalaba
+// nada y el fallo seguía igual sin avisar.
 //
-// Ahora, cuando lo que se borra viene de NeuroNotes (el id empieza
-// por "nn_"), se borra TAMBIÉN en el origen. Y por si acaso queda
-// anotado en una lista de borrados, para que la importación no lo
-// resucite aunque el mensaje no llegue.
-//
-// Excepción: las entregas de proyecto (nn_proj_) NO borran el
-// proyecto. Quitar un proyecto entero por descartar un recordatorio
-// sería una pérdida grave. Esas solo se ocultan.
+// Qué arregla:
+//   1. El evento DOBLE al crear una reunión.
+//   2. Borrar en Alertas algo que vive en NeuroNotes y que volvía.
+//   3. Tipo nuevo: Capacitación / clase.
 // ═══════════════════════════════════════════════════════════════
 
-var BORRADOS_KEY = 'em_ap_borrados_v1';
+var PAR_VERSION = 'parches-3';
 
+// Espera a que se cumpla una condición y entonces hace el trabajo.
+// Hasta 60 intentos (~30 s), que sobra para un arranque lento.
+function parCuando(condicion, trabajo, nombre){
+  var n=0;
+  (function mirar(){
+    var listo=false;
+    try{ listo=!!condicion(); }catch(e){}
+    if(listo){
+      try{ trabajo(); }catch(e){ try{console.warn('parche '+nombre,e);}catch(_){} }
+      return;
+    }
+    if(++n<60)setTimeout(mirar, n<10?150:600);
+  })();
+}
+
+// ── Lista de borrados, para que la importación no resucite nada ──
+var BORRADOS_KEY='em_ap_borrados_v1';
 function borLeer(){
-  try{ return JSON.parse(localStorage.getItem(BORRADOS_KEY)||'[]')||[]; }
-  catch(e){ return []; }
+  try{ return JSON.parse(localStorage.getItem(BORRADOS_KEY)||'[]')||[]; }catch(e){ return []; }
 }
 function borAnotar(id){
   try{
     var l=borLeer();
-    if(l.indexOf(id)<0){ l.push(id); }
-    if(l.length>400)l=l.slice(-400);       // que no crezca para siempre
+    if(l.indexOf(id)<0)l.push(id);
+    if(l.length>400)l=l.slice(-400);
     localStorage.setItem(BORRADOS_KEY,JSON.stringify(l));
   }catch(e){}
 }
-function borOlvidar(id){
-  try{
-    localStorage.setItem(BORRADOS_KEY,
-      JSON.stringify(borLeer().filter(function(x){return x!==id;})));
-  }catch(e){}
-}
 
-// ── LADO DEL PANEL DE ALERTAS ──────────────────────────────────
-if(typeof apDelete==='function' && typeof emToNN==='function'){
+// ═══════════════════════════════════════════════════════════════
+// LADO NEURONOTES
+// ═══════════════════════════════════════════════════════════════
 
-  var _apDeleteOriginal = apDelete;
+// ── 1. El evento doble ──────────────────────────────────────────
+// Al crear una REUNIÓN el formulario hacía DOS cosas: mandaba un
+// aviso directo a Alertas (id nn_cal_…) y además creaba la reunión
+// en NeuroNotes, que la importación convertía en OTRO aviso
+// (id nn_meet_…). Por eso salía dos veces: una con prioridad Media
+// y otra con Alta. Ahora se crea la reunión primero y el aviso va
+// con EL MISMO id que usará la importación, así se actualiza en vez
+// de agregarse.
+parCuando(
+  function(){ return typeof calAdd==='function' && typeof MEETS!=='undefined'
+                  && typeof nnEvent==='function'; },
+  function(){
+    calAdd = function(){
+      var g=function(id){var e=document.getElementById(id);return e?e.value.trim():'';};
+      var t=g('cal-new-title');
+      if(!t){T('Error','Escribe el título del evento','⚠️');return;}
 
-  apDelete = function(id){
-    var esDeNN = /^nn_/.test(String(id));
-    if(!esDeNN)return _apDeleteOriginal(id);
+      var fecha=g('cal-new-date')||calSel, hora=g('cal-new-time')||'09:00';
+      var tipo=g('cal-new-type')||'meet';
+      var projId=g('cal-new-proj');
+      var p=projId?projFind(projId):null;
 
-    var ev=null;
-    try{ ev=_events.filter(function(e){return e.id===id;})[0]; }catch(e){}
-    var nombre=(ev&&ev.title)||'este recordatorio';
+      var ev={ id:'nn_cal_'+Date.now(), title:t, type:tipo, prio:'media',
+               date:fecha, time:hora, project:p?p.name:'', projId:projId||'',
+               notes:g('cal-new-notes'), link:g('cal-new-link'),
+               recur:'', recurEnd:'', sent:'', done:false };
 
-    if(/^nn_proj_/.test(id)){
-      if(!confirm('«'+nombre+'» es la fecha de entrega de un proyecto.\n\n'+
-                  'Se quita de los recordatorios, pero el proyecto NO se borra.\n'+
-                  'Para cambiar la fecha, entra al proyecto en NeuroNotes.'))return;
-    }else{
-      var que=/^nn_meet_/.test(id)?'la reunión':'la tarea';
-      if(!confirm('¿Borrar «'+nombre+'»?\n\n'+
-                  'Se borra aquí y también '+que+' en NeuroNotes.\n'+
-                  'Esto no se puede deshacer.'))return;
-    }
+      if(tipo==='meet'){
+        var mid=Date.now();
+        MEETS.unshift({ id:mid, t:t, time:hora, date:nnCorto(fecha), plat:'teams',
+          parts:['Yo'], agenda:g('cal-new-notes'), link:g('cal-new-link'),
+          projId:projId||'',
+          when:fecha===nnHoy()?'today':'upcoming' });
+        try{ nnSave(); }catch(e){}
+        // Mismos datos que pondrá la importación, o al rato los
+        // reescribe y parece que el evento cambió solo.
+        ev.id='nn_meet_'+mid; ev.prio='alta'; ev.project='teams';
+      }
 
-    borAnotar(id);
-    try{ _events=_events.filter(function(e){return e.id!==id;}); }catch(e){}
-    try{ apRender(); emBroadcast(); }catch(e){}
-    try{ emToNN({type:'EM_NN_BORRAR', id:id}); }catch(e){}
-    try{
-      fbDelete(id).then(function(){ apToast('✓ Eliminado','warn'); })
-        .catch(function(){ apToast('Borrado aquí; en la nube no se pudo','err'); });
-    }catch(e){}
-  };
+      nnEvent(ev,true);                     // UNA sola vez
 
-  // La importación no debe resucitar lo borrado.
-  if(typeof emImportNN==='function'){
-    var _importOriginal = emImportNN;
-    emImportNN = function(manual){
-      var r=_importOriginal(manual);
+      ['cal-new-title','cal-new-notes','cal-new-link'].forEach(function(i){
+        var e=document.getElementById(i); if(e)e.value='';
+      });
+      try{ renderCalFull(); }catch(e){}
+      try{ renderDash(); }catch(e){}
+      try{ renderMeets(); }catch(e){}
+      try{ avEvento('nuevo',ev); }catch(e){}
+      T('Evento creado','Agendado y enviado a tus recordatorios','📅');
       try{
-        var muertos=borLeer();
-        if(muertos.length){
-          var antes=_events.length;
-          _events=_events.filter(function(e){ return muertos.indexOf(e.id)<0; });
-          if(_events.length!==antes){ apRender(); emBroadcast(); }
-        }
+        var chk=document.getElementById('cal-new-teams');
+        if(chk&&chk.checked)window.open(calTeamsLink(ev),'_blank');
       }catch(e){}
-      return r;
     };
-  }
-}
+  },'calAdd');
 
-// ── LADO DE NEURONOTES ─────────────────────────────────────────
-// Recibe la orden y borra el registro de verdad.
+// ── 3. Tipo nuevo: Capacitación / clase ─────────────────────────
+// Va como tipo suelto, NO como reunión: así no crea registro en
+// Reuniones y no puede duplicarse. Igual sale en el calendario,
+// porque el calendario también lee los avisos.
+parCuando(
+  function(){ return !!document.getElementById('cal-new-type'); },
+  function(){
+    var sel=document.getElementById('cal-new-type');
+    if(sel.querySelector('option[value="clase"]'))return;
+    var o=document.createElement('option');
+    o.value='clase'; o.textContent='🎓 Capacitación / clase';
+    var lim=sel.querySelector('option[value="deadline"]');
+    if(lim)sel.insertBefore(o,lim); else sel.appendChild(o);
+  },'tipo clase');
+
+// ── 2b. Recibir la orden de borrar el registro de origen ────────
 if(typeof window!=='undefined'){
   window.addEventListener('message',function(e){
     if(!e.data||e.data.type!=='EM_NN_BORRAR')return;
-    if(typeof MEETS==='undefined')return;      // no es este documento
+    if(typeof MEETS==='undefined')return;              // no es este documento
     var id=String(e.data.id||''), borrado=false, nombre='';
-
     try{
       if(id.indexOf('nn_meet_')===0){
         var mid=id.slice(8);
@@ -13820,9 +13850,8 @@ if(typeof window!=='undefined'){
           if(t){ nombre=t.t||''; KB[col]=KB[col].filter(function(x){return String(x.id)!==tid;}); borrado=true; }
         });
       }
-      // nn_proj_ no se toca a propósito: el proyecto se queda.
+      // nn_proj_ no se toca: el proyecto se queda.
     }catch(err){}
-
     if(!borrado)return;
     try{ nnSave(); }catch(err){}
     try{ renderMeets(); }catch(err){}
@@ -13833,144 +13862,136 @@ if(typeof window!=='undefined'){
   });
 }
 
-
-
 // ═══════════════════════════════════════════════════════════════
-// EL EVENTO DUPLICADO
-//
-// Al crear una REUNIÓN desde el calendario, el formulario hacía dos
-// cosas a la vez:
-//
-//   1. mandaba un aviso directo a Alertas   → id nn_cal_<hora>
-//   2. creaba la reunión en NeuroNotes, y   → id nn_meet_<hora>
-//      la importación la convertía en OTRO aviso
-//
-// Por eso salía dos veces, una con prioridad Media y otra con Alta.
-// No era un doble clic: eran dos caminos distintos.
-//
-// Ahora la reunión se crea primero y el aviso se manda con EL MISMO
-// id que va a usar la importación. Así, cuando esta corra, actualiza
-// el que ya está en vez de agregar otro. Los demás tipos —visita,
-// tarea, límite, llamada— nunca tuvieron el problema y siguen igual.
+// LADO DEL PANEL DE ALERTAS
 // ═══════════════════════════════════════════════════════════════
 
-if(typeof calAdd==='function' && typeof MEETS!=='undefined'){
+// ── 2. Borrar de verdad ─────────────────────────────────────────
+parCuando(
+  function(){ return typeof apDelete==='function' && typeof emToNN==='function'
+                  && typeof _events!=='undefined'; },
+  function(){
+    var original=apDelete;
+    apDelete=function(id){
+      if(!/^nn_/.test(String(id)))return original(id);
+      var ev=null;
+      try{ ev=_events.filter(function(e){return e.id===id;})[0]; }catch(e){}
+      var nombre=(ev&&ev.title)||'este recordatorio';
 
-  calAdd = function(){
-    var g=function(id){var e=document.getElementById(id);return e?e.value.trim():'';};
-    var t=g('cal-new-title');
-    if(!t){T('Error','Escribe el título del evento','⚠️');return;}
+      if(/^nn_proj_/.test(id)){
+        if(!confirm('«'+nombre+'» es la fecha de entrega de un proyecto.\n\n'+
+                    'Se quita de los recordatorios, pero el proyecto NO se borra.'))return;
+      }else{
+        var que=/^nn_meet_/.test(id)?'la reunión':'la tarea';
+        if(!confirm('¿Borrar «'+nombre+'»?\n\n'+
+                    'Se borra aquí y también '+que+' en NeuroNotes.'))return;
+      }
+      borAnotar(id);
+      try{ _events=_events.filter(function(e){return e.id!==id;}); }catch(e){}
+      try{ apRender(); emBroadcast(); }catch(e){}
+      try{ emToNN({type:'EM_NN_BORRAR', id:id}); }catch(e){}
+      try{
+        fbDelete(id).then(function(){apToast('✓ Eliminado','warn');})
+          .catch(function(){apToast('Borrado aquí; en la nube no se pudo','err');});
+      }catch(e){}
+    };
+  },'apDelete');
 
-    var fecha=g('cal-new-date')||calSel, hora=g('cal-new-time')||'09:00';
-    var tipo=g('cal-new-type')||'meet';
-    var projId=g('cal-new-proj');
-    var p=projId?projFind(projId):null;
+// La importación no debe resucitar lo borrado
+parCuando(
+  function(){ return typeof emImportNN==='function' && typeof _events!=='undefined'; },
+  function(){
+    var original=emImportNN;
+    emImportNN=function(manual){
+      var r=original(manual);
+      try{
+        var muertos=borLeer();
+        if(muertos.length){
+          var antes=_events.length;
+          _events=_events.filter(function(e){return muertos.indexOf(e.id)<0;});
+          if(_events.length!==antes){ apRender(); emBroadcast(); }
+        }
+      }catch(e){}
+      return r;
+    };
+  },'emImportNN');
 
-    var ev={ id:'nn_cal_'+Date.now(), title:t, type:tipo, prio:'media',
-             date:fecha, time:hora, project:p?p.name:'', projId:projId||'',
-             notes:g('cal-new-notes'), link:g('cal-new-link'),
-             recur:'', recurEnd:'', sent:'', done:false };
+// ── 3b. Que el tipo nuevo tenga icono y nombre ──────────────────
+parCuando(
+  function(){ return typeof apIcon==='function' && typeof apLabel==='function'; },
+  function(){
+    var ico=apIcon, lab=apLabel;
+    apIcon =function(t){ return t==='clase'?'🎓':ico(t); };
+    apLabel=function(t){ return t==='clase'?'Capacitación':lab(t); };
+    try{ apRender(); }catch(e){}
+  },'icono clase');
 
-    if(tipo==='meet'){
-      // Primero la reunión, para saber su id.
-      var mid=Date.now();
-      MEETS.unshift({ id:mid, t:t, time:hora, date:nnCorto(fecha), plat:'teams',
-        parts:['Yo'], agenda:g('cal-new-notes'), link:g('cal-new-link'),
-        projId:projId||'',                       // que no se pierda el proyecto
-        when:fecha===nnHoy()?'today':'upcoming' });
-      nnSave();
+// ── Limpiar los duplicados que ya quedaron creados ──────────────
+parCuando(
+  function(){ return typeof _events!=='undefined' && typeof apRender==='function'; },
+  function(){
+    window.apLimpiarDuplicados=function(){
+      var porClave={}, sobran=[];
+      _events.forEach(function(e){
+        var k=(e.title||'')+'|'+(e.date||'')+'|'+(e.time||'');
+        (porClave[k]=porClave[k]||[]).push(e);
+      });
+      Object.keys(porClave).forEach(function(k){
+        var l=porClave[k]; if(l.length<2)return;
+        var dereunion=l.filter(function(e){return /^nn_meet_/.test(e.id);});
+        var copias   =l.filter(function(e){return /^nn_cal_/.test(e.id);});
+        sobran = (dereunion.length&&copias.length) ? sobran.concat(copias)
+                                                   : sobran.concat(l.slice(1));
+      });
+      if(!sobran.length){ apToast('No hay duplicados','ok'); return; }
+      if(!confirm('Hay '+sobran.length+' aviso(s) repetido(s):\n\n'+
+          sobran.slice(0,8).map(function(e){return '· '+e.title;}).join('\n')+
+          (sobran.length>8?'\n· …':'')+'\n\nSe borra la copia y se conserva el original. ¿Seguir?'))return;
+      var fuera={}; sobran.forEach(function(e){ fuera[e.id]=1; borAnotar(e.id); });
+      _events=_events.filter(function(e){return !fuera[e.id];});
+      try{ apRender(); emBroadcast(); }catch(e){}
+      Object.keys(fuera).forEach(function(id){ try{ fbDelete(id).catch(function(){}); }catch(e){} });
+      apToast('✓ '+sobran.length+' duplicado(s) eliminado(s)','ok');
+    };
 
-      // Y el aviso va con el id, la prioridad y el proyecto que la
-      // importación le va a poner. Si no coinciden, al rato lo
-      // reescribe y parece que el evento "cambió solo".
-      ev.id      = 'nn_meet_'+mid;
-      ev.prio    = 'alta';
-      ev.project = 'teams';
-    }
-
-    nnEvent(ev,true);          // UNA sola vez, en los dos casos
-
-    ['cal-new-title','cal-new-notes','cal-new-link'].forEach(function(i){
-      var e=document.getElementById(i); if(e)e.value='';
-    });
-    try{ renderCalFull(); }catch(e){}
-    try{ renderDash(); }catch(e){}
-    try{ renderMeets(); }catch(e){}
-    try{ avEvento('nuevo',ev); }catch(e){}
-    T('Evento creado','Agendado y enviado a tus recordatorios','📅');
-
-    try{
-      var chk=document.getElementById('cal-new-teams');
-      if(chk&&chk.checked)window.open(calTeamsLink(ev),'_blank');
-    }catch(e){}
-  };
-}
-
-// ── Limpiar los duplicados que ya quedaron creados ─────────────
-// Los que se crearon antes del arreglo siguen ahí, por pares. Este
-// botón se encarga: para cada reunión con dos avisos, deja el que
-// viene de la reunión (nn_meet_) y borra la copia suelta (nn_cal_).
-if(typeof apDelete==='function' && typeof _events!=='undefined'){
-
-  window.apLimpiarDuplicados = function(){
-    var porClave={}, sobran=[];
-    _events.forEach(function(e){
-      var k=(e.title||'')+'|'+(e.date||'')+'|'+(e.time||'');
-      (porClave[k]=porClave[k]||[]).push(e);
-    });
-    Object.keys(porClave).forEach(function(k){
-      var lista=porClave[k];
-      if(lista.length<2)return;
-      // se conserva el que nace de la reunión; se van las copias sueltas
-      var deReunion=lista.filter(function(e){return /^nn_meet_/.test(e.id);});
-      var copias   =lista.filter(function(e){return /^nn_cal_/.test(e.id);});
-      if(deReunion.length&&copias.length)sobran=sobran.concat(copias);
-      else sobran=sobran.concat(lista.slice(1));   // repetidos del mismo tipo
-    });
-
-    if(!sobran.length){ apToast('No hay duplicados','ok'); return; }
-    if(!confirm('Se encontraron '+sobran.length+' aviso(s) repetido(s):\n\n'+
-        sobran.slice(0,8).map(function(e){return '· '+e.title;}).join('\n')+
-        (sobran.length>8?'\n· …':'')+
-        '\n\nSe borra la copia y se conserva el original. ¿Seguir?'))return;
-
-    var fuera={}; sobran.forEach(function(e){ fuera[e.id]=1; borAnotar(e.id); });
-    _events=_events.filter(function(e){ return !fuera[e.id]; });
-    try{ apRender(); emBroadcast(); }catch(e){}
-    Object.keys(fuera).forEach(function(id){
-      try{ fbDelete(id).catch(function(){}); }catch(e){}
-    });
-    apToast('✓ '+sobran.length+' duplicado(s) eliminado(s)','ok');
-  };
-}
+    // Botón, para no tener que abrir la consola
+    parCuando(function(){ return !!document.querySelector('#ap-list,.ap-list,#ap-toolbar,body'); },
+      function(){
+        if(document.getElementById('ap-btn-dup'))return;
+        var b=document.createElement('button');
+        b.id='ap-btn-dup'; b.textContent='🧹 Quitar duplicados';
+        b.style.cssText='position:fixed;right:12px;bottom:12px;z-index:9999;'+
+          'padding:10px 14px;border-radius:10px;cursor:pointer;font:600 12px system-ui,sans-serif;'+
+          'background:#1E2E44;color:#9FB3C8;border:1px solid #2C4159';
+        b.onclick=function(){ apLimpiarDuplicados(); };
+        document.body.appendChild(b);
+      },'boton duplicados');
+  },'limpiador');
 
 </script>
 <script>
 (function(){
-  var fuente=document.getElementById('tac-fuente');
-  if(!fuente)return;
-  var codigo=fuente.textContent;
+  var f=document.getElementById('em-parches-fuente');
+  if(!f)return;
+  var codigo=f.textContent;
 
   function meter(doc){
     try{
-      if(!doc||!doc.head||doc.getElementById('tac-mod'))return;
+      if(!doc||!doc.head||doc.getElementById('em-parches'))return;
       var s=doc.createElement('script');
-      s.id='tac-mod'; s.textContent=codigo;
+      s.id='em-parches'; s.textContent=codigo;
       doc.head.appendChild(s);
     }catch(e){}
   }
-
   meter(document);
 
-  // Los iframes van por srcdoc: comparten origen, asi que se puede
-  // entrar. Se reintenta un rato porque no cargan todos a la vez.
-  var vueltas=0;
+  // Los iframes van por srcdoc: mismo origen, se puede entrar. Se
+  // reintenta un rato largo porque en tablet cargan lento.
+  var n=0;
   (function recorrer(){
     var fr=document.getElementsByTagName('iframe');
-    for(var i=0;i<fr.length;i++){
-      try{ meter(fr[i].contentDocument); }catch(e){}
-    }
-    if(++vueltas<40)setTimeout(recorrer, vueltas<10?400:2000);
+    for(var i=0;i<fr.length;i++){ try{ meter(fr[i].contentDocument); }catch(e){} }
+    if(++n<60)setTimeout(recorrer, n<15?300:1500);
   })();
 })();
 </script>
