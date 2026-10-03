@@ -13437,6 +13437,7 @@ window.addEventListener("appinstalled",function(){
      6. Levantamiento: CCTV simplificado, fotos por puerta,
         conteos automáticos e informe profesional
      7. Calculadora de consumo, fuente, batería e inversor
+     8. Mis 3 tarjetas y mis ingresos cargados de los extractos
      ═════════════════════════════════════════════════════════ -->
 <script type="text/plain" id="em-parches-fuente">
 
@@ -14987,6 +14988,274 @@ function fuPintar(){
       }
     }catch(e){}
     if(++n<80)setTimeout(esperar, n<15?200:1200);
+  })();
+})();
+
+
+
+// ═══════════════════════════════════════════════════════════════
+// MIS DEUDAS Y MIS INGRESOS, CARGADOS DE LOS EXTRACTOS
+//
+// Los datos salen de los tres extractos de septiembre de 2026.
+// Se cargan UNA sola vez: si ya existen, no las duplica. Si quieres
+// volver a escribirlas tal como venían, usa misDeudasRecargar().
+//
+// La tasa de cada tarjeta se guarda en E.A. porque así viene en los
+// extractos de Davivienda y Codensa. La de Nu viene en M.V. (2,16%
+// mensual) y equivale a 29,2% E.A.
+// ═══════════════════════════════════════════════════════════════
+
+var MIS_DEUDAS_VER='deudas-oct2026';
+
+var MIS_DEUDAS=[
+  { id:'dbt_codensa',
+    n:'Codensa · Tarjeta Amarilla',
+    tipo:'tarjeta',
+    total:9298978,          // PAGO TOTAL PRODUCTO del extracto
+    cupo:7891648,
+    rate:35,                // ponderada: va de 25,9% a 45,4% E.A.
+    rateTipo:'ea',
+    corte:4,                // FECHA DE CORTE 04/09/2026
+    pago:8,                 // la factura de energía vence el 08
+    quota:581820,           // PAGO MÍNIMO MES
+    cuotas:48
+  },
+  { id:'dbt_davivienda',
+    n:'Davivienda 5406...0124',
+    tipo:'tarjeta',
+    total:8198680,
+    cupo:8000000,
+    rate:26.2,              // REDIFE 25,04% + avances 29,23%
+    rateTipo:'ea',
+    corte:8,                // periodo 08/Ago - 08/Sep
+    pago:25,                // fecha límite 25/Sep
+    quota:481549,
+    cuotas:39               // el REDIFE va a 39 cuotas, lleva 13
+  },
+  { id:'dbt_nu',
+    n:'Nu 6186',
+    tipo:'tarjeta',
+    total:1997590,
+    cupo:1920000,
+    rate:29.2,              // 2,16% M.V. = 29,2% E.A.
+    rateTipo:'ea',
+    corte:15,               // corte 15 SEP
+    pago:5,                 // límite 05 OCT
+    quota:275646,
+    cuotas:36
+  }
+];
+
+// Quincenal, sin otros ingresos.
+var MIS_INGRESOS={ quincena:1870000, mensual:3740000, dias:[15,30] };
+
+// Lo que hoy se va en las tres cuotas mínimas juntas.
+var MIS_CUOTAS_MES=1339015;
+
+// ── Las tres tarjetas ───────────────────────────────────────────
+function misDeudasCargar(forzar){
+  if(typeof DEBTS==='undefined')return false;
+  var puestas=0, actualizadas=0;
+  MIS_DEUDAS.forEach(function(d){
+    var ya=(DEBTS||[]).filter(function(x){return String(x.id)===d.id;})[0];
+    var obj={ id:d.id, n:d.n, tipo:d.tipo, total:d.total, cupo:d.cupo,
+              rate:d.rate, rateTipo:d.rateTipo, corte:d.corte, pago:d.pago,
+              quota:d.quota, cuotas:d.cuotas,
+              due:(typeof dProxDia==='function'&&d.pago)?dProxDia(d.pago):'',
+              pct:0, agendado:false };
+    if(ya){
+      if(!forzar)return;
+      var i=DEBTS.indexOf(ya);
+      obj.agendado=ya.agendado; obj.pct=ya.pct||0;
+      DEBTS[i]=obj; actualizadas++;
+    }else{ DEBTS.push(obj); puestas++; }
+  });
+  return {puestas:puestas, actualizadas:actualizadas};
+}
+
+// ── Los ingresos del mes en curso ───────────────────────────────
+// Dos quincenas. Se marcan con una clave para no repetirlas si la
+// app se recarga o si se sincroniza con la nube.
+function misIngresosCargar(){
+  if(typeof TRANSACTIONS==='undefined')return 0;
+  var h=new Date(), y=h.getFullYear(), m=h.getMonth();
+  var ult=new Date(y,m+1,0).getDate(), puestos=0;
+  MIS_INGRESOS.dias.forEach(function(dia){
+    var real=Math.min(dia,ult);
+    var clave='ing-'+y+'-'+String(m+1).padStart(2,'0')+'-'+String(real).padStart(2,'0');
+    var ya=(TRANSACTIONS||[]).some(function(t){return t&&t.k===clave;});
+    if(ya)return;
+    TRANSACTIONS.unshift({
+      id:Date.now()+puestos, k:clave,
+      t:'Sueldo quincena '+real+'/'+(m+1),
+      cat:'Sueldo', amt:MIS_INGRESOS.quincena, type:'ingreso',
+      date:real+'/'+(m+1)
+    });
+    puestos++;
+  });
+  return puestos;
+}
+
+// ── El presupuesto de Deudas, con la cuota real ─────────────────
+function misPresupuestoDeudas(){
+  if(typeof BUDGET_CATS==='undefined')return false;
+  var b=(BUDGET_CATS||[]).filter(function(x){return x&&x.n==='Deudas';})[0];
+  if(!b){ b={n:'Deudas',icon:'fa-credit-card',color:'#FF4444',used:0,total:0}; BUDGET_CATS.push(b); }
+  if(!b.total){ b.total=MIS_CUOTAS_MES; return true; }
+  return false;
+}
+
+// ── Todo junto ──────────────────────────────────────────────────
+function misDatosCargar(forzar){
+  var d=misDeudasCargar(forzar)||{puestas:0,actualizadas:0};
+  var i=misIngresosCargar();
+  var p=misPresupuestoDeudas();
+  if(d.puestas||d.actualizadas||i||p){
+    try{ nnSave(); }catch(e){}
+    try{ renderDeudas(); }catch(e){}
+    try{ renderDash(); }catch(e){}
+    try{ if(document.getElementById('v-finance')&&
+             document.getElementById('v-finance').classList.contains('on'))renderFinance(); }catch(e){}
+  }
+  return {deudas:d, ingresos:i, presupuesto:p};
+}
+
+function misDeudasRecargar(){
+  if(!confirm('Se vuelven a escribir las 3 tarjetas con los valores de los '+
+              'extractos de septiembre. Los abonos que hayas registrado se pierden.\n\n¿Seguir?'))return;
+  var r=misDatosCargar(true);
+  try{ T('Deudas actualizadas', r.deudas.actualizadas+' tarjetas', '💳'); }catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PLAN DE PAGO — avalancha, con el mínimo real de cada tarjeta
+// como piso. Trabaja con los saldos que tenga la app en ese
+// momento, así que si abonas y vuelves a correrlo, se actualiza.
+// ═══════════════════════════════════════════════════════════════
+function misDeudasPlan(pagoMensual){
+  if(typeof DEBTS==='undefined')return null;
+  var ds=(DEBTS||[]).filter(function(d){return (+d.total||0)>0;})
+    .map(function(d){
+      var ea=(d.rateTipo==='ea') ? (+d.rate||0)/100
+                                 : Math.pow(1+(+d.rate||0)/100,12)-1;
+      return { n:d.n, s:+d.total, r:Math.pow(1+ea,1/12)-1, m:+d.quota||0, fin:0 };
+    });
+  if(!ds.length)return null;
+  ds.sort(function(a,b){return b.r-a.r;});           // la más cara primero
+  var minimos=ds.reduce(function(a,x){return a+x.m;},0);
+  var pago=Math.max(+pagoMensual||0, minimos);
+  var mes=0, intereses=0, caidas=[];
+  while(ds.some(function(x){return x.s>1000;}) && mes<400){
+    mes++;
+    var disp=pago;
+    ds.forEach(function(x){ if(x.s>0){ var i=x.s*x.r; intereses+=i; x.s+=i; } });
+    // primero el mínimo de cada una, para no caer en mora
+    ds.forEach(function(x){ if(x.s>0){ var p=Math.min(x.s,x.m,Math.max(0,disp)); x.s-=p; disp-=p; } });
+    // lo que sobre, entero a la más cara que siga viva
+    ds.forEach(function(x){ if(disp>0&&x.s>0){ var p=Math.min(disp,x.s); x.s-=p; disp-=p; } });
+    ds.forEach(function(x){ if(x.s<=1000&&!x.fin){ x.fin=mes; caidas.push({n:x.n,mes:mes}); x.s=0; } });
+  }
+  return { meses:mes, intereses:Math.round(intereses), pago:Math.round(pago),
+           minimos:Math.round(minimos), caidas:caidas };
+}
+
+// Lo mismo pero contado: para verlo rápido en la consola.
+function misDeudasPlanTexto(pagoMensual){
+  var r=misDeudasPlan(pagoMensual);
+  if(!r)return 'No hay deudas con saldo.';
+  var f=function(v){return '$'+Math.round(v).toLocaleString('es-CO');};
+  return 'Pagando '+f(r.pago)+' al mes: libre en '+r.meses+' meses, '+
+         f(r.intereses)+' en intereses.\n'+
+         r.caidas.map(function(c){return '  · '+c.n+' se acaba en el mes '+c.mes;}).join('\n');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ARREGLO: el abono a una deuda no aparecía en Finanzas
+// deudaAbonar guardaba la transacción con otros nombres de campo
+// ({t,c,a,d,tipo}) de los que lee la pantalla de Finanzas
+// ({t,cat,amt,type,date}), así que el abono nunca sumaba al egreso
+// ni al presupuesto de Deudas. Aquí se corrige al vuelo.
+// ═══════════════════════════════════════════════════════════════
+(function(){
+  var n=0;
+  (function esperar(){
+    try{
+      if(typeof TRANSACTIONS!=='undefined'){
+        var arreglados=0;
+        (TRANSACTIONS||[]).forEach(function(t){
+          if(!t||t.type||t.cat||t.amt!==undefined)return;
+          if(t.tipo===undefined&&t.a===undefined)return;
+          t.type=t.tipo||'egreso';
+          t.cat =t.c||'Deudas';
+          t.amt =Math.abs(+t.a||0);
+          t.date=t.d||t.date||'';
+          arreglados++;
+        });
+        if(arreglados){ try{ nnSave(); }catch(e){} }
+        return;
+      }
+    }catch(e){}
+    if(++n<80)setTimeout(esperar, n<15?250:1200);
+  })();
+})();
+
+(function(){
+  var n=0;
+  (function esperar(){
+    try{
+      if(typeof deudaAbonar==='function' && typeof TRANSACTIONS!=='undefined'){
+        var original=deudaAbonar;
+        deudaAbonar=function(id){
+          var antes=(TRANSACTIONS||[]).length;
+          var r=original.apply(this,arguments);
+          try{
+            var nuevas=(TRANSACTIONS||[]).length-antes;
+            for(var i=0;i<nuevas;i++){
+              var t=TRANSACTIONS[i];
+              if(!t||t.type)continue;
+              t.type='egreso';
+              t.cat =t.c||'Deudas';
+              t.amt =Math.abs(+t.a||0);
+              t.date=t.d||'';
+            }
+            if(nuevas){ try{ nnSave(); }catch(e){} }
+          }catch(e){}
+          return r;
+        };
+        return;
+      }
+    }catch(e){}
+    if(++n<80)setTimeout(esperar, n<15?250:1200);
+  })();
+})();
+
+// ═══════════════════════════════════════════════════════════════
+// Se carga sola la primera vez que la app arranca con esto adentro
+// ═══════════════════════════════════════════════════════════════
+(function(){
+  var n=0;
+  (function esperar(){
+    try{
+      if(typeof DEBTS!=='undefined' && typeof TRANSACTIONS!=='undefined'
+         && typeof nnSave==='function'){
+        var hecho=false;
+        try{ hecho=localStorage.getItem('em_deudas_cargadas')===MIS_DEUDAS_VER; }catch(e){}
+        if(!hecho){
+          var r=misDatosCargar(false);
+          try{ localStorage.setItem('em_deudas_cargadas',MIS_DEUDAS_VER); }catch(e){}
+          if(r.deudas.puestas||r.ingresos){
+            try{ T('Datos cargados',
+                   r.deudas.puestas+' tarjetas · '+r.ingresos+' quincenas', '💳'); }catch(e){}
+          }
+        }else{
+          // Cada mes nuevo, las dos quincenas del mes.
+          var i=misIngresosCargar();
+          if(i){ try{ nnSave(); renderDash(); }catch(e){} }
+        }
+        return;
+      }
+    }catch(e){}
+    if(++n<80)setTimeout(esperar, n<15?250:1200);
   })();
 })();
 
