@@ -15505,6 +15505,32 @@ cieEsperar(function(){ return typeof calEvents==='function'; }, function(){
   var orig=calEvents;
   calEvents=function(){
     var l=orig.apply(this,arguments)||[];
+
+    // ── LOS EVENTOS QUE SE CREAN DESDE EL CALENDARIO ───────────
+    // Al crear algo que NO es reunión (una tarea, una llamada, una
+    // fecha límite, una capacitación), el evento se guarda SOLO en
+    // Alertas con un identificador que empieza por «nn_cal_». No
+    // deja reunión ni tarea detrás, porque no es ninguna de las dos.
+    //
+    // calEvents descartaba de Alertas todo lo que empezara por
+    // «nn_», dando por hecho que ya venía de Reuniones, Tareas o
+    // Proyectos. Para los «nn_cal_» eso no era cierto: no venían de
+    // ningún lado, así que se perdían. Resultado: lo agendaba, le
+    // sonaba la alerta… y la agenda del escritorio y el calendario
+    // decían «nada agendado». Aquí se recuperan.
+    try{
+      var vistos={};
+      l.forEach(function(e){ if(e&&e.id)vistos[String(e.id)]=1; });
+      (window._apAlertas||[]).forEach(function(e){
+        if(!e||!e.date||e.done)return;
+        if(vistos[String(e.id)])return;
+        if(/^nn_(meet|task|proj)_/.test(String(e.id)))return;   // esos sí tienen origen
+        l.push({date:e.date, time:e.time||'', title:e.title, type:e.type||'task',
+                src:'Alertas', color:'#f59e0b', project:e.project||'',
+                link:e.link||'', id:e.id});
+      });
+    }catch(err){}
+
     var fuera=cieFueraDeAgenda();
     return l.filter(function(e){
       if(!e)return false;
@@ -16017,7 +16043,31 @@ cieEsperar(function(){ return typeof _events!=='undefined' && typeof apRender===
 //   · En tablet y celular se apila solo: 5 → 3 → 2 columnas.
 // ═══════════════════════════════════════════════════════════════
 
-var ESTILO_VER='estilo-1';
+var ESTILO_VER='estilo-2';
+
+// ── CUÁNTOS DÍAS MUESTRA LA AGENDA ──────────────────────────────
+// Estaba fijo en 6 días, y eso confundía: un evento del día 13 o
+// del 27 salía en Alertas pero la agenda decía «nada agendado».
+// No faltaba el evento: estaba fuera de la ventana. Ahora la
+// ventana se elige y se ve escrita en el título.
+var AG_DIAS_KEY='em_agenda_dias';
+function agDias(){
+  var n=6; try{ n=parseInt(localStorage.getItem(AG_DIAS_KEY)||'6',10); }catch(e){}
+  return [6,15,30].indexOf(n)>=0?n:6;
+}
+function agPoner(n){
+  try{ localStorage.setItem(AG_DIAS_KEY,String(n)); }catch(e){}
+  try{ renderAgendaDash(n); }catch(e){}
+  agPintarRango();
+}
+function agPintarRango(){
+  var c=document.getElementById('est-rango');
+  if(!c)return;
+  var d=agDias();
+  c.innerHTML=[6,15,30].map(function(n){
+    return '<button class="est-r'+(n===d?' on':'')+'" onclick="agPoner('+n+')">'+n+' días</button>';
+  }).join('');
+}
 
 function estCSS(){
   if(document.getElementById('est-css'))return;
@@ -16039,7 +16089,13 @@ function estCSS(){
   '#v-dash .est-h .lin{flex:1;height:1px;background:var(--bd)}',
   '#v-dash .est-h .n{font-family:var(--mono);font-size:11px;color:var(--t3);',
     'background:var(--bg4);border:1px solid var(--bd);border-radius:999px;padding:2px 9px}',
-  '#v-dash .est-h .acc{display:flex;gap:6px;align-items:center}',
+  '#v-dash .est-h .acc{display:flex;gap:6px;align-items:center;flex-wrap:wrap}',
+  '#v-dash .est-r{border:1px solid var(--bd);background:transparent;color:var(--t3);',
+    'font-family:var(--fm);font-size:10px;padding:4px 9px;border-radius:999px;',
+    'cursor:pointer;transition:var(--tr)}',
+  '#v-dash .est-r:hover{color:var(--t2);border-color:var(--bd2)}',
+  '#v-dash .est-r.on{color:var(--ac);border-color:var(--bd2);background:rgba(0,212,255,.08)}',
+  '#v-dash #est-rango{display:flex;gap:4px}',
 
   // ── La franja de contadores: baja, ancha, sin competir ──
   '#v-dash .g4{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:10px!important;',
@@ -16166,6 +16222,8 @@ function estArmar(){
       var btn=cab.querySelector('button');
       var h=estTitulo('Agenda');
       var acc=document.createElement('div'); acc.className='acc';
+      var rango=document.createElement('div'); rango.id='est-rango';
+      acc.appendChild(rango);
       if(leyenda)acc.appendChild(leyenda);
       if(btn)acc.appendChild(btn);
       h.appendChild(acc);
@@ -16228,6 +16286,7 @@ function estArmar(){
   }
 
   estEnvolver();
+  agPintarRango();
   v.setAttribute('data-est',ESTILO_VER);
   estVacios(); estBarras(); estContar();
   return true;
@@ -16303,6 +16362,11 @@ function estContar(){
       var css=document.getElementById('apps-css');
       if(css)css.remove();
 
+      if(typeof renderAgendaDash==='function'&&!renderAgendaDash._est){
+        var oag=renderAgendaDash;
+        renderAgendaDash=function(){ return oag.call(this, agDias()); };
+        renderAgendaDash._est=1;
+      }
       if(document.getElementById('v-dash')&&estArmar()){
         if(typeof renderDash==='function'){
           var orig=renderDash;
