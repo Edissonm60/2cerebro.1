@@ -13438,6 +13438,9 @@ window.addEventListener("appinstalled",function(){
         conteos automáticos e informe profesional
      7. Calculadora de consumo, fuente, batería e inversor
      8. Mis 3 tarjetas y mis ingresos cargados de los extractos
+     9. Cierre del dia: lo vencido se marca, se reagenda o se borra
+    10. Lo marcado como hecho se queda hecho (ya no revive)
+    11. Muelle de apps y WhatsApp rapido en el escritorio
      ═════════════════════════════════════════════════════════ -->
 <script type="text/plain" id="em-parches-fuente">
 
@@ -15256,6 +15259,942 @@ function misDeudasPlanTexto(pagoMensual){
       }
     }catch(e){}
     if(++n<80)setTimeout(esperar, n<15?250:1200);
+  })();
+})();
+
+
+
+// ═══════════════════════════════════════════════════════════════
+// CIERRE DEL DÍA  ·  Y QUE LO MARCADO COMO HECHO SE QUEDE HECHO
+//
+// TRES FALLOS DISTINTOS, QUE JUNTOS DABAN LA MISMA SENSACIÓN:
+// «marco algo y vuelve a salir».
+//
+//  1. LAS REUNIONES NO GUARDABAN EL AÑO.
+//     Una reunión se guardaba con la fecha «29/09», sin año. Al
+//     leerla, el programa suponía que una fecha ya pasada era del
+//     año SIGUIENTE. Por eso la reunión con Marlyn aparecía en
+//     2027: es del 29/09 de este año, pero como ese día ya pasó,
+//     se la mandó a 2027. Ahora cada reunión guarda el año y,
+//     cuando una vieja no lo tiene, se le pone el año MÁS CERCANO
+//     a hoy, no siempre el futuro.
+//
+//  2. «HOY / PRÓXIMAS / PASADAS» SE DECIDÍA UNA SOLA VEZ.
+//     Cuando se creaba la reunión se anotaba si era de hoy o
+//     próxima… y nunca se volvía a revisar. El informe de la feria
+//     del 29/09 quedó marcado «próxima» para siempre. Ahora se
+//     recalcula cada vez que se abre la pantalla.
+//
+//  3. MARCAR «LISTO» EN ALERTAS NO LLEGABA A NEURONOTES.
+//     Se marcaba el aviso, pero la reunión de origen seguía sin
+//     marcar; a los pocos segundos la importación la traía de
+//     vuelta como pendiente. Ahora el «listo» viaja a NeuroNotes y
+//     además queda anotado aquí, así que la importación ya no lo
+//     deshace.
+//
+// Y LO NUEVO: a la hora del resumen de la tarde, el programa abre
+// el CIERRE DEL DÍA con todo lo que se venció sin marcar, y por
+// cada cosa pregunta: ¿cumplida, la reagendo, o la borro?
+// ═══════════════════════════════════════════════════════════════
+
+var CIERRE_VER='cierre-1';
+
+function cieEsperar(cond,trab,nom){
+  var n=0;
+  (function mirar(){
+    var ok=false; try{ ok=!!cond(); }catch(e){}
+    if(ok){ try{ trab(); }catch(e){ try{console.warn('cierre '+nom,e);}catch(_){} } return; }
+    if(++n<60)setTimeout(mirar, n<10?150:600);
+  })();
+}
+function cieHoy(){
+  var d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+// El año más cercano a hoy para una fecha sin año (dd/mm).
+// Antes siempre se iba al futuro; por eso el 29/09 se volvía 2027.
+function cieAnioCercano(dia,mes){
+  var h=new Date(), hoy=new Date(h.getFullYear(),h.getMonth(),h.getDate());
+  var mejor=null, dist=Infinity;
+  [h.getFullYear()-1,h.getFullYear(),h.getFullYear()+1].forEach(function(y){
+    var f=new Date(y,mes,dia,12,0,0);
+    var d=Math.abs(f-hoy);
+    if(d<dist){dist=d;mejor=y;}
+  });
+  return mejor;
+}
+function cieISO(y,m,d){
+  return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LADO NEURONOTES
+// ═══════════════════════════════════════════════════════════════
+
+// ── 1. Ponerle el año a las reuniones que no lo tienen ──────────
+function meetFechaISO(m){
+  if(!m)return '';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(String(m.fecha||'')))return m.fecha;
+  var p=String(m.date||'').split('/');
+  if(p.length===3){
+    var y=parseInt(p[2]); if(y<100)y+=2000;
+    return cieISO(y,parseInt(p[1])-1,parseInt(p[0]));
+  }
+  if(p.length===2){
+    var d=parseInt(p[0]), mes=parseInt(p[1])-1;
+    if(isNaN(d)||isNaN(mes))return '';
+    return cieISO(cieAnioCercano(d,mes),mes,d);
+  }
+  return '';
+}
+function meetMigrar(){
+  if(typeof MEETS==='undefined')return 0;
+  var n=0;
+  (MEETS||[]).forEach(function(m){
+    var iso=meetFechaISO(m);
+    if(!iso)return;
+    if(m.fecha!==iso){ m.fecha=iso; n++; }
+    var p=iso.split('-');
+    var largo=p[2]+'/'+p[1]+'/'+p[0];
+    if(m.date!==largo){ m.date=largo; n++; }
+  });
+  return n;
+}
+// ── 2. Volver a decidir hoy / próxima / pasada ──────────────────
+function meetWhen(){
+  if(typeof MEETS==='undefined')return 0;
+  var hoy=cieHoy(), n=0;
+  (MEETS||[]).forEach(function(m){
+    var iso=m.fecha||meetFechaISO(m);
+    var w;
+    if(m.done)      w='past';
+    else if(!iso)   w=m.when||'upcoming';
+    else if(iso===hoy)w='today';
+    else if(iso<hoy)  w='past';
+    else              w='upcoming';
+    if(m.when!==w){ m.when=w; n++; }
+  });
+  return n;
+}
+function meetRefrescar(guardar){
+  var n=meetMigrar()+meetWhen();
+  if(n&&guardar!==false){ try{ nnSave(); }catch(e){} }
+  return n;
+}
+
+// Antes de pintar, recalcular. Así el informe de la feria deja de
+// salir en «próximas reuniones» al día siguiente.
+cieEsperar(function(){ return typeof renderMeets==='function' && typeof MEETS!=='undefined'; },
+function(){
+  var orig=renderMeets;
+  renderMeets=function(){ meetRefrescar(); return orig.apply(this,arguments); };
+},'renderMeets');
+
+cieEsperar(function(){ return typeof renderDash==='function' && typeof MEETS!=='undefined'; },
+function(){
+  var orig=renderDash;
+  var dentro=false;
+  renderDash=function(){
+    if(!dentro){ dentro=true; try{ meetRefrescar(); }catch(e){} dentro=false; }
+    return orig.apply(this,arguments);
+  };
+  meetRefrescar();
+  // El escritorio ya se había pintado con los datos viejos (una
+  // reunión de hace días seguía en «hoy»). Se vuelve a pintar una
+  // vez, ya con las fechas corregidas.
+  setTimeout(function(){
+    try{ renderDash(); }catch(e){}
+    try{ if(typeof renderMeets==='function')renderMeets(); }catch(e){}
+  },400);
+},'renderDash');
+
+// ── 3. Al crear una reunión, guardar el año desde el principio ──
+cieEsperar(function(){ return typeof addMeeting==='function' && typeof MEETS!=='undefined'; },
+function(){
+  var orig=addMeeting;
+  addMeeting=function(){
+    var el=document.getElementById('m-date');
+    var iso=el?el.value:'';
+    var r=orig.apply(this,arguments);
+    try{
+      var m=MEETS[0];
+      if(m){
+        if(/^\d{4}-\d{2}-\d{2}$/.test(iso)){
+          m.fecha=iso;
+          var p=iso.split('-'); m.date=p[2]+'/'+p[1]+'/'+p[0];
+        }else{ m.fecha=meetFechaISO(m); }
+        meetWhen(); nnSave();
+      }
+    }catch(e){}
+    return r;
+  };
+},'addMeeting');
+
+// La reunión que nace desde el calendario (calAdd) también
+cieEsperar(function(){ return typeof MEETS!=='undefined' && typeof nnSave==='function'; },
+function(){
+  window.meetArreglarUna=function(m){
+    if(!m)return; m.fecha=meetFechaISO(m);
+    if(m.fecha){var p=m.fecha.split('-'); m.date=p[2]+'/'+p[1]+'/'+p[0];}
+  };
+},'helper');
+
+// ── 4. Marcar asistida desde la propia tarjeta de la reunión ────
+function meetHecha(id,valor){
+  if(typeof MEETS==='undefined')return;
+  var m=(MEETS||[]).filter(function(x){return String(x.id)===String(id);})[0];
+  if(!m)return;
+  m.done=(valor===undefined)?!m.done:!!valor;
+  m._ts=Date.now();
+  meetWhen();
+  try{ nnSave(); }catch(e){}
+  try{ renderMeets(); }catch(e){}
+  try{ renderDash(); }catch(e){}
+  // que el aviso de Alertas también se marque
+  try{ emPost({type:'EM_SUITE_EVENT_DONE', id:'nn_meet_'+m.id, done:m.done}); }catch(e){}
+  try{ T(m.done?'Reunión atendida':'Reunión reabierta', m.t||'', m.done?'✅':'↩️'); }catch(e){}
+}
+
+cieEsperar(function(){ return typeof meetHTML==='function'; }, function(){
+  var orig=meetHTML;
+  meetHTML=function(m,mini){
+    var h=orig.call(this,m,mini);
+    if(mini)return h;
+    var btn='<button class="bi" title="'+(m.done?'Marcar como NO atendida':'Marcar como atendida')+'" '+
+            'onclick="meetHecha('+m.id+')" style="color:'+(m.done?'#00FF88':'var(--t3)')+'">'+
+            '<i class="fa fa-'+(m.done?'check-circle':'check')+'"></i></button>';
+    h=h.replace('<div style="display:flex;gap:6px;margin-left:auto;flex-shrink:0">',
+                '<div style="display:flex;gap:6px;margin-left:auto;flex-shrink:0">'+btn);
+    if(m.done)h=h.replace('<div class="meet-item"','<div class="meet-item" style="opacity:.55"');
+    return h;
+  };
+},'meetHTML');
+
+// ── 5. Recibir el «listo» que viene desde Alertas ───────────────
+if(typeof window!=='undefined'){
+  window.addEventListener('message',function(e){
+    if(!e.data||e.data.type!=='EM_NN_HECHO')return;
+    if(typeof MEETS==='undefined')return;             // no es este documento
+    var id=String(e.data.id||''), hecho=(e.data.done!==false), tocado=false;
+    try{
+      if(id.indexOf('nn_meet_')===0){
+        var mid=id.slice(8);
+        var m=(MEETS||[]).filter(function(x){return String(x.id)===mid;})[0];
+        if(m){ m.done=hecho; m._ts=Date.now(); tocado=true; }
+      }else if(id.indexOf('nn_task_')===0 && typeof KB!=='undefined'){
+        var tid=id.slice(8);
+        Object.keys(KB||{}).forEach(function(col){
+          if(col==='Completado')return;
+          var t=(KB[col]||[]).filter(function(x){return String(x.id)===tid;})[0];
+          if(t&&hecho){
+            KB[col]=KB[col].filter(function(x){return String(x.id)!==tid;});
+            t._ts=Date.now();
+            KB['Completado']=KB['Completado']||[];
+            KB['Completado'].push(t); tocado=true;
+          }
+        });
+      }
+    }catch(err){}
+    if(!tocado)return;
+    try{ meetWhen(); }catch(err){}
+    try{ nnSave(); }catch(err){}
+    try{ renderMeets(); }catch(err){}
+    try{ renderKB(); }catch(err){}
+    try{ renderDash(); }catch(err){}
+  });
+
+  // ── 6. Reagendar: cambiar la fecha en el registro de origen ───
+  window.addEventListener('message',function(e){
+    if(!e.data||e.data.type!=='EM_NN_REAGENDAR')return;
+    if(typeof MEETS==='undefined')return;
+    var id=String(e.data.id||''), f=String(e.data.date||''), hora=e.data.time||'';
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(f))return;
+    var p=f.split('-'), tocado=false;
+    try{
+      if(id.indexOf('nn_meet_')===0){
+        var m=(MEETS||[]).filter(function(x){return String(x.id)===id.slice(8);})[0];
+        if(m){ m.fecha=f; m.date=p[2]+'/'+p[1]+'/'+p[0]; if(hora)m.time=hora;
+               m.done=false; m._ts=Date.now(); tocado=true; }
+      }else if(id.indexOf('nn_task_')===0 && typeof KB!=='undefined'){
+        Object.keys(KB||{}).forEach(function(col){
+          var t=(KB[col]||[]).filter(function(x){return String(x.id)===id.slice(8);})[0];
+          if(t){ t.date=f; if(hora)t.time=hora; t._ts=Date.now(); tocado=true; }
+        });
+      }
+    }catch(err){}
+    if(!tocado)return;
+    try{ meetWhen(); }catch(err){}
+    try{ nnSave(); }catch(err){}
+    try{ renderMeets(); renderKB(); renderDash(); }catch(err){}
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LADO DEL PANEL DE ALERTAS (documento principal)
+// ═══════════════════════════════════════════════════════════════
+
+var HECHOS_KEY='em_ap_hechos_v1';
+var HECHOS_DIAS=180;
+
+function hechosLeer(){
+  try{
+    var l=JSON.parse(localStorage.getItem(HECHOS_KEY)||'[]')||[];
+    var corte=Date.now()-HECHOS_DIAS*864e5;
+    return l.filter(function(x){return x&&x.id!=null&&(x.ts||0)>corte;});
+  }catch(e){ return []; }
+}
+function hechosGuardar(l){
+  try{
+    if(l.length>900)l=l.sort(function(a,b){return b.ts-a.ts;}).slice(0,900);
+    localStorage.setItem(HECHOS_KEY,JSON.stringify(l));
+  }catch(e){}
+}
+function hechoPoner(id){
+  if(id==null)return;
+  var l=hechosLeer(), s=String(id), hay=false;
+  for(var i=0;i<l.length;i++){ if(String(l[i].id)===s){l[i].ts=Date.now();hay=true;break;} }
+  if(!hay)l.push({id:s,ts:Date.now()});
+  hechosGuardar(l);
+}
+function hechoQuitar(id){
+  hechosGuardar(hechosLeer().filter(function(x){return String(x.id)!==String(id);}));
+}
+function hechosMapa(){
+  var m={}; hechosLeer().forEach(function(x){m[String(x.id)]=1;}); return m;
+}
+
+// Las que YA estaban marcadas antes de este arreglo quedan anotadas,
+// así no hay que volver a marcarlas una por una.
+cieEsperar(function(){ return typeof _events!=='undefined' && _events.length>0; },
+function(){
+  var sembrado=false;
+  try{ sembrado=localStorage.getItem('em_hechos_sembrado')===CIERRE_VER; }catch(e){}
+  if(sembrado)return;
+  _events.forEach(function(e){ if(e&&e.done&&/^nn_/.test(String(e.id)))hechoPoner(e.id); });
+  try{ localStorage.setItem('em_hechos_sembrado',CIERRE_VER); }catch(e){}
+},'sembrar');
+
+// ── El año más cercano, también al leer de NeuroNotes ───────────
+cieEsperar(function(){ return typeof emParseDate==='function'; }, function(){
+  var orig=emParseDate;
+  emParseDate=function(str){
+    var s=String(str||'').trim();
+    var p=s.split('/');
+    if(p.length===2){
+      var d=parseInt(p[0]), m=parseInt(p[1])-1;
+      if(!isNaN(d)&&!isNaN(m)&&m>=0&&m<12)return cieISO(cieAnioCercano(d,m),m,d);
+    }
+    return orig.call(this,str);
+  };
+},'emParseDate');
+
+// ── Marcar listo: anotarlo y avisarle a NeuroNotes ──────────────
+cieEsperar(function(){ return typeof apDone==='function' && typeof emToNN==='function'; },
+function(){
+  var orig=apDone;
+  apDone=function(id){
+    hechoPoner(id);
+    var r=orig.apply(this,arguments);
+    try{ emToNN({type:'EM_NN_HECHO', id:id, done:true}); }catch(e){}
+    try{ fbCacheSave(_events); }catch(e){}
+    return r;
+  };
+},'apDone');
+
+// ── La importación ya no deshace lo que se marcó ────────────────
+cieEsperar(function(){ return typeof emImportNN==='function' && typeof _events!=='undefined'; },
+function(){
+  var orig=emImportNN;
+  emImportNN=function(manual){
+    var r=orig.apply(this,arguments);
+    try{
+      var hechos=hechosMapa(), cambio=0;
+      _events.forEach(function(e){
+        if(e&&!e.done&&hechos[String(e.id)]){ e.done=true; cambio++; }
+      });
+      if(cambio){ apRender(); emBroadcast(); try{fbCacheSave(_events);}catch(_){} }
+    }catch(e){}
+    return r;
+  };
+},'emImportNN');
+
+// El «listo» que llega desde NeuroNotes (botón ✓ de la reunión)
+cieEsperar(function(){ return typeof window._apDoneEvent==='function'; }, function(){
+  var orig=window._apDoneEvent;
+  window._apDoneEvent=function(id,done){
+    if(done!==false)hechoPoner(id); else hechoQuitar(id);
+    var r=orig.apply(this,arguments);
+    try{ fbCacheSave(_events); }catch(e){}
+    return r;
+  };
+},'_apDoneEvent');
+
+// Si lo edita o lo reagenda, deja de estar «hecho»
+cieEsperar(function(){ return typeof apSave==='function'; }, function(){
+  var orig=apSave;
+  apSave=function(){ try{ if(_apEdit)hechoQuitar(_apEdit); }catch(e){} return orig.apply(this,arguments); };
+},'apSave');
+
+if(typeof window!=='undefined'){
+  window.nnOlvidarHechos=function(){
+    var n=hechosLeer().length;
+    if(!confirm('Hay '+n+' cosa(s) marcadas como hechas.\n\nAl soltarlas pueden volver a '+
+                'aparecer como pendientes. ¿Seguir?'))return;
+    try{ localStorage.removeItem(HECHOS_KEY); localStorage.removeItem('em_hechos_sembrado'); }catch(e){}
+    try{ apToast('Marcas soltadas: '+n,'warn'); }catch(e){}
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EL CIERRE DEL DÍA
+// ═══════════════════════════════════════════════════════════════
+
+function cieVencidos(){
+  if(typeof _events==='undefined')return [];
+  var hoy=cieHoy(), ahora=new Date();
+  var hechos=hechosMapa();
+  return _events.filter(function(e){
+    if(!e||e.done||hechos[String(e.id)])return false;
+    if(!e.date)return false;
+    if(e.date>hoy)return false;
+    if(e.date===hoy){
+      var hm=String(e.time||'');
+      if(!/^\d{1,2}:\d{2}$/.test(hm))return false;     // sin hora, aún no vence
+      var p=hm.split(':');
+      var t=new Date(); t.setHours(+p[0],+p[1],0,0);
+      if(ahora<t)return false;
+    }
+    return true;
+  }).sort(function(a,b){
+    if(a.date!==b.date)return a.date<b.date?1:-1;       // lo más viejo arriba
+    return (a.time||'')<(b.time||'')?1:-1;
+  });
+}
+function cieDiasDe(iso){
+  try{
+    return Math.round((new Date(cieHoy()+'T12:00')-new Date(iso+'T12:00'))/864e5);
+  }catch(e){ return 0; }
+}
+function cieFmtDia(iso){
+  var p=String(iso||'').split('-'); if(p.length!==3)return iso||'';
+  return new Date(+p[0],+p[1]-1,+p[2],12).toLocaleDateString('es-CO',
+    {weekday:'short',day:'numeric',month:'short'});
+}
+function cieMas(dias){
+  var d=new Date(); d.setDate(d.getDate()+dias);
+  return cieISO(d.getFullYear(),d.getMonth(),d.getDate());
+}
+function cieProxLunes(){
+  var d=new Date(), f=(8-d.getDay())%7||7;
+  d.setDate(d.getDate()+f);
+  return cieISO(d.getFullYear(),d.getMonth(),d.getDate());
+}
+
+function cieCSS(){
+  if(document.getElementById('cie-css'))return;
+  var s=document.createElement('style'); s.id='cie-css';
+  s.textContent=
+  '#cie-bg{position:fixed;inset:0;background:rgba(2,6,14,.82);backdrop-filter:blur(7px);'+
+  'z-index:99990;display:none;align-items:center;justify-content:center;padding:16px}'+
+  '#cie-bg.on{display:flex}'+
+  '#cie-box{width:100%;max-width:620px;max-height:88vh;display:flex;flex-direction:column;'+
+  'background:#0e141f;border:1px solid rgba(120,160,255,.18);border-radius:16px;'+
+  'box-shadow:0 30px 80px rgba(0,0,0,.6);overflow:hidden;'+
+  'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}'+
+  '#cie-head{padding:18px 20px 14px;border-bottom:1px solid rgba(120,160,255,.12);'+
+  'background:linear-gradient(135deg,rgba(255,184,0,.10),rgba(255,184,0,0))}'+
+  '#cie-head h3{margin:0 0 4px;font-size:16px;color:#e8eefb;font-weight:700}'+
+  '#cie-head p{margin:0;font-size:11.5px;color:#8899bb;line-height:1.5}'+
+  '#cie-body{overflow:auto;padding:12px 14px;flex:1}'+
+  '.cie-it{border:1px solid rgba(120,160,255,.14);border-radius:12px;padding:11px 12px;'+
+  'margin-bottom:9px;background:rgba(255,255,255,.015);transition:.15s}'+
+  '.cie-it.va{opacity:.35;transform:scale(.98)}'+
+  '.cie-it .t{font-size:13px;color:#e8eefb;font-weight:600;line-height:1.35;'+
+  'display:flex;gap:7px;align-items:flex-start}'+
+  '.cie-it .s{font-size:10.5px;color:#7d8aa3;margin:4px 0 9px}'+
+  '.cie-it .s b{color:#ff9f43;font-weight:600}'+
+  '.cie-acts{display:flex;gap:6px;flex-wrap:wrap}'+
+  '.cie-b{border:1px solid rgba(120,160,255,.22);background:rgba(255,255,255,.03);'+
+  'color:#aebbd4;font-size:11px;padding:6px 10px;border-radius:8px;cursor:pointer;'+
+  'font-family:inherit;transition:.14s;white-space:nowrap}'+
+  '.cie-b:hover{background:rgba(255,255,255,.08);color:#fff;transform:translateY(-1px)}'+
+  '.cie-b.ok{color:#00ff88;border-color:rgba(0,255,136,.32)}'+
+  '.cie-b.ok:hover{background:rgba(0,255,136,.12)}'+
+  '.cie-b.re{color:#00d4ff;border-color:rgba(0,212,255,.3)}'+
+  '.cie-b.re:hover{background:rgba(0,212,255,.12)}'+
+  '.cie-b.del{color:#ff6b6b;border-color:rgba(255,68,68,.3)}'+
+  '.cie-b.del:hover{background:rgba(255,68,68,.12)}'+
+  '.cie-re{display:none;gap:6px;flex-wrap:wrap;margin-top:8px;padding-top:8px;'+
+  'border-top:1px dashed rgba(120,160,255,.18)}'+
+  '.cie-re.on{display:flex}'+
+  '.cie-re input{background:rgba(255,255,255,.05);border:1px solid rgba(120,160,255,.22);'+
+  'color:#e8eefb;border-radius:8px;padding:5px 8px;font-size:11px;font-family:inherit}'+
+  '#cie-foot{padding:12px 16px;border-top:1px solid rgba(120,160,255,.12);display:flex;'+
+  'gap:8px;align-items:center;flex-wrap:wrap;background:rgba(255,255,255,.015)}'+
+  '#cie-foot .sp{flex:1;font-size:10.5px;color:#66748c}';
+  document.head.appendChild(s);
+}
+
+function cieMontar(){
+  cieCSS();
+  if(document.getElementById('cie-bg'))return;
+  var d=document.createElement('div');
+  d.id='cie-bg';
+  d.innerHTML='<div id="cie-box">'+
+    '<div id="cie-head"><h3>🌙 Cierre del día</h3>'+
+    '<p id="cie-sub"></p></div>'+
+    '<div id="cie-body"></div>'+
+    '<div id="cie-foot">'+
+      '<span class="sp" id="cie-nota">Lo que no toques sigue aquí mañana. Nada se borra solo.</span>'+
+      '<button class="cie-b ok" onclick="cieTodasHechas()">✓ Todas cumplidas</button>'+
+      '<button class="cie-b" onclick="cieCerrar(true)">Lo hago luego</button>'+
+    '</div></div>';
+  document.body.appendChild(d);
+  d.addEventListener('click',function(e){ if(e.target===d)cieCerrar(true); });
+}
+
+function ciePintar(){
+  var l=cieVencidos();
+  var body=document.getElementById('cie-body');
+  var sub=document.getElementById('cie-sub');
+  if(!body)return 0;
+  if(sub)sub.textContent=l.length
+    ? 'Se venció el plazo de '+l.length+' cosa'+(l.length>1?'s':'')+' y quedaron sin marcar. '+
+      'Por cada una: ¿se cumplió, la reagendas, o la borras?'
+    : 'Todo al día. No quedó nada vencido sin marcar.';
+  if(!l.length){
+    body.innerHTML='<div style="text-align:center;padding:36px 16px;color:#66748c;font-size:12.5px">'+
+      '<div style="font-size:34px;margin-bottom:10px">🎉</div>Día cerrado limpio.</div>';
+    return 0;
+  }
+  body.innerHTML=l.map(function(ev){
+    var dias=cieDiasDe(ev.date);
+    var cuanto = dias<=0?'hoy' : dias===1?'ayer' : 'hace '+dias+' días';
+    var ico=(typeof apIcon==='function')?apIcon(ev.type):'•';
+    var esc=(typeof emEsc==='function')?emEsc:function(x){return String(x||'');};
+    return '<div class="cie-it" data-id="'+esc(ev.id)+'">'+
+      '<div class="t"><span>'+ico+'</span><span>'+esc(ev.title)+'</span></div>'+
+      '<div class="s">'+cieFmtDia(ev.date)+(ev.time?' · '+esc(ev.time):'')+
+        ' · <b>venció '+cuanto+'</b>'+(ev.project?' · '+esc(ev.project):'')+'</div>'+
+      '<div class="cie-acts">'+
+        '<button class="cie-b ok"  data-a="ok">✓ Cumplida</button>'+
+        '<button class="cie-b re"  data-a="re">📅 Reagendar</button>'+
+        '<button class="cie-b del" data-a="del">🗑 Borrar</button>'+
+      '</div>'+
+      '<div class="cie-re">'+
+        '<button class="cie-b" data-a="r1">Mañana</button>'+
+        '<button class="cie-b" data-a="r3">En 3 días</button>'+
+        '<button class="cie-b" data-a="rl">Próximo lunes</button>'+
+        '<input type="date" data-a="rf" value="'+cieMas(1)+'"/>'+
+        '<button class="cie-b re" data-a="rok">Mover</button>'+
+      '</div></div>';
+  }).join('');
+  body.onclick=function(e){
+    var b=e.target.closest('[data-a]'); if(!b)return;
+    var it=b.closest('.cie-it'); if(!it)return;
+    var id=it.getAttribute('data-id');
+    var a=b.getAttribute('data-a');
+    if(a==='ok'){ cieMarcar(id); cieIr(it); }
+    else if(a==='del'){ cieBorrar(id); cieIr(it); }
+    else if(a==='re'){ var r=it.querySelector('.cie-re'); if(r)r.classList.toggle('on'); }
+    else if(a==='r1'){ cieMover(id,cieMas(1)); cieIr(it); }
+    else if(a==='r3'){ cieMover(id,cieMas(3)); cieIr(it); }
+    else if(a==='rl'){ cieMover(id,cieProxLunes()); cieIr(it); }
+    else if(a==='rok'){
+      var inp=it.querySelector('input[data-a="rf"]');
+      var f=inp?inp.value:''; if(!f)return;
+      cieMover(id,f); cieIr(it);
+    }
+  };
+  return l.length;
+}
+function cieIr(it){
+  it.classList.add('va');
+  setTimeout(function(){
+    it.remove();
+    var body=document.getElementById('cie-body');
+    if(body&&!body.querySelector('.cie-it')){
+      var sub=document.getElementById('cie-sub');
+      if(sub)sub.textContent='Listo. Día cerrado.';
+      body.innerHTML='<div style="text-align:center;padding:36px 16px;color:#66748c;font-size:12.5px">'+
+        '<div style="font-size:34px;margin-bottom:10px">🎉</div>Día cerrado limpio.</div>';
+      setTimeout(function(){ cieCerrar(true); },1100);
+    }
+  },180);
+}
+function cieMarcar(id){ try{ apDone(id); }catch(e){} }
+function cieBorrar(id){
+  try{
+    if(typeof borAnotar==='function')borAnotar(id);
+    _events=_events.filter(function(e){return e.id!==id;});
+    apRender(); emBroadcast();
+    try{ fbCacheSave(_events); }catch(e){}
+    if(/^nn_/.test(String(id))&&typeof emToNN==='function')emToNN({type:'EM_NN_BORRAR',id:id});
+    fbDelete(id).catch(function(){});
+  }catch(e){}
+}
+function cieMover(id,fecha){
+  try{
+    var ev=_events.filter(function(e){return e.id===id;})[0];
+    if(!ev)return;
+    ev.date=fecha; ev.done=false; ev.sent='';
+    hechoQuitar(id);
+    apRender(); emBroadcast();
+    try{ fbCacheSave(_events); }catch(e){}
+    fbWrite(ev).catch(function(){});
+    if(/^nn_/.test(String(id))&&typeof emToNN==='function')
+      emToNN({type:'EM_NN_REAGENDAR', id:id, date:fecha, time:ev.time||''});
+    if(typeof apToast==='function')apToast('→ '+cieFmtDia(fecha),'ok');
+  }catch(e){}
+}
+function cieTodasHechas(){
+  var l=cieVencidos();
+  if(!l.length)return;
+  if(!confirm('Marcar como cumplidas las '+l.length+' actividades vencidas.\n\n¿Seguro?'))return;
+  l.forEach(function(e){ cieMarcar(e.id); });
+  ciePintar();
+  setTimeout(function(){ cieCerrar(true); },700);
+}
+function cieAbrir(){
+  cieMontar();
+  ciePintar();
+  var bg=document.getElementById('cie-bg');
+  if(bg)bg.classList.add('on');
+}
+function cieCerrar(marcarVisto){
+  var bg=document.getElementById('cie-bg');
+  if(bg)bg.classList.remove('on');
+  if(marcarVisto){ try{ localStorage.setItem('em_cierre_visto',cieHoy()); }catch(e){} }
+  try{ apRender(); emBroadcast(); }catch(e){}
+}
+
+// ── Cuándo sale solo ────────────────────────────────────────────
+// A la misma hora del resumen de la tarde (Configuración →
+// «Resumen de la tarde»). Una vez al día: si lo cierra, no vuelve
+// a abrirse hasta mañana.
+function cieHoraCierre(){
+  try{ if(typeof EMC!=='undefined'&&EMC.digestPm)return String(EMC.digestPm); }catch(e){}
+  return '18:00';
+}
+function cieRevisar(){
+  try{
+    if(typeof _events==='undefined'||!_events.length)return;
+    var visto=''; try{ visto=localStorage.getItem('em_cierre_visto')||''; }catch(e){}
+    if(visto===cieHoy())return;
+    var h=cieHoraCierre().split(':');
+    var t=new Date(); t.setHours(+h[0]||18,+h[1]||0,0,0);
+    if(new Date()<t)return;
+    if(!cieVencidos().length){
+      try{ localStorage.setItem('em_cierre_visto',cieHoy()); }catch(e){}
+      return;
+    }
+    var bg=document.getElementById('cie-bg');
+    if(bg&&bg.classList.contains('on'))return;
+    cieAbrir();
+    try{
+      if(typeof emTg==='function'){
+        var l=cieVencidos();
+        var m='🌙 '+emB('Cierre del día')+'\n━━━━━━━━━━━━━━━\n'+
+              'Quedaron '+l.length+' sin marcar:\n';
+        l.slice(0,10).forEach(function(e){
+          m+='• '+emEsc(e.title)+' — '+emEsc(cieFmtDia(e.date))+'\n';
+        });
+        if(l.length>10)m+='…y '+(l.length-10)+' más\n';
+        m+='\nAbre EM Suite y márcalas: cumplida, reagendar o borrar.\n<i>EM Suite PRO</i>';
+        var k='cierre_'+cieHoy();
+        var s={}; try{ s=JSON.parse(localStorage.getItem('_ap_sent')||'{}'); }catch(e){}
+        if(!s[k]){ emTg(m); s[k]=1; try{localStorage.setItem('_ap_sent',JSON.stringify(s));}catch(e){} }
+      }
+    }catch(e){}
+  }catch(e){}
+}
+
+cieEsperar(function(){ return typeof _events!=='undefined' && typeof apRender==='function'
+                           && !!document.body; }, function(){
+  cieMontar();
+  window.cierreDelDia=cieAbrir;          // para abrirlo cuando quiera
+  setTimeout(cieRevisar, 6000);
+  setInterval(cieRevisar, 120000);
+},'cierre');
+
+
+
+// ═══════════════════════════════════════════════════════════════
+// MIS APPS  +  WHATSAPP RÁPIDO  (en el escritorio)
+//
+// NOTA HONESTA SOBRE WHATSAPP:
+// WhatsApp no se deja incrustar dentro de otra aplicación. Bloquea
+// que lo metan en un marco (lo mismo hacen Gmail, los bancos y casi
+// todo lo que pide contraseña). No es un límite de esta app: si lo
+// intentáramos, saldría un cuadro en blanco.
+//
+// Lo que sí se puede, y es lo que quedó:
+//   · Un acceso directo que abre WhatsApp Web en su ventana.
+//   · Un cuadro para escribirle a un número SIN tenerlo agendado:
+//     se pone el número, el mensaje, y abre el chat listo para
+//     enviar. Eso ahorra el «guardar contacto → buscar → escribir».
+//   · Los técnicos del directorio salen como botones: un toque y
+//     el chat está abierto.
+//   · Y un muelle de accesos a las demás apps que usa, editable.
+// ═══════════════════════════════════════════════════════════════
+
+var APPS_VER='apps-1';
+var APPS_KEY='em_apps_v1';
+var WA_KEY='em_wa_v1';
+
+var APPS_DEF=[
+  {n:'WhatsApp',   u:'https://web.whatsapp.com',            i:'fab fa-whatsapp',       c:'#25D366'},
+  {n:'Gmail',      u:'https://mail.google.com',             i:'fa fa-envelope',        c:'#EA4335'},
+  {n:'Drive',      u:'https://drive.google.com',            i:'fab fa-google-drive',   c:'#4285F4'},
+  {n:'Calendario', u:'https://calendar.google.com',         i:'fa fa-calendar-days',   c:'#1A73E8'},
+  {n:'Teams',      u:'https://teams.microsoft.com',         i:'fab fa-microsoft',      c:'#6264A7'},
+  {n:'Outlook',    u:'https://outlook.office.com/mail/',    i:'fa fa-inbox',           c:'#0078D4'},
+  {n:'Meet',       u:'https://meet.google.com',             i:'fa fa-video',           c:'#00AC47'},
+  {n:'Firebase',   u:'https://console.firebase.google.com', i:'fa fa-fire',            c:'#FFCA28'},
+  {n:'Maps',       u:'https://maps.google.com',             i:'fa fa-map-location-dot',c:'#34A853'},
+  {n:'YouTube',    u:'https://youtube.com',                 i:'fab fa-youtube',        c:'#FF0000'}
+];
+
+function appsLeer(){
+  try{
+    var l=JSON.parse(localStorage.getItem(APPS_KEY)||'null');
+    if(l&&l.length)return l;
+  }catch(e){}
+  return APPS_DEF.map(function(a){return {n:a.n,u:a.u,i:a.i,c:a.c};});
+}
+function appsGuardar(l){ try{ localStorage.setItem(APPS_KEY,JSON.stringify(l)); }catch(e){} }
+
+function waLeer(){ try{ return JSON.parse(localStorage.getItem(WA_KEY)||'{}')||{}; }catch(e){ return {}; } }
+function waGuardar(o){ try{ localStorage.setItem(WA_KEY,JSON.stringify(o)); }catch(e){} }
+
+// Deja solo dígitos y le pone el 57 de Colombia si hace falta.
+function waNumero(txt){
+  var s=String(txt||'').replace(/[^\d]/g,'');
+  if(!s)return '';
+  if(s.indexOf('57')===0&&s.length>=12)return s;
+  if(s.length===10)return '57'+s;
+  if(s.length===12&&s.indexOf('57')===0)return s;
+  return s;
+}
+function waAbrir(num,msg){
+  var n=waNumero(num);
+  if(!n){ try{ T('Falta el número','Escribe el celular, ej: 3108864803','⚠️'); }catch(e){} return; }
+  var u='https://wa.me/'+n+(msg?('?text='+encodeURIComponent(msg)):'');
+  window.open(u,'_blank','noopener');
+  var w=waLeer();
+  w.ult=w.ult||[];
+  w.ult=[n].concat(w.ult.filter(function(x){return x!==n;})).slice(0,6);
+  waGuardar(w);
+  try{ appsPintarWA(); }catch(e){}
+}
+function waEnviar(){
+  var n=document.getElementById('wa-num'), m=document.getElementById('wa-msg');
+  waAbrir(n?n.value:'', m?m.value:'');
+}
+function waPonerNumero(n){
+  var e=document.getElementById('wa-num'); if(e){ e.value=n; e.focus(); }
+}
+
+function appsAbrir(u){ try{ window.open(u,'_blank','noopener'); }catch(e){} }
+function appsAgregar(){
+  var n=prompt('¿Cómo se llama el acceso?\n(ej: Mercado Libre, Banco, Portal del cliente)');
+  if(!n)return;
+  var u=prompt('Pega la dirección web completa:\n(ej: https://www.mercadolibre.com.co)');
+  if(!u)return;
+  if(!/^https?:\/\//i.test(u))u='https://'+u;
+  var l=appsLeer();
+  l.push({n:n.trim().slice(0,18), u:u.trim(), i:'fa fa-arrow-up-right-from-square', c:'#00D4FF'});
+  appsGuardar(l); appsPintar();
+  try{ T('Acceso agregado',n,'🔗'); }catch(e){}
+}
+function appsQuitar(i){
+  var l=appsLeer();
+  if(!l[i])return;
+  if(!confirm('¿Quitar «'+l[i].n+'» del muelle?'))return;
+  l.splice(i,1); appsGuardar(l); appsPintar();
+}
+function appsRestaurar(){
+  if(!confirm('Vuelve a dejar los accesos de fábrica. Los que agregaste se pierden.\n\n¿Seguir?'))return;
+  try{ localStorage.removeItem(APPS_KEY); }catch(e){}
+  appsPintar();
+}
+var APPS_EDIT=false;
+function appsEditar(){
+  APPS_EDIT=!APPS_EDIT;
+  appsPintar();
+}
+
+// ── El HTML ─────────────────────────────────────────────────────
+function appsCSS(){
+  if(document.getElementById('apps-css'))return;
+  var s=document.createElement('style'); s.id='apps-css';
+  s.textContent=
+  '#ap-dock{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:9px}'+
+  '.ap-t{position:relative;display:flex;flex-direction:column;align-items:center;gap:7px;'+
+  'padding:13px 6px 11px;border-radius:14px;cursor:pointer;background:var(--bg4);'+
+  'border:1px solid var(--bd);transition:transform .16s,border-color .16s,background .16s}'+
+  '.ap-t:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.18);'+
+  'background:rgba(255,255,255,.045)}'+
+  '.ap-t .ic{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;'+
+  'justify-content:center;font-size:17px;transition:transform .16s}'+
+  '.ap-t:hover .ic{transform:scale(1.08)}'+
+  '.ap-t .nm{font-size:10px;color:var(--t2);text-align:center;line-height:1.2;'+
+  'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}'+
+  '.ap-t .x{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;'+
+  'background:#FF4444;color:#fff;border:none;font-size:11px;cursor:pointer;display:none;'+
+  'align-items:center;justify-content:center;line-height:1}'+
+  '#ap-dock.edit .ap-t .x{display:flex}'+
+  '#ap-dock.edit .ap-t{animation:apwob .9s ease-in-out infinite}'+
+  '@keyframes apwob{0%,100%{transform:rotate(-.7deg)}50%{transform:rotate(.7deg)}}'+
+  '.ap-t.add{border-style:dashed;color:var(--t3)}'+
+  '.wa-chip{border:1px solid var(--bd);background:var(--bg4);color:var(--t2);font-size:10.5px;'+
+  'padding:5px 9px;border-radius:999px;cursor:pointer;transition:.14s;font-family:inherit;'+
+  'white-space:nowrap;display:inline-flex;align-items:center;gap:5px}'+
+  '.wa-chip:hover{border-color:#25D366;color:#25D366;background:rgba(37,211,102,.08)}'+
+  '.wa-in{width:100%;background:var(--bg4);border:1px solid var(--bd);border-radius:10px;'+
+  'padding:9px 11px;color:var(--t1,#e8eefb);font-size:12px;font-family:inherit;outline:none}'+
+  '.wa-in:focus{border-color:#25D366}'+
+  '.wa-go{width:100%;border:none;border-radius:10px;padding:10px;cursor:pointer;font-size:12px;'+
+  'font-weight:700;font-family:inherit;color:#04210f;'+
+  'background:linear-gradient(135deg,#25D366,#1ebe5a);transition:.15s}'+
+  '.wa-go:hover{filter:brightness(1.08);transform:translateY(-1px)}';
+  document.head.appendChild(s);
+}
+
+function appsPintar(){
+  var d=document.getElementById('ap-dock');
+  if(!d)return;
+  var l=appsLeer();
+  d.className=APPS_EDIT?'edit':'';
+  d.innerHTML=l.map(function(a,i){
+    return '<div class="ap-t" onclick="'+(APPS_EDIT?'':'appsAbrir(\''+a.u.replace(/'/g,"\\'")+'\')')+'" title="'+a.u+'">'+
+      '<button class="x" onclick="event.stopPropagation();appsQuitar('+i+')">&times;</button>'+
+      '<div class="ic" style="background:'+a.c+'1f;color:'+a.c+'"><i class="'+a.i+'"></i></div>'+
+      '<div class="nm">'+a.n+'</div></div>';
+  }).join('')+
+  '<div class="ap-t add" onclick="appsAgregar()">'+
+    '<div class="ic" style="background:rgba(255,255,255,.04)"><i class="fa fa-plus"></i></div>'+
+    '<div class="nm">Agregar</div></div>';
+}
+
+function appsPintarWA(){
+  var c=document.getElementById('wa-chips');
+  if(!c)return;
+  var chips=[];
+  // Técnicos del directorio que tengan celular
+  try{
+    (typeof TECNICOS!=='undefined'?TECNICOS:[]).forEach(function(t){
+      if(!t||!t.telefono)return;
+      var n=waNumero(t.telefono); if(!n)return;
+      chips.push({t:(t.nombre||'').split(' ')[0], n:n, ico:'fa fa-user-gear'});
+    });
+  }catch(e){}
+  // Los últimos a los que les escribió
+  try{
+    (waLeer().ult||[]).forEach(function(n){
+      if(chips.some(function(x){return x.n===n;}))return;
+      chips.push({t:'+'+n, n:n, ico:'fa fa-clock-rotate-left'});
+    });
+  }catch(e){}
+  c.innerHTML = chips.length
+    ? chips.slice(0,10).map(function(x){
+        return '<button class="wa-chip" onclick="waPonerNumero(\''+x.n+'\')">'+
+               '<i class="'+x.ico+'" style="opacity:.6"></i>'+x.t+'</button>';
+      }).join('')
+    : '<span style="font-size:10.5px;color:var(--t3)">Los técnicos con celular guardado '+
+      'aparecen aquí como botones.</span>';
+}
+
+function appsMontar(){
+  var v=document.getElementById('v-dash');
+  if(!v||document.getElementById('ap-panel-apps'))return false;
+  appsCSS();
+  // justo debajo de las 5 tarjetas de arriba
+  var ancla=v.querySelector('.g4');
+  var box=document.createElement('div');
+  box.id='ap-panel-apps';
+  box.style.cssText='margin-bottom:22px';
+  box.innerHTML=
+  '<div class="g2" style="align-items:start">'+
+    '<div>'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'+
+        '<div class="sect" style="margin:0;flex:1">Mis apps</div>'+
+        '<button class="bs" style="font-size:10px;padding:5px 9px" onclick="appsEditar()">'+
+          '<i class="fa fa-pen"></i> Editar</button>'+
+        '<button class="bs" style="font-size:10px;padding:5px 9px" onclick="appsRestaurar()" '+
+          'title="Volver a los accesos de fábrica"><i class="fa fa-rotate-left"></i></button>'+
+      '</div>'+
+      '<div class="card"><div id="ap-dock"></div></div>'+
+    '</div>'+
+    '<div>'+
+      '<div class="sect" style="margin-bottom:10px">'+
+        '<i class="fab fa-whatsapp" style="color:#25D366;margin-right:6px"></i>WhatsApp rápido</div>'+
+      '<div class="card">'+
+        '<div style="font-size:10.5px;color:var(--t3);line-height:1.5;margin-bottom:10px">'+
+          'Escríbele a un número <b style="color:var(--t2)">sin guardarlo</b> en los contactos. '+
+          'Abre el chat listo para enviar.</div>'+
+        '<div id="wa-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>'+
+        '<input class="wa-in" id="wa-num" type="tel" inputmode="numeric" '+
+          'placeholder="Celular — ej: 310 886 4803" style="margin-bottom:8px"/>'+
+        '<textarea class="wa-in" id="wa-msg" rows="2" style="margin-bottom:10px;resize:vertical" '+
+          'placeholder="Mensaje (opcional)"></textarea>'+
+        '<button class="wa-go" onclick="waEnviar()">'+
+          '<i class="fab fa-whatsapp"></i> &nbsp;Abrir el chat</button>'+
+        '<div style="display:flex;gap:6px;margin-top:9px">'+
+          '<button class="wa-chip" style="flex:1;justify-content:center" '+
+            'onclick="appsAbrir(\'https://web.whatsapp.com\')">'+
+            '<i class="fab fa-whatsapp"></i> WhatsApp Web</button>'+
+          '<button class="wa-chip" style="flex:1;justify-content:center" '+
+            'onclick="waPlantillas()"><i class="fa fa-comment-dots"></i> Plantillas</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+  if(ancla&&ancla.nextSibling)v.insertBefore(box,ancla.nextSibling);
+  else v.insertBefore(box, v.children[1]||null);
+  appsPintar();
+  appsPintarWA();
+  return true;
+}
+
+// ── Plantillas de mensaje, para no escribir lo mismo cada vez ───
+var WA_PLANT=[
+  {t:'Saludo comercial', m:'Buen día, le saluda el Ing. Edisson Macías de DELTHAC1 Seguridad. '+
+     'Quedo atento a cualquier inquietud sobre la cotización.'},
+  {t:'Confirmar visita', m:'Buen día, le confirmo la visita técnica. ¿Le queda bien la hora acordada?'},
+  {t:'Envío de cotización', m:'Buen día, le comparto la cotización solicitada. Quedo atento a sus comentarios.'},
+  {t:'Seguimiento', m:'Buen día, ¿tuvo oportunidad de revisar la propuesta? Quedo atento.'},
+  {t:'Soporte ATH', m:'Buen día, le escribo de la Academia Técnica del Hogar. ¿En qué le puedo ayudar?'}
+];
+function waPlantillas(){
+  var o=waLeer();
+  var lista=(o.plantillas&&o.plantillas.length)?o.plantillas:WA_PLANT;
+  var txt='Elige una plantilla escribiendo su número:\n\n'+
+    lista.map(function(p,i){return (i+1)+'. '+p.t;}).join('\n')+
+    '\n\n(deja vacío para cancelar)';
+  var r=prompt(txt,'1');
+  if(!r)return;
+  var p=lista[parseInt(r,10)-1];
+  if(!p)return;
+  var e=document.getElementById('wa-msg');
+  if(e){ e.value=p.m; e.focus(); }
+}
+
+// ── Montarlo en cuanto el escritorio exista ─────────────────────
+(function(){
+  var n=0;
+  (function mirar(){
+    try{
+      if(document.getElementById('v-dash')){
+        if(appsMontar()){
+          // los técnicos pueden cargarse después
+          setTimeout(appsPintarWA,2500);
+          setTimeout(appsPintarWA,7000);
+          return;
+        }
+      }
+    }catch(e){}
+    if(++n<70)setTimeout(mirar, n<15?250:1200);
   })();
 })();
 
