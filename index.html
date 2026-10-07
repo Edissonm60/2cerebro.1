@@ -15470,6 +15470,71 @@ cieEsperar(function(){ return typeof meetHTML==='function'; }, function(){
   };
 },'meetHTML');
 
+// ── 4b. La agenda del escritorio también respeta lo hecho ───────
+// calEvents() —la que alimenta «Agenda de los próximos días» y el
+// calendario— leía MEETS y KB sin mirar si algo estaba marcado o
+// borrado. Por eso una reunión atendida, o una que se borró en
+// Alertas, seguía saliendo en rojo como «Vencido».
+cieEsperar(function(){ return typeof nnParseDate==='function'; }, function(){
+  var orig=nnParseDate;
+  nnParseDate=function(str){
+    var p=String(str||'').trim().split('/');
+    if(p.length===2){
+      var d=parseInt(p[0]), m=parseInt(p[1])-1;
+      if(!isNaN(d)&&!isNaN(m)&&m>=0&&m<12)return cieISO(cieAnioCercano(d,m),m,d);
+    }
+    return orig.call(this,str);
+  };
+},'nnParseDate');
+
+// Lo que Alertas dice que está hecho o ya no existe
+function cieFueraDeAgenda(){
+  var fuera={};
+  try{ (typeof borLeer==='function'?borLeer():[]).forEach(function(id){ fuera[String(id)]=1; }); }catch(e){}
+  try{
+    (typeof tumbasLeer==='function'?tumbasLeer():[]).forEach(function(t){
+      fuera['nn_meet_'+t.id]=1; fuera['nn_task_'+t.id]=1;
+    });
+  }catch(e){}
+  try{
+    (window._apAlertas||[]).forEach(function(e){ if(e&&e.done)fuera[String(e.id)]=1; });
+  }catch(e){}
+  return fuera;
+}
+cieEsperar(function(){ return typeof calEvents==='function'; }, function(){
+  var orig=calEvents;
+  calEvents=function(){
+    var l=orig.apply(this,arguments)||[];
+    var fuera=cieFueraDeAgenda();
+    return l.filter(function(e){
+      if(!e)return false;
+      if(e.type==='done')return false;            // tarea en Completado
+      if(fuera[String(e.id)])return false;        // marcada o borrada
+      if(/^nn_meet_/.test(String(e.id))&&typeof MEETS!=='undefined'){
+        var m=(MEETS||[]).filter(function(x){return 'nn_meet_'+x.id===e.id;})[0];
+        if(m&&m.done)return false;
+      }
+      return true;
+    });
+  };
+},'calEvents');
+
+// Cuando llegan los avisos del panel, repintar la agenda: antes se
+// quedaba con la foto vieja hasta cambiar de pantalla.
+cieEsperar(function(){ return typeof window._renderAlertas==='function'; }, function(){
+  var orig=window._renderAlertas;
+  var t=null;
+  window._renderAlertas=function(){
+    var r=orig.apply(this,arguments);
+    clearTimeout(t);
+    t=setTimeout(function(){
+      try{ if(typeof renderAgendaDash==='function')renderAgendaDash(); }catch(e){}
+      try{ if(typeof renderCalFull==='function')renderCalFull(); }catch(e){}
+    },250);
+    return r;
+  };
+},'_renderAlertas');
+
 // ── 5. Recibir el «listo» que viene desde Alertas ───────────────
 if(typeof window!=='undefined'){
   window.addEventListener('message',function(e){
@@ -15920,92 +15985,153 @@ cieEsperar(function(){ return typeof _events!=='undefined' && typeof apRender===
 
 
 // ═══════════════════════════════════════════════════════════════
-// MIS APPS  +  WHATSAPP RÁPIDO  (en el escritorio)
+// MIS APPS — el muelle del escritorio
 //
-// NOTA HONESTA SOBRE WHATSAPP:
-// WhatsApp no se deja incrustar dentro de otra aplicación. Bloquea
-// que lo metan en un marco (lo mismo hacen Gmail, los bancos y casi
-// todo lo que pide contraseña). No es un límite de esta app: si lo
-// intentáramos, saldría un cuadro en blanco.
+// LO QUE SE PUEDE Y LO QUE NO, SIN ADORNOS:
 //
-// Lo que sí se puede, y es lo que quedó:
-//   · Un acceso directo que abre WhatsApp Web en su ventana.
-//   · Un cuadro para escribirle a un número SIN tenerlo agendado:
-//     se pone el número, el mensaje, y abre el chat listo para
-//     enviar. Eso ahorra el «guardar contacto → buscar → escribir».
-//   · Los técnicos del directorio salen como botones: un toque y
-//     el chat está abierto.
-//   · Y un muelle de accesos a las demás apps que usa, editable.
+// · ABRIR una app de la tablet: SÍ. Android deja que una página
+//   lance una app instalada si se le dice el «nombre de paquete»
+//   (com.whatsapp, com.netflix.mediaclient…). Eso es lo que hace
+//   cada botón de aquí.
+//
+// · VER una app DENTRO de un recuadro del escritorio: NO. Y no es
+//   un límite de esta app: ninguna app lo permite. WhatsApp,
+//   Netflix, Hidra, los bancos, YouTube — todas bloquean que las
+//   metan en un marco ajeno. Si lo intentáramos saldría un cuadro
+//   negro o un aviso de «no se puede mostrar».
+//   Lo que sí hace eso es la PANTALLA DIVIDIDA de la tablet: se
+//   mantiene pulsado el botón de recientes (o se desliza arriba y
+//   se sostiene), se elige la app, y queda media pantalla con el
+//   video y media con EM Suite. El botón de aquí la abre; la
+//   tablet la pone al lado.
+//
+// · SABER qué apps tiene instaladas: NO. Ningún navegador entrega
+//   esa lista (si la entregara, cualquier página sabría todo lo
+//   que usted usa). Por eso hay una lista de las más comunes ya
+//   lista para elegir, y para las demás basta pegar el enlace de
+//   Play Store: de ahí se saca el nombre de paquete solo.
 // ═══════════════════════════════════════════════════════════════
 
-var APPS_VER='apps-1';
-var APPS_KEY='em_apps_v1';
-var WA_KEY='em_wa_v1';
+var APPS_VER='apps-2';
+var APPS_KEY='em_apps_v2';
 
+// De fábrica: solo WhatsApp. Lo demás lo pone él.
 var APPS_DEF=[
-  {n:'WhatsApp',   u:'https://web.whatsapp.com',            i:'fab fa-whatsapp',       c:'#25D366'},
-  {n:'Gmail',      u:'https://mail.google.com',             i:'fa fa-envelope',        c:'#EA4335'},
-  {n:'Drive',      u:'https://drive.google.com',            i:'fab fa-google-drive',   c:'#4285F4'},
-  {n:'Calendario', u:'https://calendar.google.com',         i:'fa fa-calendar-days',   c:'#1A73E8'},
-  {n:'Teams',      u:'https://teams.microsoft.com',         i:'fab fa-microsoft',      c:'#6264A7'},
-  {n:'Outlook',    u:'https://outlook.office.com/mail/',    i:'fa fa-inbox',           c:'#0078D4'},
-  {n:'Meet',       u:'https://meet.google.com',             i:'fa fa-video',           c:'#00AC47'},
-  {n:'Firebase',   u:'https://console.firebase.google.com', i:'fa fa-fire',            c:'#FFCA28'},
-  {n:'Maps',       u:'https://maps.google.com',             i:'fa fa-map-location-dot',c:'#34A853'},
-  {n:'YouTube',    u:'https://youtube.com',                 i:'fab fa-youtube',        c:'#FF0000'}
+  {n:'WhatsApp', u:'https://web.whatsapp.com', pkg:'com.whatsapp',
+   i:'fab fa-whatsapp', c:'#25D366'}
 ];
+
+// Las más comunes, para elegirlas sin buscar el nombre de paquete.
+var APPS_CAT=[
+  {n:'WhatsApp',  pkg:'com.whatsapp',                 u:'https://web.whatsapp.com',        i:'fab fa-whatsapp',      c:'#25D366'},
+  {n:'Telegram',  pkg:'org.telegram.messenger',       u:'https://web.telegram.org',        i:'fab fa-telegram',      c:'#2AABEE'},
+  {n:'YouTube',   pkg:'com.google.android.youtube',   u:'https://youtube.com',             i:'fab fa-youtube',       c:'#FF0000'},
+  {n:'Netflix',   pkg:'com.netflix.mediaclient',      u:'https://netflix.com',             i:'fa fa-film',           c:'#E50914'},
+  {n:'Gmail',     pkg:'com.google.android.gm',        u:'https://mail.google.com',         i:'fa fa-envelope',       c:'#EA4335'},
+  {n:'Drive',     pkg:'com.google.android.apps.docs', u:'https://drive.google.com',        i:'fab fa-google-drive',  c:'#4285F4'},
+  {n:'Calendario',pkg:'com.google.android.calendar',  u:'https://calendar.google.com',     i:'fa fa-calendar-days',  c:'#1A73E8'},
+  {n:'Teams',     pkg:'com.microsoft.teams',          u:'https://teams.microsoft.com',     i:'fab fa-microsoft',     c:'#6264A7'},
+  {n:'Outlook',   pkg:'com.microsoft.office.outlook', u:'https://outlook.office.com/mail/',i:'fa fa-inbox',          c:'#0078D4'},
+  {n:'Meet',      pkg:'com.google.android.apps.meetings',u:'https://meet.google.com',      i:'fa fa-video',          c:'#00AC47'},
+  {n:'Maps',      pkg:'com.google.android.apps.maps', u:'https://maps.google.com',         i:'fa fa-map-location-dot',c:'#34A853'},
+  {n:'Chrome',    pkg:'com.android.chrome',           u:'',                                i:'fab fa-chrome',        c:'#4285F4'},
+  {n:'Galería',   pkg:'com.google.android.apps.photos',u:'https://photos.google.com',      i:'fa fa-images',         c:'#FBBC04'},
+  {n:'Cámara',    pkg:'',  esq:'',                    u:'',                                i:'fa fa-camera',         c:'#8899BB'},
+  {n:'Firebase',  pkg:'',                             u:'https://console.firebase.google.com',i:'fa fa-fire',        c:'#FFCA28'},
+  {n:'Zoom',      pkg:'us.zoom.videomeetings',        u:'https://zoom.us',                 i:'fa fa-video',          c:'#2D8CFF'},
+  {n:'Instagram', pkg:'com.instagram.android',        u:'https://instagram.com',           i:'fab fa-instagram',     c:'#E1306C'},
+  {n:'Facebook',  pkg:'com.facebook.katana',          u:'https://facebook.com',            i:'fab fa-facebook',      c:'#1877F2'}
+];
+
+var APPS_ICONOS=['fa fa-play','fa fa-film','fa fa-tv','fa fa-music','fa fa-bolt',
+  'fa fa-building-columns','fa fa-cart-shopping','fa fa-camera','fa fa-folder',
+  'fa fa-gear','fa fa-globe','fa fa-arrow-up-right-from-square'];
+var APPS_COLORES=['#00D4FF','#FF6B35','#7B5EA7','#00FF88','#FFB800','#FF4488',
+  '#E50914','#25D366','#8899BB'];
+
+function appsEsAndroid(){ try{ return /Android/i.test(navigator.userAgent||''); }catch(e){ return false; } }
 
 function appsLeer(){
   try{
     var l=JSON.parse(localStorage.getItem(APPS_KEY)||'null');
     if(l&&l.length)return l;
   }catch(e){}
-  return APPS_DEF.map(function(a){return {n:a.n,u:a.u,i:a.i,c:a.c};});
+  return APPS_DEF.map(function(a){ var o={}; for(var k in a)o[k]=a[k]; return o; });
 }
 function appsGuardar(l){ try{ localStorage.setItem(APPS_KEY,JSON.stringify(l)); }catch(e){} }
 
-function waLeer(){ try{ return JSON.parse(localStorage.getItem(WA_KEY)||'{}')||{}; }catch(e){ return {}; } }
-function waGuardar(o){ try{ localStorage.setItem(WA_KEY,JSON.stringify(o)); }catch(e){} }
-
-// Deja solo dígitos y le pone el 57 de Colombia si hace falta.
-function waNumero(txt){
-  var s=String(txt||'').replace(/[^\d]/g,'');
-  if(!s)return '';
-  if(s.indexOf('57')===0&&s.length>=12)return s;
-  if(s.length===10)return '57'+s;
-  if(s.length===12&&s.indexOf('57')===0)return s;
-  return s;
+// ── Abrir ───────────────────────────────────────────────────────
+// En la tablet lanza la app instalada; si no está, cae a la web.
+// En el PC va derecho a la web, porque allá «intent://» no existe.
+function appsDestino(a){
+  if(!a)return '';
+  if(appsEsAndroid()){
+    if(a.esq)return a.esq;
+    if(a.pkg){
+      return 'intent://#Intent;package='+a.pkg+';S.em=1'+
+             (a.u?';S.browser_fallback_url='+encodeURIComponent(a.u):'')+';end';
+    }
+  }
+  return a.u||a.esq||'';
 }
-function waAbrir(num,msg){
-  var n=waNumero(num);
-  if(!n){ try{ T('Falta el número','Escribe el celular, ej: 3108864803','⚠️'); }catch(e){} return; }
-  var u='https://wa.me/'+n+(msg?('?text='+encodeURIComponent(msg)):'');
-  window.open(u,'_blank','noopener');
-  var w=waLeer();
-  w.ult=w.ult||[];
-  w.ult=[n].concat(w.ult.filter(function(x){return x!==n;})).slice(0,6);
-  waGuardar(w);
-  try{ appsPintarWA(); }catch(e){}
-}
-function waEnviar(){
-  var n=document.getElementById('wa-num'), m=document.getElementById('wa-msg');
-  waAbrir(n?n.value:'', m?m.value:'');
-}
-function waPonerNumero(n){
-  var e=document.getElementById('wa-num'); if(e){ e.value=n; e.focus(); }
+function appsLanzar(i){
+  var a=appsLeer()[i];
+  var d=appsDestino(a);
+  if(!d){
+    try{ T('Sin destino','A «'+(a?a.n:'')+'» le falta el paquete o la dirección','⚠️'); }catch(e){}
+    return;
+  }
+  try{ window.open(d,'_blank','noopener'); }catch(e){}
 }
 
-function appsAbrir(u){ try{ window.open(u,'_blank','noopener'); }catch(e){} }
+// ── Agregar ─────────────────────────────────────────────────────
+// Del enlace de Play Store sale el nombre de paquete:
+// https://play.google.com/store/apps/details?id=com.whatsapp  →  com.whatsapp
+function appsPaquete(txt){
+  var s=String(txt||'').trim();
+  var m=s.match(/[?&]id=([A-Za-z0-9_.]+)/);
+  if(m)return m[1];
+  if(/^[a-z][a-z0-9_]*(\.[a-z0-9_]+){1,6}$/i.test(s)&&!/^https?:/i.test(s))return s;
+  return '';
+}
 function appsAgregar(){
-  var n=prompt('¿Cómo se llama el acceso?\n(ej: Mercado Libre, Banco, Portal del cliente)');
-  if(!n)return;
-  var u=prompt('Pega la dirección web completa:\n(ej: https://www.mercadolibre.com.co)');
-  if(!u)return;
-  if(!/^https?:\/\//i.test(u))u='https://'+u;
-  var l=appsLeer();
-  l.push({n:n.trim().slice(0,18), u:u.trim(), i:'fa fa-arrow-up-right-from-square', c:'#00D4FF'});
-  appsGuardar(l); appsPintar();
-  try{ T('Acceso agregado',n,'🔗'); }catch(e){}
+  var nombres=APPS_CAT.map(function(a,i){return (i+1)+'. '+a.n;}).join('\n');
+  var r=prompt(
+    'AGREGAR UN ACCESO\n\n'+
+    'Escribe el NÚMERO de una de la lista,\n'+
+    'o pega el ENLACE DE PLAY STORE de la app,\n'+
+    'o pega una DIRECCIÓN WEB.\n\n'+nombres+'\n\n'+
+    '(Para una app que no está en Play Store, como Hidra, escribe su\n'+
+    'nombre de paquete: Ajustes → Aplicaciones → la app → Información)','');
+  if(!r)return;
+  r=String(r).trim();
+  var nuevo=null;
+  var num=parseInt(r,10);
+  if(String(num)===r && APPS_CAT[num-1]){
+    var c=APPS_CAT[num-1];
+    nuevo={n:c.n,u:c.u,pkg:c.pkg,esq:c.esq||'',i:c.i,c:c.c};
+  }else{
+    var pkg=appsPaquete(r);
+    var nombre=prompt('¿Cómo quieres que se llame el botón?',
+      pkg?pkg.split('.').pop():'Mi acceso');
+    if(!nombre)return;
+    if(pkg){
+      var web=prompt('Si la app tiene página web, pégala aquí\n'+
+                     '(para abrirla desde el PC). Puedes dejarlo vacío.','');
+      nuevo={n:nombre.trim().slice(0,16),pkg:pkg,u:(web||'').trim(),esq:'',
+             i:APPS_ICONOS[Math.floor(Math.random()*APPS_ICONOS.length)],
+             c:APPS_COLORES[Math.floor(Math.random()*APPS_COLORES.length)]};
+    }else{
+      var u=r;
+      if(!/^https?:\/\//i.test(u))u='https://'+u;
+      nuevo={n:nombre.trim().slice(0,16),pkg:'',u:u,esq:'',
+             i:'fa fa-globe',
+             c:APPS_COLORES[Math.floor(Math.random()*APPS_COLORES.length)]};
+    }
+  }
+  if(!nuevo)return;
+  var l=appsLeer(); l.push(nuevo); appsGuardar(l); appsPintar();
+  try{ T('Acceso agregado',nuevo.n,'🔗'); }catch(e){}
 }
 function appsQuitar(i){
   var l=appsLeer();
@@ -16013,51 +16139,52 @@ function appsQuitar(i){
   if(!confirm('¿Quitar «'+l[i].n+'» del muelle?'))return;
   l.splice(i,1); appsGuardar(l); appsPintar();
 }
+function appsMover(i,paso){
+  var l=appsLeer(), j=i+paso;
+  if(!l[i]||!l[j])return;
+  var t=l[i]; l[i]=l[j]; l[j]=t;
+  appsGuardar(l); appsPintar();
+}
 function appsRestaurar(){
-  if(!confirm('Vuelve a dejar los accesos de fábrica. Los que agregaste se pierden.\n\n¿Seguir?'))return;
+  if(!confirm('Vuelve a dejar solo WhatsApp. Los accesos que agregaste se pierden.\n\n¿Seguir?'))return;
   try{ localStorage.removeItem(APPS_KEY); }catch(e){}
   appsPintar();
 }
 var APPS_EDIT=false;
-function appsEditar(){
-  APPS_EDIT=!APPS_EDIT;
-  appsPintar();
-}
+function appsEditar(){ APPS_EDIT=!APPS_EDIT; appsPintar(); }
 
-// ── El HTML ─────────────────────────────────────────────────────
+// ── Pintar ──────────────────────────────────────────────────────
 function appsCSS(){
   if(document.getElementById('apps-css'))return;
   var s=document.createElement('style'); s.id='apps-css';
   s.textContent=
-  '#ap-dock{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:9px}'+
-  '.ap-t{position:relative;display:flex;flex-direction:column;align-items:center;gap:7px;'+
-  'padding:13px 6px 11px;border-radius:14px;cursor:pointer;background:var(--bg4);'+
-  'border:1px solid var(--bd);transition:transform .16s,border-color .16s,background .16s}'+
+  '#ap-dock{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px}'+
+  '.ap-t{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;'+
+  'padding:14px 6px 12px;border-radius:16px;cursor:pointer;background:var(--bg4);'+
+  'border:1px solid var(--bd);transition:transform .16s,border-color .16s,background .16s;'+
+  '-webkit-tap-highlight-color:transparent}'+
   '.ap-t:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.18);'+
   'background:rgba(255,255,255,.045)}'+
-  '.ap-t .ic{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;'+
-  'justify-content:center;font-size:17px;transition:transform .16s}'+
+  '.ap-t:active{transform:scale(.95)}'+
+  '.ap-t .ic{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;'+
+  'justify-content:center;font-size:19px;transition:transform .16s}'+
   '.ap-t:hover .ic{transform:scale(1.08)}'+
-  '.ap-t .nm{font-size:10px;color:var(--t2);text-align:center;line-height:1.2;'+
+  '.ap-t .nm{font-size:10.5px;color:var(--t2);text-align:center;line-height:1.2;'+
   'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}'+
-  '.ap-t .x{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;'+
-  'background:#FF4444;color:#fff;border:none;font-size:11px;cursor:pointer;display:none;'+
-  'align-items:center;justify-content:center;line-height:1}'+
-  '#ap-dock.edit .ap-t .x{display:flex}'+
+  '.ap-t .x{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;'+
+  'background:#FF4444;color:#fff;border:none;font-size:12px;cursor:pointer;display:none;'+
+  'align-items:center;justify-content:center;line-height:1;z-index:2}'+
+  '.ap-t .mv{position:absolute;bottom:-7px;width:22px;height:22px;border-radius:50%;'+
+  'background:#1b2433;color:#9fb0cc;border:1px solid var(--bd);font-size:10px;cursor:pointer;'+
+  'display:none;align-items:center;justify-content:center;line-height:1;z-index:2}'+
+  '.ap-t .mv.l{left:6px} .ap-t .mv.r{right:6px}'+
+  '#ap-dock.edit .ap-t .x,#ap-dock.edit .ap-t .mv{display:flex}'+
   '#ap-dock.edit .ap-t{animation:apwob .9s ease-in-out infinite}'+
   '@keyframes apwob{0%,100%{transform:rotate(-.7deg)}50%{transform:rotate(.7deg)}}'+
   '.ap-t.add{border-style:dashed;color:var(--t3)}'+
-  '.wa-chip{border:1px solid var(--bd);background:var(--bg4);color:var(--t2);font-size:10.5px;'+
-  'padding:5px 9px;border-radius:999px;cursor:pointer;transition:.14s;font-family:inherit;'+
-  'white-space:nowrap;display:inline-flex;align-items:center;gap:5px}'+
-  '.wa-chip:hover{border-color:#25D366;color:#25D366;background:rgba(37,211,102,.08)}'+
-  '.wa-in{width:100%;background:var(--bg4);border:1px solid var(--bd);border-radius:10px;'+
-  'padding:9px 11px;color:var(--t1,#e8eefb);font-size:12px;font-family:inherit;outline:none}'+
-  '.wa-in:focus{border-color:#25D366}'+
-  '.wa-go{width:100%;border:none;border-radius:10px;padding:10px;cursor:pointer;font-size:12px;'+
-  'font-weight:700;font-family:inherit;color:#04210f;'+
-  'background:linear-gradient(135deg,#25D366,#1ebe5a);transition:.15s}'+
-  '.wa-go:hover{filter:brightness(1.08);transform:translateY(-1px)}';
+  '#ap-tip{font-size:10.5px;color:var(--t3);line-height:1.55;margin-top:11px;'+
+  'padding-top:10px;border-top:1px dashed var(--bd)}'+
+  '#ap-tip b{color:var(--t2);font-weight:600}';
   document.head.appendChild(s);
 }
 
@@ -16067,8 +16194,11 @@ function appsPintar(){
   var l=appsLeer();
   d.className=APPS_EDIT?'edit':'';
   d.innerHTML=l.map(function(a,i){
-    return '<div class="ap-t" onclick="'+(APPS_EDIT?'':'appsAbrir(\''+a.u.replace(/'/g,"\\'")+'\')')+'" title="'+a.u+'">'+
-      '<button class="x" onclick="event.stopPropagation();appsQuitar('+i+')">&times;</button>'+
+    var tit=(a.pkg?('App: '+a.pkg):(a.u||''));
+    return '<div class="ap-t" '+(APPS_EDIT?'':'onclick="appsLanzar('+i+')"')+' title="'+tit+'">'+
+      '<button class="x"  onclick="event.stopPropagation();appsQuitar('+i+')">&times;</button>'+
+      '<button class="mv l" onclick="event.stopPropagation();appsMover('+i+',-1)">&lsaquo;</button>'+
+      '<button class="mv r" onclick="event.stopPropagation();appsMover('+i+',1)">&rsaquo;</button>'+
       '<div class="ic" style="background:'+a.c+'1f;color:'+a.c+'"><i class="'+a.i+'"></i></div>'+
       '<div class="nm">'+a.n+'</div></div>';
   }).join('')+
@@ -16077,122 +16207,46 @@ function appsPintar(){
     '<div class="nm">Agregar</div></div>';
 }
 
-function appsPintarWA(){
-  var c=document.getElementById('wa-chips');
-  if(!c)return;
-  var chips=[];
-  // Técnicos del directorio que tengan celular
-  try{
-    (typeof TECNICOS!=='undefined'?TECNICOS:[]).forEach(function(t){
-      if(!t||!t.telefono)return;
-      var n=waNumero(t.telefono); if(!n)return;
-      chips.push({t:(t.nombre||'').split(' ')[0], n:n, ico:'fa fa-user-gear'});
-    });
-  }catch(e){}
-  // Los últimos a los que les escribió
-  try{
-    (waLeer().ult||[]).forEach(function(n){
-      if(chips.some(function(x){return x.n===n;}))return;
-      chips.push({t:'+'+n, n:n, ico:'fa fa-clock-rotate-left'});
-    });
-  }catch(e){}
-  c.innerHTML = chips.length
-    ? chips.slice(0,10).map(function(x){
-        return '<button class="wa-chip" onclick="waPonerNumero(\''+x.n+'\')">'+
-               '<i class="'+x.ico+'" style="opacity:.6"></i>'+x.t+'</button>';
-      }).join('')
-    : '<span style="font-size:10.5px;color:var(--t3)">Los técnicos con celular guardado '+
-      'aparecen aquí como botones.</span>';
-}
-
 function appsMontar(){
   var v=document.getElementById('v-dash');
   if(!v||document.getElementById('ap-panel-apps'))return false;
   appsCSS();
-  // justo debajo de las 5 tarjetas de arriba
   var ancla=v.querySelector('.g4');
   var box=document.createElement('div');
   box.id='ap-panel-apps';
   box.style.cssText='margin-bottom:22px';
   box.innerHTML=
-  '<div class="g2" style="align-items:start">'+
-    '<div>'+
-      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'+
-        '<div class="sect" style="margin:0;flex:1">Mis apps</div>'+
-        '<button class="bs" style="font-size:10px;padding:5px 9px" onclick="appsEditar()">'+
-          '<i class="fa fa-pen"></i> Editar</button>'+
-        '<button class="bs" style="font-size:10px;padding:5px 9px" onclick="appsRestaurar()" '+
-          'title="Volver a los accesos de fábrica"><i class="fa fa-rotate-left"></i></button>'+
-      '</div>'+
-      '<div class="card"><div id="ap-dock"></div></div>'+
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'+
+      '<div class="sect" style="margin:0;flex:1">Mis apps</div>'+
+      '<button class="bs" style="font-size:10px;padding:5px 9px" onclick="appsEditar()">'+
+        '<i class="fa fa-pen"></i> Editar</button>'+
+      '<button class="bs" style="font-size:10px;padding:5px 9px" onclick="appsRestaurar()" '+
+        'title="Dejar solo WhatsApp"><i class="fa fa-rotate-left"></i></button>'+
     '</div>'+
-    '<div>'+
-      '<div class="sect" style="margin-bottom:10px">'+
-        '<i class="fab fa-whatsapp" style="color:#25D366;margin-right:6px"></i>WhatsApp rápido</div>'+
-      '<div class="card">'+
-        '<div style="font-size:10.5px;color:var(--t3);line-height:1.5;margin-bottom:10px">'+
-          'Escríbele a un número <b style="color:var(--t2)">sin guardarlo</b> en los contactos. '+
-          'Abre el chat listo para enviar.</div>'+
-        '<div id="wa-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>'+
-        '<input class="wa-in" id="wa-num" type="tel" inputmode="numeric" '+
-          'placeholder="Celular — ej: 310 886 4803" style="margin-bottom:8px"/>'+
-        '<textarea class="wa-in" id="wa-msg" rows="2" style="margin-bottom:10px;resize:vertical" '+
-          'placeholder="Mensaje (opcional)"></textarea>'+
-        '<button class="wa-go" onclick="waEnviar()">'+
-          '<i class="fab fa-whatsapp"></i> &nbsp;Abrir el chat</button>'+
-        '<div style="display:flex;gap:6px;margin-top:9px">'+
-          '<button class="wa-chip" style="flex:1;justify-content:center" '+
-            'onclick="appsAbrir(\'https://web.whatsapp.com\')">'+
-            '<i class="fab fa-whatsapp"></i> WhatsApp Web</button>'+
-          '<button class="wa-chip" style="flex:1;justify-content:center" '+
-            'onclick="waPlantillas()"><i class="fa fa-comment-dots"></i> Plantillas</button>'+
-        '</div>'+
+    '<div class="card">'+
+      '<div id="ap-dock"></div>'+
+      '<div id="ap-tip">'+
+        '<b>Para verla en un recuadro mientras trabajas:</b> ninguna app '+
+        '(Hidra, Netflix, YouTube, WhatsApp) se deja meter dentro de otra — todas lo '+
+        'bloquean. Lo que sí funciona es la <b>pantalla dividida</b> de la tablet: '+
+        'toca el botón de aquí para abrirla, mantén pulsado el botón de recientes '+
+        'y elige dividir. Queda el video a un lado y EM Suite al otro.'+
       '</div>'+
-    '</div>'+
-  '</div>';
+    '</div>';
   if(ancla&&ancla.nextSibling)v.insertBefore(box,ancla.nextSibling);
   else v.insertBefore(box, v.children[1]||null);
   appsPintar();
-  appsPintarWA();
   return true;
 }
 
-// ── Plantillas de mensaje, para no escribir lo mismo cada vez ───
-var WA_PLANT=[
-  {t:'Saludo comercial', m:'Buen día, le saluda el Ing. Edisson Macías de DELTHAC1 Seguridad. '+
-     'Quedo atento a cualquier inquietud sobre la cotización.'},
-  {t:'Confirmar visita', m:'Buen día, le confirmo la visita técnica. ¿Le queda bien la hora acordada?'},
-  {t:'Envío de cotización', m:'Buen día, le comparto la cotización solicitada. Quedo atento a sus comentarios.'},
-  {t:'Seguimiento', m:'Buen día, ¿tuvo oportunidad de revisar la propuesta? Quedo atento.'},
-  {t:'Soporte ATH', m:'Buen día, le escribo de la Academia Técnica del Hogar. ¿En qué le puedo ayudar?'}
-];
-function waPlantillas(){
-  var o=waLeer();
-  var lista=(o.plantillas&&o.plantillas.length)?o.plantillas:WA_PLANT;
-  var txt='Elige una plantilla escribiendo su número:\n\n'+
-    lista.map(function(p,i){return (i+1)+'. '+p.t;}).join('\n')+
-    '\n\n(deja vacío para cancelar)';
-  var r=prompt(txt,'1');
-  if(!r)return;
-  var p=lista[parseInt(r,10)-1];
-  if(!p)return;
-  var e=document.getElementById('wa-msg');
-  if(e){ e.value=p.m; e.focus(); }
-}
-
-// ── Montarlo en cuanto el escritorio exista ─────────────────────
 (function(){
   var n=0;
   (function mirar(){
     try{
-      if(document.getElementById('v-dash')){
-        if(appsMontar()){
-          // los técnicos pueden cargarse después
-          setTimeout(appsPintarWA,2500);
-          setTimeout(appsPintarWA,7000);
-          return;
-        }
-      }
+      // si quedó el panel viejo de WhatsApp rápido, fuera
+      var viejo=document.getElementById('ap-panel-apps');
+      if(viejo&&viejo.querySelector('#wa-num')){ viejo.remove(); }
+      if(document.getElementById('v-dash')&&appsMontar())return;
     }catch(e){}
     if(++n<70)setTimeout(mirar, n<15?250:1200);
   })();
