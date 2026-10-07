@@ -13440,7 +13440,7 @@ window.addEventListener("appinstalled",function(){
      8. Mis 3 tarjetas y mis ingresos cargados de los extractos
      9. Cierre del dia: lo vencido se marca, se reagenda o se borra
     10. Lo marcado como hecho se queda hecho (ya no revive)
-    11. Muelle de apps y WhatsApp rapido en el escritorio
+    11. Escritorio reorganizado: jerarquia, panel lateral unico y vacios compactos
      ═════════════════════════════════════════════════════════ -->
 <script type="text/plain" id="em-parches-fuente">
 
@@ -15985,268 +15985,337 @@ cieEsperar(function(){ return typeof _events!=='undefined' && typeof apRender===
 
 
 // ═══════════════════════════════════════════════════════════════
-// MIS APPS — el muelle del escritorio
+// EL ESCRITORIO, ORDENADO
 //
-// LO QUE SE PUEDE Y LO QUE NO, SIN ADORNOS:
+// No se cambia ni un dato ni una función: todo lo que pinta el
+// escritorio sigue igual y con los mismos identificadores. Lo que
+// cambia es el ORDEN y el PESO visual de cada cosa.
 //
-// · ABRIR una app de la tablet: SÍ. Android deja que una página
-//   lance una app instalada si se le dice el «nombre de paquete»
-//   (com.whatsapp, com.netflix.mediaclient…). Eso es lo que hace
-//   cada botón de aquí.
+// QUÉ ESTABA DESORDENADO
+//   · Cinco tarjetas del mismo tamaño gritando a la vez: ninguna
+//     decía «esto es lo de hoy».
+//   · Los vacíos ocupaban más alto que el contenido («Sin metas»
+//     pesaba más que tres metas).
+//   · La columna derecha tenía tres cosas sueltas (reuniones,
+//     metas, alertas) flotando sin recuadro, como si no fueran del
+//     mismo bloque.
+//   · Todos los títulos tenían el mismo tamaño y color, así que no
+//     se veía qué era sección grande y qué era subtítulo.
 //
-// · VER una app DENTRO de un recuadro del escritorio: NO. Y no es
-//   un límite de esta app: ninguna app lo permite. WhatsApp,
-//   Netflix, Hidra, los bancos, YouTube — todas bloquean que las
-//   metan en un marco ajeno. Si lo intentáramos saldría un cuadro
-//   negro o un aviso de «no se puede mostrar».
-//   Lo que sí hace eso es la PANTALLA DIVIDIDA de la tablet: se
-//   mantiene pulsado el botón de recientes (o se desliza arriba y
-//   se sostiene), se elige la app, y queda media pantalla con el
-//   video y media con EM Suite. El botón de aquí la abre; la
-//   tablet la pone al lado.
-//
-// · SABER qué apps tiene instaladas: NO. Ningún navegador entrega
-//   esa lista (si la entregara, cualquier página sabría todo lo
-//   que usted usa). Por eso hay una lista de las más comunes ya
-//   lista para elegir, y para las demás basta pegar el enlace de
-//   Play Store: de ahí se saca el nombre de paquete solo.
+// QUÉ SE HIZO
+//   · La franja de contadores se vuelve baja y ancha: deja de
+//     competir con la agenda, que es lo que de verdad se mira.
+//   · La agenda queda como pieza principal del escritorio.
+//   · Reuniones + Metas + Alertas se juntan en UN panel con
+//     separadores finos: se lee como una sola columna, no como
+//     tres pedazos.
+//   · Dos niveles de título: el de sección en la tipografía con
+//     personalidad de la app (Fraunces), el de dentro de tarjeta
+//     pequeño y discreto.
+//   · Los vacíos se achican y dicen qué hacer, no solo que no hay
+//     nada.
+//   · En tablet y celular se apila solo: 5 → 3 → 2 columnas.
 // ═══════════════════════════════════════════════════════════════
 
-var APPS_VER='apps-2';
-var APPS_KEY='em_apps_v2';
+var ESTILO_VER='estilo-1';
 
-// De fábrica: solo WhatsApp. Lo demás lo pone él.
-var APPS_DEF=[
-  {n:'WhatsApp', u:'https://web.whatsapp.com', pkg:'com.whatsapp',
-   i:'fab fa-whatsapp', c:'#25D366'}
-];
+function estCSS(){
+  if(document.getElementById('est-css'))return;
+  var s=document.createElement('style'); s.id='est-css';
+  s.textContent=[
 
-// Las más comunes, para elegirlas sin buscar el nombre de paquete.
-var APPS_CAT=[
-  {n:'WhatsApp',  pkg:'com.whatsapp',                 u:'https://web.whatsapp.com',        i:'fab fa-whatsapp',      c:'#25D366'},
-  {n:'Telegram',  pkg:'org.telegram.messenger',       u:'https://web.telegram.org',        i:'fab fa-telegram',      c:'#2AABEE'},
-  {n:'YouTube',   pkg:'com.google.android.youtube',   u:'https://youtube.com',             i:'fab fa-youtube',       c:'#FF0000'},
-  {n:'Netflix',   pkg:'com.netflix.mediaclient',      u:'https://netflix.com',             i:'fa fa-film',           c:'#E50914'},
-  {n:'Gmail',     pkg:'com.google.android.gm',        u:'https://mail.google.com',         i:'fa fa-envelope',       c:'#EA4335'},
-  {n:'Drive',     pkg:'com.google.android.apps.docs', u:'https://drive.google.com',        i:'fab fa-google-drive',  c:'#4285F4'},
-  {n:'Calendario',pkg:'com.google.android.calendar',  u:'https://calendar.google.com',     i:'fa fa-calendar-days',  c:'#1A73E8'},
-  {n:'Teams',     pkg:'com.microsoft.teams',          u:'https://teams.microsoft.com',     i:'fab fa-microsoft',     c:'#6264A7'},
-  {n:'Outlook',   pkg:'com.microsoft.office.outlook', u:'https://outlook.office.com/mail/',i:'fa fa-inbox',          c:'#0078D4'},
-  {n:'Meet',      pkg:'com.google.android.apps.meetings',u:'https://meet.google.com',      i:'fa fa-video',          c:'#00AC47'},
-  {n:'Maps',      pkg:'com.google.android.apps.maps', u:'https://maps.google.com',         i:'fa fa-map-location-dot',c:'#34A853'},
-  {n:'Chrome',    pkg:'com.android.chrome',           u:'',                                i:'fab fa-chrome',        c:'#4285F4'},
-  {n:'Galería',   pkg:'com.google.android.apps.photos',u:'https://photos.google.com',      i:'fa fa-images',         c:'#FBBC04'},
-  {n:'Cámara',    pkg:'',  esq:'',                    u:'',                                i:'fa fa-camera',         c:'#8899BB'},
-  {n:'Firebase',  pkg:'',                             u:'https://console.firebase.google.com',i:'fa fa-fire',        c:'#FFCA28'},
-  {n:'Zoom',      pkg:'us.zoom.videomeetings',        u:'https://zoom.us',                 i:'fa fa-video',          c:'#2D8CFF'},
-  {n:'Instagram', pkg:'com.instagram.android',        u:'https://instagram.com',           i:'fab fa-instagram',     c:'#E1306C'},
-  {n:'Facebook',  pkg:'com.facebook.katana',          u:'https://facebook.com',            i:'fab fa-facebook',      c:'#1877F2'}
-];
+  // ── El saludo: una sola línea, con la fecha al otro extremo ──
+  '#v-dash .pg{display:flex;align-items:baseline;justify-content:space-between;',
+    'gap:18px;flex-wrap:wrap;margin:0 0 20px;padding-bottom:14px;',
+    'border-bottom:1px solid var(--bd)}',
+  '#v-dash .pgh1{font-size:30px;line-height:1.1;margin:0;letter-spacing:-.3px}',
+  '#v-dash .pgp{margin:0;font-size:11.5px;color:var(--t3);text-align:right;',
+    'font-variant-numeric:tabular-nums}',
 
-var APPS_ICONOS=['fa fa-play','fa fa-film','fa fa-tv','fa fa-music','fa fa-bolt',
-  'fa fa-building-columns','fa fa-cart-shopping','fa fa-camera','fa fa-folder',
-  'fa fa-gear','fa fa-globe','fa fa-arrow-up-right-from-square'];
-var APPS_COLORES=['#00D4FF','#FF6B35','#7B5EA7','#00FF88','#FFB800','#FF4488',
-  '#E50914','#25D366','#8899BB'];
+  // ── Títulos de sección: dos niveles claros ──
+  '#v-dash .est-h{display:flex;align-items:center;gap:10px;margin:0 0 11px}',
+  '#v-dash .est-h h2{font-family:var(--display);font-size:16px;font-weight:400;',
+    'color:var(--t1);margin:0;letter-spacing:.1px}',
+  '#v-dash .est-h .lin{flex:1;height:1px;background:var(--bd)}',
+  '#v-dash .est-h .n{font-family:var(--mono);font-size:11px;color:var(--t3);',
+    'background:var(--bg4);border:1px solid var(--bd);border-radius:999px;padding:2px 9px}',
+  '#v-dash .est-h .acc{display:flex;gap:6px;align-items:center}',
 
-function appsEsAndroid(){ try{ return /Android/i.test(navigator.userAgent||''); }catch(e){ return false; } }
+  // ── La franja de contadores: baja, ancha, sin competir ──
+  '#v-dash .g4{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:10px!important;',
+    'margin-bottom:26px!important}',
+  '#v-dash .sc{display:flex;align-items:center;gap:11px;padding:12px 13px!important;',
+    'background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);',
+    'position:relative;overflow:hidden;min-height:0}',
+  '#v-dash .sc:hover{border-color:var(--bd2);background:var(--bg4)}',
+  '#v-dash .sc::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;opacity:.6}',
+  '#v-dash .sc:nth-child(1)::before{background:var(--ok)}',
+  '#v-dash .sc:nth-child(2)::before{background:var(--ac)}',
+  '#v-dash .sc:nth-child(3)::before{background:#8899FF}',
+  '#v-dash .sc:nth-child(4)::before{background:var(--warn)}',
+  '#v-dash .sc:nth-child(5)::before{background:var(--ac3)}',
+  '#v-dash .sc .sci{width:32px;height:32px;margin:0!important;flex-shrink:0;font-size:14px;',
+    'border-radius:10px}',
+  '#v-dash .sc .est-v{min-width:0;flex:1}',
+  '#v-dash .sc .scn{font-size:21px;margin:0 0 1px!important;letter-spacing:-.5px;',
+    'font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+  '#v-dash .sc .scl{font-size:10.5px;color:var(--t2);line-height:1.2;white-space:nowrap;',
+    'overflow:hidden;text-overflow:ellipsis}',
+  '#v-dash .sc .scc{font-size:9.5px;margin-top:2px!important;color:var(--t3);line-height:1.2;',
+    'white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
 
-function appsLeer(){
-  try{
-    var l=JSON.parse(localStorage.getItem(APPS_KEY)||'null');
-    if(l&&l.length)return l;
-  }catch(e){}
-  return APPS_DEF.map(function(a){ var o={}; for(var k in a)o[k]=a[k]; return o; });
-}
-function appsGuardar(l){ try{ localStorage.setItem(APPS_KEY,JSON.stringify(l)); }catch(e){} }
+  // ── La agenda: la pieza principal ──
+  '#v-dash #dash-agenda{margin-bottom:26px!important}',
+  '#v-dash #dash-agenda-leyenda{gap:7px!important}',
 
-// ── Abrir ───────────────────────────────────────────────────────
-// En la tablet lanza la app instalada; si no está, cae a la web.
-// En el PC va derecho a la web, porque allá «intent://» no existe.
-function appsDestino(a){
-  if(!a)return '';
-  if(appsEsAndroid()){
-    if(a.esq)return a.esq;
-    if(a.pkg){
-      return 'intent://#Intent;package='+a.pkg+';S.em=1'+
-             (a.u?';S.browser_fallback_url='+encodeURIComponent(a.u):'')+';end';
-    }
-  }
-  return a.u||a.esq||'';
-}
-function appsLanzar(i){
-  var a=appsLeer()[i];
-  var d=appsDestino(a);
-  if(!d){
-    try{ T('Sin destino','A «'+(a?a.n:'')+'» le falta el paquete o la dirección','⚠️'); }catch(e){}
-    return;
-  }
-  try{ window.open(d,'_blank','noopener'); }catch(e){}
-}
+  // ── El panel de la derecha, ahora uno solo ──
+  '#v-dash .est-lat{background:var(--bg3);border:1px solid var(--bd);',
+    'border-radius:var(--r);overflow:hidden}',
+  '#v-dash .est-lat section{padding:13px 15px}',
+  '#v-dash .est-lat section + section{border-top:1px solid var(--bd)}',
+  '#v-dash .est-lat h3{font-size:11.5px;font-weight:600;color:var(--t2);margin:0 0 9px;',
+    'display:flex;align-items:center;gap:7px;letter-spacing:.1px}',
+  '#v-dash .est-lat h3 .pt{width:5px;height:5px;border-radius:50%;flex-shrink:0}',
+  '#v-dash .est-lat h3 .c{margin-left:auto;font-family:var(--mono);font-size:10px;',
+    'color:var(--t2);background:var(--bg4);border-radius:999px;padding:1px 7px;',
+    'font-weight:400;letter-spacing:0}',
+  // dentro del panel las tarjetas pierden su propio marco: ya están dentro de uno
+  '#v-dash .est-lat .meet-item{background:transparent;border:none;border-radius:var(--rs);',
+    'padding:8px 9px;margin-bottom:2px}',
+  '#v-dash .est-lat .meet-item:hover{background:var(--bg4)}',
+  '#v-dash .est-lat .meet-item:last-child{margin-bottom:0}',
+  // las metas y las alertas tampoco llevan marco propio aquí dentro
+  '#v-dash .est-lat .goal-card{background:transparent;border:none;padding:6px 9px 9px;',
+    'margin-bottom:4px!important}',
+  '#v-dash .est-lat .goal-card:hover{background:var(--bg4)}',
+  '#v-dash .est-lat .goal-card .gc-h{margin-bottom:8px}',
+  '#v-dash .est-lat .goal-card .gc-ico{width:30px;height:30px;font-size:13px}',
+  '#v-dash .est-lat #dash-alerts-list > div{margin-bottom:4px!important;padding:8px 10px!important}',
+  '#v-dash .est-lat #dash-alerts-list > div:last-child{margin-bottom:0!important}',
 
-// ── Agregar ─────────────────────────────────────────────────────
-// Del enlace de Play Store sale el nombre de paquete:
-// https://play.google.com/store/apps/details?id=com.whatsapp  →  com.whatsapp
-function appsPaquete(txt){
-  var s=String(txt||'').trim();
-  var m=s.match(/[?&]id=([A-Za-z0-9_.]+)/);
-  if(m)return m[1];
-  if(/^[a-z][a-z0-9_]*(\.[a-z0-9_]+){1,6}$/i.test(s)&&!/^https?:/i.test(s))return s;
-  return '';
-}
-function appsAgregar(){
-  var nombres=APPS_CAT.map(function(a,i){return (i+1)+'. '+a.n;}).join('\n');
-  var r=prompt(
-    'AGREGAR UN ACCESO\n\n'+
-    'Escribe el NÚMERO de una de la lista,\n'+
-    'o pega el ENLACE DE PLAY STORE de la app,\n'+
-    'o pega una DIRECCIÓN WEB.\n\n'+nombres+'\n\n'+
-    '(Para una app que no está en Play Store, como Hidra, escribe su\n'+
-    'nombre de paquete: Ajustes → Aplicaciones → la app → Información)','');
-  if(!r)return;
-  r=String(r).trim();
-  var nuevo=null;
-  var num=parseInt(r,10);
-  if(String(num)===r && APPS_CAT[num-1]){
-    var c=APPS_CAT[num-1];
-    nuevo={n:c.n,u:c.u,pkg:c.pkg,esq:c.esq||'',i:c.i,c:c.c};
-  }else{
-    var pkg=appsPaquete(r);
-    var nombre=prompt('¿Cómo quieres que se llame el botón?',
-      pkg?pkg.split('.').pop():'Mi acceso');
-    if(!nombre)return;
-    if(pkg){
-      var web=prompt('Si la app tiene página web, pégala aquí\n'+
-                     '(para abrirla desde el PC). Puedes dejarlo vacío.','');
-      nuevo={n:nombre.trim().slice(0,16),pkg:pkg,u:(web||'').trim(),esq:'',
-             i:APPS_ICONOS[Math.floor(Math.random()*APPS_ICONOS.length)],
-             c:APPS_COLORES[Math.floor(Math.random()*APPS_COLORES.length)]};
-    }else{
-      var u=r;
-      if(!/^https?:\/\//i.test(u))u='https://'+u;
-      nuevo={n:nombre.trim().slice(0,16),pkg:'',u:u,esq:'',
-             i:'fa fa-globe',
-             c:APPS_COLORES[Math.floor(Math.random()*APPS_COLORES.length)]};
-    }
-  }
-  if(!nuevo)return;
-  var l=appsLeer(); l.push(nuevo); appsGuardar(l); appsPintar();
-  try{ T('Acceso agregado',nuevo.n,'🔗'); }catch(e){}
-}
-function appsQuitar(i){
-  var l=appsLeer();
-  if(!l[i])return;
-  if(!confirm('¿Quitar «'+l[i].n+'» del muelle?'))return;
-  l.splice(i,1); appsGuardar(l); appsPintar();
-}
-function appsMover(i,paso){
-  var l=appsLeer(), j=i+paso;
-  if(!l[i]||!l[j])return;
-  var t=l[i]; l[i]=l[j]; l[j]=t;
-  appsGuardar(l); appsPintar();
-}
-function appsRestaurar(){
-  if(!confirm('Vuelve a dejar solo WhatsApp. Los accesos que agregaste se pierden.\n\n¿Seguir?'))return;
-  try{ localStorage.removeItem(APPS_KEY); }catch(e){}
-  appsPintar();
-}
-var APPS_EDIT=false;
-function appsEditar(){ APPS_EDIT=!APPS_EDIT; appsPintar(); }
+  // ── Las tres cifras de Finanzas ──
+  '#v-dash #dash-fin-sect{font-family:var(--display);font-size:16px;font-weight:400;',
+    'color:var(--t1);text-transform:none;letter-spacing:.1px;margin:0 0 11px;',
+    'display:flex;align-items:center;gap:9px}',
+  '#v-dash #dash-fin-sect::after{content:"";flex:1;height:1px;background:var(--bd)}',
+  '#v-dash .est-fin{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:15px}',
+  '#v-dash .est-fin > div{padding:11px 10px!important;border-radius:10px!important;',
+    'border:1px solid var(--bd);background:var(--bg4);transition:var(--tr)}',
+  '#v-dash .est-fin > div:hover{border-color:var(--bd2)}',
+  '#v-dash .est-fin > div > div:first-child{font-size:17px!important;letter-spacing:-.4px;',
+    'font-variant-numeric:tabular-nums}',
+  '#v-dash .est-fin > div > div:last-child{font-size:10px!important;color:var(--t3)!important;',
+    'margin-top:2px}',
 
-// ── Pintar ──────────────────────────────────────────────────────
-function appsCSS(){
-  if(document.getElementById('apps-css'))return;
-  var s=document.createElement('style'); s.id='apps-css';
-  s.textContent=
-  '#ap-dock{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px}'+
-  '.ap-t{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;'+
-  'padding:14px 6px 12px;border-radius:16px;cursor:pointer;background:var(--bg4);'+
-  'border:1px solid var(--bd);transition:transform .16s,border-color .16s,background .16s;'+
-  '-webkit-tap-highlight-color:transparent}'+
-  '.ap-t:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.18);'+
-  'background:rgba(255,255,255,.045)}'+
-  '.ap-t:active{transform:scale(.95)}'+
-  '.ap-t .ic{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;'+
-  'justify-content:center;font-size:19px;transition:transform .16s}'+
-  '.ap-t:hover .ic{transform:scale(1.08)}'+
-  '.ap-t .nm{font-size:10.5px;color:var(--t2);text-align:center;line-height:1.2;'+
-  'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}'+
-  '.ap-t .x{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;'+
-  'background:#FF4444;color:#fff;border:none;font-size:12px;cursor:pointer;display:none;'+
-  'align-items:center;justify-content:center;line-height:1;z-index:2}'+
-  '.ap-t .mv{position:absolute;bottom:-7px;width:22px;height:22px;border-radius:50%;'+
-  'background:#1b2433;color:#9fb0cc;border:1px solid var(--bd);font-size:10px;cursor:pointer;'+
-  'display:none;align-items:center;justify-content:center;line-height:1;z-index:2}'+
-  '.ap-t .mv.l{left:6px} .ap-t .mv.r{right:6px}'+
-  '#ap-dock.edit .ap-t .x,#ap-dock.edit .ap-t .mv{display:flex}'+
-  '#ap-dock.edit .ap-t{animation:apwob .9s ease-in-out infinite}'+
-  '@keyframes apwob{0%,100%{transform:rotate(-.7deg)}50%{transform:rotate(.7deg)}}'+
-  '.ap-t.add{border-style:dashed;color:var(--t3)}'+
-  '#ap-tip{font-size:10.5px;color:var(--t3);line-height:1.55;margin-top:11px;'+
-  'padding-top:10px;border-top:1px dashed var(--bd)}'+
-  '#ap-tip b{color:var(--t2);font-weight:600}';
+  // ── Los vacíos: chicos, para que no pesen más que el contenido ──
+  '#v-dash .est-vacio{padding:15px 12px!important;font-size:11.5px!important;line-height:1.55}',
+  '#v-dash .est-vacio i{font-size:16px!important;margin-bottom:5px!important;opacity:.35!important}',
+  '#v-dash .est-vacio span{font-size:10.5px!important}',
+
+  // ── Barras de gasto: sin datos no se muestra el hueco ──
+  '#v-dash .barchart{height:104px!important}',
+  '#v-dash .est-sin-barras{display:none!important}',
+
+  // ── Último bloque ──
+  '#v-dash .est-pie{margin-top:4px}',
+
+  // ── Tablet y celular ──
+  '@media(max-width:1180px){#v-dash .g4{grid-template-columns:repeat(3,minmax(0,1fr))!important}}',
+  // En pantalla angosta, lo que hay que atender va antes que las cifras
+  '@media(max-width:900px){#v-dash .g2{grid-template-columns:1fr!important}',
+    '#v-dash .g2 > div:nth-child(2){order:-1;margin-bottom:20px}',
+    '#v-dash .pgh1{font-size:25px}}',
+  '@media(max-width:620px){#v-dash .g4{grid-template-columns:repeat(2,minmax(0,1fr))!important}',
+    '#v-dash .pg{flex-direction:column;align-items:flex-start;gap:4px}',
+    '#v-dash .pgp{text-align:left}',
+    '#v-dash .est-fin{grid-template-columns:1fr}}'
+  ].join('');
   document.head.appendChild(s);
 }
 
-function appsPintar(){
-  var d=document.getElementById('ap-dock');
-  if(!d)return;
-  var l=appsLeer();
-  d.className=APPS_EDIT?'edit':'';
-  d.innerHTML=l.map(function(a,i){
-    var tit=(a.pkg?('App: '+a.pkg):(a.u||''));
-    return '<div class="ap-t" '+(APPS_EDIT?'':'onclick="appsLanzar('+i+')"')+' title="'+tit+'">'+
-      '<button class="x"  onclick="event.stopPropagation();appsQuitar('+i+')">&times;</button>'+
-      '<button class="mv l" onclick="event.stopPropagation();appsMover('+i+',-1)">&lsaquo;</button>'+
-      '<button class="mv r" onclick="event.stopPropagation();appsMover('+i+',1)">&rsaquo;</button>'+
-      '<div class="ic" style="background:'+a.c+'1f;color:'+a.c+'"><i class="'+a.i+'"></i></div>'+
-      '<div class="nm">'+a.n+'</div></div>';
-  }).join('')+
-  '<div class="ap-t add" onclick="appsAgregar()">'+
-    '<div class="ic" style="background:rgba(255,255,255,.04)"><i class="fa fa-plus"></i></div>'+
-    '<div class="nm">Agregar</div></div>';
+// Un encabezado de sección con el mismo molde en todo el escritorio
+function estTitulo(texto, acciones){
+  var d=document.createElement('div');
+  d.className='est-h';
+  d.innerHTML='<h2>'+texto+'</h2><div class="lin"></div>';
+  if(acciones){ var a=document.createElement('div'); a.className='acc'; a.appendChild(acciones); d.appendChild(a); }
+  return d;
 }
 
-function appsMontar(){
+// Color del punto de cada apartado del panel lateral
+function estPunto(c){ return '<span class="pt" style="background:'+c+'"></span>'; }
+
+function estArmar(){
   var v=document.getElementById('v-dash');
-  if(!v||document.getElementById('ap-panel-apps'))return false;
-  appsCSS();
-  var ancla=v.querySelector('.g4');
-  var box=document.createElement('div');
-  box.id='ap-panel-apps';
-  box.style.cssText='margin-bottom:22px';
-  box.innerHTML=
-    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'+
-      '<div class="sect" style="margin:0;flex:1">Mis apps</div>'+
-      '<button class="bs" style="font-size:10px;padding:5px 9px" onclick="appsEditar()">'+
-        '<i class="fa fa-pen"></i> Editar</button>'+
-      '<button class="bs" style="font-size:10px;padding:5px 9px" onclick="appsRestaurar()" '+
-        'title="Dejar solo WhatsApp"><i class="fa fa-rotate-left"></i></button>'+
-    '</div>'+
-    '<div class="card">'+
-      '<div id="ap-dock"></div>'+
-      '<div id="ap-tip">'+
-        '<b>Para verla en un recuadro mientras trabajas:</b> ninguna app '+
-        '(Hidra, Netflix, YouTube, WhatsApp) se deja meter dentro de otra — todas lo '+
-        'bloquean. Lo que sí funciona es la <b>pantalla dividida</b> de la tablet: '+
-        'toca el botón de aquí para abrirla, mantén pulsado el botón de recientes '+
-        'y elige dividir. Queda el video a un lado y EM Suite al otro.'+
-      '</div>'+
-    '</div>';
-  if(ancla&&ancla.nextSibling)v.insertBefore(box,ancla.nextSibling);
-  else v.insertBefore(box, v.children[1]||null);
-  appsPintar();
+  if(!v||v.getAttribute('data-est')===ESTILO_VER)return false;
+  var g4=v.querySelector('.g4');
+  if(!g4)return false;
+  estCSS();
+
+  // ── 1. Franja de contadores con su título ──
+  if(!v.querySelector('.est-h')){
+    g4.parentNode.insertBefore(estTitulo('En números'), g4);
+  }
+
+  // ── 2. La agenda: cambiar su encabezado por el molde nuevo ──
+  var ag=document.getElementById('dash-agenda');
+  if(ag){
+    var cab=ag.previousElementSibling;
+    if(cab&&cab.querySelector&&cab.querySelector('.sect')){
+      var leyenda=cab.querySelector('#dash-agenda-leyenda');
+      var btn=cab.querySelector('button');
+      var h=estTitulo('Agenda');
+      var acc=document.createElement('div'); acc.className='acc';
+      if(leyenda)acc.appendChild(leyenda);
+      if(btn)acc.appendChild(btn);
+      h.appendChild(acc);
+      cab.parentNode.replaceChild(h,cab);
+    }
+  }
+
+  // ── 3. Finanzas y el panel lateral ──
+  var g2=v.querySelector('.g2');
+  if(g2&&g2.children.length>=2){
+    var izq=g2.children[0], der=g2.children[1];
+
+    // Finanzas: título nuevo y las tres cifras en rejilla
+    if(!izq.getAttribute('data-est')){
+      izq.setAttribute('data-est','1');
+      var cardFin=izq.querySelector('.card');
+      if(cardFin){
+        var fila=cardFin.querySelector('div[style*="display:flex"]');
+        if(fila){ fila.className='est-fin'; fila.removeAttribute('style'); }
+        var sub=cardFin.querySelector('.sect');
+        if(sub){ sub.style.fontSize='10.5px'; sub.style.marginBottom='9px'; }
+      }
+    }
+
+    // Panel lateral: las tres secciones sueltas, dentro de un recuadro
+    if(!der.querySelector('.est-lat')){
+      var meets=document.getElementById('dash-meets');
+      var goals=document.getElementById('dash-goals');
+      var alerts=document.getElementById('dash-alerts-list');
+      if(meets&&goals&&alerts){
+        var caja=document.createElement('div'); caja.className='est-lat';
+        var sec=function(titulo,color,nodo,idCont){
+          var s=document.createElement('section');
+          var h=document.createElement('h3');
+          h.innerHTML=estPunto(color)+titulo+'<span class="c" id="'+idCont+'"></span>';
+          s.appendChild(h); s.appendChild(nodo);
+          return s;
+        };
+        caja.appendChild(sec('Reuniones','#8899FF',meets,'est-c-meets'));
+        caja.appendChild(sec('Metas','#FFB800',goals,'est-c-goals'));
+        caja.appendChild(sec('Alertas','#FF6B6B',alerts,'est-c-alerts'));
+        der.innerHTML='';
+        der.appendChild(estTitulo('Lo que viene'));
+        der.appendChild(caja);
+      }
+    }
+  }
+
+  // ── 4. Próximo viaje: pasa a la columna izquierda, debajo de
+  //      Finanzas, para que las dos columnas queden parejas.
+  var trip=document.getElementById('dash-trip');
+  if(trip&&g2&&g2.children.length>=2&&!document.getElementById('est-viaje')){
+    var ttl=trip.previousElementSibling;
+    var caja2=document.createElement('div');
+    caja2.id='est-viaje'; caja2.style.marginTop='20px';
+    caja2.appendChild(estTitulo('Próximo viaje'));
+    caja2.appendChild(trip);
+    if(ttl&&ttl.classList&&ttl.classList.contains('sect'))ttl.remove();
+    g2.children[0].appendChild(caja2);
+  }
+
+  estEnvolver();
+  v.setAttribute('data-est',ESTILO_VER);
+  estVacios(); estBarras(); estContar();
   return true;
+}
+
+// Cada tarjeta de contador: el número y sus letras en una columna,
+// al lado del icono. Antes eran cuatro hermanos sueltos y en fila
+// quedaban uno al lado del otro.
+function estEnvolver(){
+  var scs=document.querySelectorAll('#v-dash .g4 .sc');
+  for(var i=0;i<scs.length;i++){
+    var sc=scs[i];
+    if(sc.querySelector('.est-v'))continue;
+    var caja=document.createElement('div'); caja.className='est-v';
+    var hijos=[], c=sc.firstElementChild;
+    while(c){ if(!c.classList.contains('sci'))hijos.push(c); c=c.nextElementSibling; }
+    hijos.forEach(function(h){ caja.appendChild(h); });
+    sc.appendChild(caja);
+  }
+}
+
+// Marcar los estados vacíos de los bloques del escritorio, para
+// que el CSS los achique sin tocar las cifras de Finanzas.
+function estVacios(){
+  ['dash-agenda','dash-meets','dash-goals','dash-alerts-list','dash-trip',
+   'budget-panel','donut-legend'].forEach(function(id){
+    var e=document.getElementById(id); if(!e)return;
+    var d=e.children[0];
+    if(d&&e.children.length===1&&/text-align:\s*center/.test(d.getAttribute('style')||''))
+      d.classList.add('est-vacio');
+  });
+}
+
+// Un gráfico sin datos es un hueco: mejor no mostrarlo.
+function estBarras(){
+  var b=document.getElementById('dash-bars');
+  if(!b)return;
+  var uno=b.children[0];
+  var vacio=!b.children.length ||
+    (b.children.length===1 && /text-align:\s*center/.test(uno.getAttribute('style')||''));
+  b.classList.toggle('est-sin-barras',vacio);
+  var t=b.previousElementSibling;
+  if(t&&t.classList&&t.classList.contains('sect'))
+    t.classList.toggle('est-sin-barras',vacio);
+}
+
+// Los contadorcitos del panel lateral: solo salen si hay algo
+function estContar(){
+  var pon=function(id,n){
+    var e=document.getElementById(id);
+    if(!e)return;
+    e.textContent=n>0?n:'';
+    e.style.display=n>0?'':'none';
+  };
+  var reales=function(cont){
+    var e=document.getElementById(cont);
+    if(!e)return 0;
+    if(e.querySelector('[style*="text-align:center"]'))return 0;
+    return e.children.length;
+  };
+  pon('est-c-meets', reales('dash-meets'));
+  pon('est-c-goals', reales('dash-goals'));
+  pon('est-c-alerts',reales('dash-alerts-list'));
 }
 
 (function(){
   var n=0;
   (function mirar(){
     try{
-      // si quedó el panel viejo de WhatsApp rápido, fuera
+      // si quedó el muelle de apps de la versión anterior, fuera
       var viejo=document.getElementById('ap-panel-apps');
-      if(viejo&&viejo.querySelector('#wa-num')){ viejo.remove(); }
-      if(document.getElementById('v-dash')&&appsMontar())return;
+      if(viejo)viejo.remove();
+      var css=document.getElementById('apps-css');
+      if(css)css.remove();
+
+      if(document.getElementById('v-dash')&&estArmar()){
+        if(typeof renderDash==='function'){
+          var orig=renderDash;
+          renderDash=function(){
+            var r=orig.apply(this,arguments);
+            try{ estArmar(); estEnvolver(); estVacios(); estBarras(); estContar(); }catch(e){}
+            return r;
+          };
+        }
+        setTimeout(function(){estVacios();estBarras();estContar();},1200);
+        setTimeout(function(){estVacios();estBarras();estContar();},4000);
+        return;
+      }
     }catch(e){}
     if(++n<70)setTimeout(mirar, n<15?250:1200);
   })();
