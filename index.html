@@ -16025,9 +16025,32 @@ cieEsperar(function(){ return typeof _events!=='undefined' && typeof apRender===
 // interruptor suelto, el perfil pasa a «A mi medida».
 // ═══════════════════════════════════════════════════════════════
 
-var MOD_VER='mod-1';
-var MOD_KEY='em_modulos_v1';
-var MOD_PERFIL_KEY='em_perfil_v1';
+var MOD_VER='mod-2';
+
+// ── CADA EDICIÓN CON SU PROPIA GAVETA ───────────────────────────
+// Las dos ediciones se abren como archivo del disco, y el navegador
+// le da la MISMA gaveta a todos los archivos locales. Por eso abrir
+// la de estudiantes le cambiaba el menú a la personal: compartían
+// el mismo apunte de qué áreas están encendidas.
+// Ahora cada edición usa sus propias llaves. La personal se queda
+// con lo que ya hubiera guardado antes, para no perder nada; la de
+// estudiantes arranca limpia, como debe ser.
+var EM_EDICION = (typeof EM_PERFIL_DEFECTO==='string') ? EM_PERFIL_DEFECTO : 'profesional';
+function emLlave(base){ return base+'__'+EM_EDICION; }
+function emMigrar(base){
+  var n=emLlave(base);
+  try{
+    if(localStorage.getItem(n)!=null)return n;
+    if(EM_EDICION==='profesional'){
+      var v=localStorage.getItem(base);
+      if(v!=null)localStorage.setItem(n,v);
+    }
+  }catch(e){}
+  return n;
+}
+
+var MOD_KEY=emMigrar('em_modulos_v1');
+var MOD_PERFIL_KEY=emMigrar('em_perfil_v1');
 
 // El catálogo. 'fijo' = no se puede apagar (sin eso no hay app).
 var MOD_CAT=[
@@ -16076,7 +16099,7 @@ var MOD_PERFILES={
   profesional:['dash','agenda','cuadernos','reuniones','proyectos','apuntes','metas',
                'finanzas','hogar','viajes','porteria','control','herram','integra',
                'planos','lienzo'],
-  estudiante :['dash','agenda','cuadernos','materias','notas','proyectos','apuntes',
+  estudiante :['dash','agenda','cuadernos','materias','notas','apuntes',
                'metas','lienzo']
 };
 
@@ -16453,27 +16476,24 @@ if(typeof window!=='undefined'){
 // CUADERNOS
 //
 // Un estante de cuadernos con portada, y adentro páginas donde se
-// puede escribir con teclado Y dibujar encima con el dedo o el
-// lápiz óptico, en la misma hoja.
+// escribe con teclado Y se dibuja encima, en la misma hoja.
 //
 // CÓMO SE GUARDA, Y POR QUÉ ASÍ
 // Los trazos NO se guardan como imagen: se guarda la lista de
 // puntos de cada trazo, con las coordenadas de 0 a 1 en vez de en
-// píxeles. Dos razones:
-//   · Pesa una fracción de lo que pesaría un PNG. Una página escrita
-//     a mano ocupa unos pocos kilobytes.
-//   · Al ser relativo, la misma página se ve igual en el celular,
-//     en la tablet y en el PC, y se puede exportar a PDF nítida.
+// píxeles. Así una página escrita a mano pesa unos pocos kilobytes
+// en vez de un megabyte, y se ve igual en el celular, en la tablet
+// y en el PC. Lo mismo vale para la regla, las flechas y las
+// pegatinas: son datos, no dibujos.
 //
-// Y van en su PROPIA gaveta del navegador (em_cuadernos_v1), fuera
-// de lo que se sincroniza con la nube. Si fueran con el resto, un
-// par de cuadernos reventarían el límite de 1 MB por documento de
-// Firestore y se rompería la sincronización de TODO lo demás. Para
-// pasarlos a otro equipo está Exportar / Importar.
+// Y va en su propia gaveta, fuera de lo que se sincroniza con la
+// nube: dos cuadernos en imagen reventarían el límite de 1 MB por
+// documento de Firestore y romperían la sincronización de todo lo
+// demás. Para pasarlos a otro equipo está Exportar / Importar.
 // ═══════════════════════════════════════════════════════════════
 
-var CUA_VER='cuadernos-1';
-var CUA_KEY='em_cuadernos_v1';
+var CUA_VER='cuadernos-2';
+var CUA_KEY=emMigrar('em_cuadernos_v1');
 
 var CUA_PORTADAS=[
   {id:'indigo', n:'Índigo',   a:'#4338ca', b:'#1e1b4b'},
@@ -16496,9 +16516,26 @@ var CUA_TRAMAS=[
   {id:'malla',  n:'Malla'},
   {id:'diag',   n:'Diagonal'}
 ];
-var CUA_ICONOS=['📘','📗','📙','📕','📓','📔','🧮','🧪','⚗️','🔬','🧬','📐','📏','🧲',
-  '⚡','🔌','💡','🖥️','⌨️','🧠','🫀','🦴','🌎','🗺️','🏛️','⚖️','💼','📊','📈','🎨',
-  '🎵','🎬','⚽','🏃','🍳','🌱','🐾','✍️','📝','🔭'];
+
+// ── Iconos y pegatinas, por grupos ──────────────────────────────
+var CUA_GRUPOS=[
+  {n:'Estudio',  l:'📘 📗 📙 📕 📓 📔 📒 📚 📝 ✏️ 🖊️ 🖍️ 📐 📏 ✂️ 📎 🖇️ 📌 📍 🔖 🗂️ 📅 🗓️ ⏰ 🎓 🏫'},
+  {n:'Ciencia',  l:'🧮 🧪 ⚗️ 🔬 🔭 🧬 🧫 🦠 ⚛️ 🪐 🌡️ 🧲 ⚡ 💡 🔋 🔌 🖥️ ⌨️ 🖱️ 💾 📡 🛰️ 🤖 ⚙️ 🔧 🔩'},
+  {n:'Cuerpo',   l:'🧠 🫀 🫁 🦴 🦷 👁️ 👂 🩺 💊 💉 🩹 🧴 🧬 🫂'},
+  {n:'Mundo',    l:'🌎 🌍 🌏 🗺️ 🧭 🏛️ ⚖️ 🏺 🗿 ⛰️ 🌋 🏕️ 🌱 🌳 🍃 🌸 ☀️ 🌙 ⭐ ☁️ 🌧️ ❄️ 🔥 💧'},
+  {n:'Trabajo',  l:'💼 📊 📈 📉 💰 🧾 🏦 🏗️ 🧰 🪛 🪚 🧯 🚨 🛡️ 🔒 🔑 📞 ✉️ 📦 🚚 🏠 🏢'},
+  {n:'Arte',     l:'🎨 🖌️ 🎭 🎵 🎶 🎸 🎹 🥁 🎬 📷 📸 🎤 🕹️ ⚽ 🏀 🏃 🏊 🚴 🧘 🍳 ☕ 🍎'},
+  {n:'Marcas',   l:'✅ ❌ ❗ ❓ ⚠️ ⭐ 🌟 💯 🔥 👍 👎 👀 ✍️ 🤔 💭 💬 🗯️ ❤️ 💔 🎯 🏆 🥇 🔔 📢'},
+  {n:'Flechas',  l:'➡️ ⬅️ ⬆️ ⬇️ ↗️ ↘️ ↙️ ↖️ 🔄 🔁 ▶️ ⏸️ ⏹️ 🔀 ➕ ➖ ✖️ ➗ 🟰 ♾️'},
+  {n:'Figuras',  l:'🔴 🟠 🟡 🟢 🔵 🟣 🟤 ⚫ ⚪ 🟥 🟧 🟨 🟩 🟦 🟪 ⬛ ⬜ 🔶 🔷 🔺 🔻 ⏺️'},
+  {n:'Números',  l:'1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ 6️⃣ 7️⃣ 8️⃣ 9️⃣ 🔟 🅰️ 🅱️ 🆎 🆑 🆗 🆕 🆙 🔠'}
+];
+function cuaTodosIconos(){
+  var l=[];
+  CUA_GRUPOS.forEach(function(g){ g.l.split(' ').forEach(function(x){ if(x)l.push(x); }); });
+  return l;
+}
+
 var CUA_HOJAS=[
   {id:'rayada',  n:'Rayada'},
   {id:'cuadros', n:'Cuadriculada'},
@@ -16508,6 +16545,35 @@ var CUA_HOJAS=[
 ];
 var CUA_COLORES=['#1f2937','#1d4ed8','#dc2626','#15803d','#b45309','#7c3aed','#0891b2','#be185d'];
 var CUA_GROSORES=[{n:'Fino',w:1.6},{n:'Medio',w:3},{n:'Grueso',w:5.5}];
+
+// ── Las letras ──────────────────────────────────────────────────
+// Las de mano son las que se piden para un cuaderno. Coming Soon es
+// la de Kilonotes. Se traen de Google Fonts, igual que las demás de
+// la app, así que la primera vez hay que estar conectado.
+var CUA_FUENTES=[
+  {id:'coming',   n:'Coming Soon',   css:"'Coming Soon', cursive",        mano:true},
+  {id:'caveat',   n:'Caveat',        css:"'Caveat', cursive",             mano:true, esc:1.22},
+  {id:'patrick',  n:'Patrick Hand',  css:"'Patrick Hand', cursive",       mano:true},
+  {id:'arch',     n:'Architects',    css:"'Architects Daughter', cursive",mano:true},
+  {id:'indie',    n:'Indie Flower',  css:"'Indie Flower', cursive",       mano:true, esc:1.1},
+  {id:'shadows',  n:'Shadows',       css:"'Shadows Into Light', cursive", mano:true, esc:1.15},
+  {id:'gloria',   n:'Gloria',        css:"'Gloria Hallelujah', cursive",  mano:true, esc:.95},
+  {id:'sistema',  n:'Normal',        css:"var(--fm)"},
+  {id:'serif',    n:'Serif',         css:"Georgia, 'Times New Roman', serif"},
+  {id:'mono',     n:'Máquina',       css:"var(--mono)"}
+];
+function cuaFuente(id){
+  return CUA_FUENTES.filter(function(f){return f.id===id;})[0]||CUA_FUENTES[0];
+}
+function cuaCargarFuentes(){
+  if(document.getElementById('cua-fuentes'))return;
+  var l=document.createElement('link');
+  l.id='cua-fuentes'; l.rel='stylesheet';
+  l.href='https://fonts.googleapis.com/css2?family=Coming+Soon&family=Caveat:wght@400;700'+
+         '&family=Patrick+Hand&family=Architects+Daughter&family=Indie+Flower'+
+         '&family=Shadows+Into+Light&family=Gloria+Hallelujah&display=swap';
+  document.head.appendChild(l);
+}
 
 // ── La gaveta ───────────────────────────────────────────────────
 function cuaLeer(){
@@ -16533,17 +16599,20 @@ var CUA=cuaLeer();
 function cuaId(){ return 'cu'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function cuaLibro(id){ return (CUA.libros||[]).filter(function(l){return l.id===id;})[0]||null; }
 function cuaPaginaNueva(hoja){
-  return {id:cuaId(), hoja:hoja||'rayada', texto:'', tam:'m', trazos:[], ts:Date.now()};
+  return {id:cuaId(), hoja:hoja||'rayada', texto:'', tam:'m',
+          trazos:[], pegatinas:[], ts:Date.now()};
 }
-function cuaNuevoLibro(datos){
-  var l={ id:cuaId(), t:(datos&&datos.t)||'Cuaderno nuevo',
-          materia:(datos&&datos.materia)||'', profe:(datos&&datos.profe)||'',
-          portada:(datos&&datos.portada)||CUA_PORTADAS[0].id,
-          trama:(datos&&datos.trama)||'rayas',
-          icono:(datos&&datos.icono)||'📘',
-          hoja:(datos&&datos.hoja)||'rayada',
+function cuaNuevoLibro(d){
+  var l={ id:cuaId(), t:(d&&d.t)||'Cuaderno nuevo',
+          materia:(d&&d.materia)||'', profe:(d&&d.profe)||'',
+          portada:(d&&d.portada)||CUA_PORTADAS[0].id,
+          trama:(d&&d.trama)||'rayas',
+          icono:(d&&d.icono)||'📘',
+          hoja:(d&&d.hoja)||'rayada',
+          fuente:(d&&d.fuente)||'coming',
+          orient:(d&&d.orient)||'v',
           creado:Date.now(), ts:Date.now(),
-          paginas:[cuaPaginaNueva((datos&&datos.hoja)||'rayada')] };
+          paginas:[cuaPaginaNueva((d&&d.hoja)||'rayada')] };
   CUA.libros.unshift(l); cuaGuardar(true);
   return l;
 }
@@ -16551,6 +16620,7 @@ function cuaNuevoLibro(datos){
 // ── Estilos ─────────────────────────────────────────────────────
 function cuaCSS(){
   if(document.getElementById('cua-css'))return;
+  cuaCargarFuentes();
   var s=document.createElement('style'); s.id='cua-css';
   s.textContent=[
   // estante
@@ -16583,17 +16653,17 @@ function cuaCSS(){
   '#cua-abierto{display:none}',
   '#cua-abierto.on{display:block}',
   '#cua-estante-wrap.off{display:none}',
-  '#cua-barra{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;',
-    'padding-bottom:13px;border-bottom:1px solid var(--bd)}',
+  '#cua-barra{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;',
+    'padding-bottom:11px;border-bottom:1px solid var(--bd)}',
   '#cua-barra .tit{font-family:var(--display);font-size:17px;color:var(--t1);font-weight:400}',
   '#cua-barra .sp{flex:1}',
   '.cu-b{border:1px solid var(--bd);background:var(--bg3);color:var(--t2);font-family:inherit;',
     'font-size:11.5px;padding:7px 11px;border-radius:9px;cursor:pointer;transition:var(--tr);',
     'display:inline-flex;align-items:center;gap:6px;white-space:nowrap}',
   '.cu-b:hover{color:var(--t1);border-color:var(--bd2)}',
-  '.cu-b.on{background:var(--ac);color:#04121a;border-color:var(--ac);font-weight:600}',
+  '.cu-b.on{background:var(--ac);color:#fff;border-color:var(--ac);font-weight:600}',
   '.cu-b.sutil{background:transparent}',
-  '#cua-tools{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:12px}',
+  '#cua-tools{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:11px}',
   '.cu-sep{width:1px;height:22px;background:var(--bd)}',
   '.cu-col{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;',
     'transition:var(--tr)}',
@@ -16603,26 +16673,52 @@ function cuaCSS(){
   '.cu-gr.on{border-color:var(--ac);background:var(--bg4)}',
   '.cu-gr i{display:block;background:var(--t2);border-radius:99px}',
   '.cu-gr.on i{background:var(--ac)}',
+  '.cu-sel{background:var(--bg3);border:1px solid var(--bd);border-radius:9px;color:var(--t2);',
+    'font-family:inherit;font-size:11.5px;padding:7px 9px;cursor:pointer;outline:none}',
+  '.cu-sel:focus{border-color:var(--ac)}',
 
   // la hoja
-  '#cua-hoja-caja{display:flex;justify-content:center}',
-  // La hoja se ajusta al alto que queda libre, no al ancho: así cabe
-  // entera sin tener que rodar la pantalla para ver el pie.
-  '#cua-hoja{position:relative;height:calc(100vh - 272px);min-height:360px;',
+  '#cua-hoja-caja{display:flex;justify-content:center;align-items:flex-start;width:100%}',
+  '#cua-hoja{position:relative;flex:0 0 auto;height:calc(100vh - 248px);min-height:380px;',
     'aspect-ratio:1/1.414;max-width:100%;background:#fdfdf8;border-radius:5px;',
     'box-shadow:0 14px 40px rgba(0,0,0,.4);overflow:hidden}',
-  '@media(max-width:820px){#cua-hoja{height:auto;width:100%}}',
+  // Acostada: la hoja se vuelve ancha y aprovecha la pantalla.
+  '#cua-hoja.ancha{aspect-ratio:1.414/1}',
   '#cua-papel{position:absolute;inset:0}',
   '#cua-texto{position:absolute;inset:0;padding:46px 44px;font-size:15px;line-height:30px;',
-    'color:#1f2937;font-family:var(--fm);white-space:pre-wrap;word-break:break-word;',
-    'outline:none;overflow:hidden;background:transparent;border:none;resize:none;width:100%;',
-    'height:100%;display:block}',
+    'color:#1f2937;white-space:pre-wrap;word-break:break-word;outline:none;overflow:hidden;',
+    'background:transparent;border:none;resize:none;width:100%;height:100%;display:block}',
   '#cua-texto.s{font-size:13px;line-height:26px}',
   '#cua-texto.l{font-size:18px;line-height:34px}',
+  '#cua-pegas{position:absolute;inset:0;pointer-events:none}',
+  '.cu-pega{position:absolute;transform:translate(-50%,-50%);cursor:grab;user-select:none;',
+    'line-height:1;pointer-events:auto;touch-action:none}',
+  '.cu-pega.mov{cursor:grabbing;opacity:.75}',
+  '#cua-hoja.modo-dibujo .cu-pega{pointer-events:none}',
   '#cua-lienzo{position:absolute;inset:0;touch-action:none;cursor:crosshair}',
   '#cua-hoja.modo-texto #cua-lienzo{pointer-events:none}',
   '#cua-hoja.modo-dibujo #cua-texto{pointer-events:none}',
-  '#cua-pies{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px}',
+  '#cua-pies{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px}',
+
+  // pantalla completa
+  '#v-cuadernos.lleno{position:fixed;inset:0;z-index:9000;background:var(--bg);',
+    'padding:10px 14px 14px;overflow:auto;margin:0;max-width:none}',
+  '#v-cuadernos.lleno #cua-estante-wrap{display:none}',
+  '#v-cuadernos.lleno #cua-hoja{height:calc(100vh - 168px)}',
+  '#v-cuadernos.lleno #cua-barra{margin-bottom:9px;padding-bottom:8px}',
+
+  // paleta de pegatinas
+  '#cua-paleta{display:none;border:1px solid var(--bd);background:var(--bg3);border-radius:var(--r);',
+    'padding:11px 12px;margin-bottom:11px}',
+  '#cua-paleta.on{display:block}',
+  '#cua-paleta .gr{font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;',
+    'margin:9px 0 5px}',
+  '#cua-paleta .gr:first-child{margin-top:0}',
+  '#cua-paleta .fila{display:flex;gap:5px;flex-wrap:wrap}',
+  '#cua-paleta .pg{width:30px;height:30px;border-radius:8px;border:1px solid var(--bd);',
+    'background:var(--bg4);cursor:pointer;font-size:16px;display:flex;align-items:center;',
+    'justify-content:center;transition:var(--tr)}',
+  '#cua-paleta .pg:hover{border-color:var(--ac);transform:scale(1.12)}',
 
   // editor de portada
   '#cup-bg{position:fixed;inset:0;background:rgba(2,6,14,.85);backdrop-filter:blur(7px);',
@@ -16641,15 +16737,15 @@ function cuaCSS(){
   '.cup-c.on{border-color:var(--t1)}',
   '.cup-i{width:34px;height:34px;border-radius:9px;border:1px solid var(--bd);background:var(--bg4);',
     'cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center}',
-  '.cup-i.on{border-color:var(--ac);background:var(--bg4)}',
+  '.cup-i.on{border-color:var(--ac);background:var(--bg3)}',
   '#cup-prev{display:flex;justify-content:center}',
   '#cup-prev .cu-tapa{width:168px}',
+  '@media(max-width:860px){#cua-hoja{height:auto;width:100%}}',
   '@media(max-width:760px){.cup-fila{grid-template-columns:1fr}}'
   ].join('');
   document.head.appendChild(s);
 }
 
-// Tramas de la portada y rayas de la hoja, dibujadas con CSS
 function cuaTramaCSS(trama){
   if(trama==='rayas')  return 'background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.07) 0 1px,transparent 1px 11px)';
   if(trama==='puntos') return 'background-image:radial-gradient(rgba(255,255,255,.14) 1px,transparent 1px);background-size:13px 13px';
@@ -16657,29 +16753,26 @@ function cuaTramaCSS(trama){
   if(trama==='diag')   return 'background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.055) 0 2px,transparent 2px 11px)';
   return '';
 }
-function cuaPapelCSS(hoja){
+function cuaPapelCSS(hoja,alto){
   var l='rgba(37,99,235,.17)';
-  if(hoja==='rayada')  return 'background-image:repeating-linear-gradient(180deg,transparent 0 29px,'+l+' 29px 30px);background-position:0 46px';
+  var h=alto||30;
+  if(hoja==='rayada')  return 'background-image:repeating-linear-gradient(180deg,transparent 0 '+(h-1)+'px,'+l+' '+(h-1)+'px '+h+'px);background-position:0 46px';
   if(hoja==='cuadros') return 'background-image:linear-gradient('+l+' 1px,transparent 1px),linear-gradient(90deg,'+l+' 1px,transparent 1px);background-size:24px 24px';
   if(hoja==='puntos')  return 'background-image:radial-gradient(rgba(37,99,235,.3) 1px,transparent 1px);background-size:24px 24px';
-  if(hoja==='cornell') return 'background-image:repeating-linear-gradient(180deg,transparent 0 29px,'+l+' 29px 30px),'+
+  if(hoja==='cornell') return 'background-image:repeating-linear-gradient(180deg,transparent 0 '+(h-1)+'px,'+l+' '+(h-1)+'px '+h+'px),'+
     'linear-gradient(90deg,transparent 0 27%,rgba(220,38,38,.3) 27% calc(27% + 1px),transparent calc(27% + 1px)),'+
     'linear-gradient(180deg,transparent 0 78%,rgba(220,38,38,.3) 78% calc(78% + 1px),transparent calc(78% + 1px))';
   return '';
 }
-function cuaPortada(id){
-  return CUA_PORTADAS.filter(function(p){return p.id===id;})[0]||CUA_PORTADAS[0];
-}
+function cuaPortada(id){ return CUA_PORTADAS.filter(function(p){return p.id===id;})[0]||CUA_PORTADAS[0]; }
 function cuaTapaHTML(l){
-  var p=cuaPortada(l.portada);
-  var sub=l.materia||l.profe||'';
+  var p=cuaPortada(l.portada), sub=l.materia||l.profe||'';
   return '<div class="cu-tapa" style="background:linear-gradient(145deg,'+p.a+','+p.b+')">'+
     '<div style="position:absolute;inset:0;'+cuaTramaCSS(l.trama)+'"></div>'+
     '<div class="ico">'+(l.icono||'📘')+'</div>'+
     '<div><div class="tit">'+cuaEsc(l.t)+'</div>'+
       (sub?'<div class="sub">'+cuaEsc(sub)+'</div>':'')+'</div>'+
-    '<div class="nro">'+(l.paginas||[]).length+' pág</div>'+
-  '</div>';
+    '<div class="nro">'+(l.paginas||[]).length+' pág</div></div>';
 }
 function cuaEsc(s){
   return String(s==null?'':s).replace(/[&<>"]/g,function(c){
@@ -16691,8 +16784,7 @@ function cuaEsc(s){
 function cuaRenderEstante(){
   var e=document.getElementById('cua-estante');
   if(!e)return;
-  var libros=CUA.libros||[];
-  e.innerHTML=libros.map(function(l,i){
+  e.innerHTML=(CUA.libros||[]).map(function(l){
     return '<div class="cu-lib">'+
       '<div onclick="cuaAbrir(\''+l.id+'\')">'+cuaTapaHTML(l)+'</div>'+
       '<div class="pie"><b onclick="cuaAbrir(\''+l.id+'\')">'+cuaEsc(l.t)+'</b>'+
@@ -16714,11 +16806,10 @@ var CUP={};
 function cuaEditarPortada(id){
   var l=id?cuaLibro(id):null;
   CUP = l ? {id:l.id,t:l.t,materia:l.materia,profe:l.profe,portada:l.portada,
-             trama:l.trama,icono:l.icono,hoja:l.hoja}
+             trama:l.trama,icono:l.icono,hoja:l.hoja,fuente:l.fuente||'coming'}
           : {id:'',t:'',materia:'',profe:'',portada:CUA_PORTADAS[0].id,
-             trama:'rayas',icono:'📘',hoja:'rayada'};
-  cuaMontarPortada();
-  cuaPintarPortada();
+             trama:'rayas',icono:'📘',hoja:'rayada',fuente:'coming'};
+  cuaMontarPortada(); cuaPintarPortada();
   var b=document.getElementById('cup-bg'); if(b)b.classList.add('on');
 }
 function cuaMontarPortada(){
@@ -16737,6 +16828,8 @@ function cuaMontarPortada(){
         '<input class="cup-in" id="cup-p" placeholder="Ing. Ramírez" oninput="cuaCampo(\'profe\',this.value)">'+
         '<label class="cup-l">Hoja por defecto</label>'+
         '<div class="cup-rej" id="cup-hojas"></div>'+
+        '<label class="cup-l">Letra</label>'+
+        '<div class="cup-rej" id="cup-fuentes"></div>'+
       '</div>'+
       '<div>'+
         '<label class="cup-l" style="margin-top:0">Así va a quedar</label>'+
@@ -16744,7 +16837,7 @@ function cuaMontarPortada(){
         '<label class="cup-l">Color</label><div class="cup-rej" id="cup-cols"></div>'+
         '<label class="cup-l">Textura</label><div class="cup-rej" id="cup-tramas"></div>'+
         '<label class="cup-l">Ícono</label>'+
-        '<div class="cup-rej" id="cup-iconos" style="max-height:124px;overflow:auto"></div>'+
+        '<div id="cup-iconos" style="max-height:170px;overflow:auto"></div>'+
       '</div>'+
     '</div>'+
     '<div style="display:flex;gap:9px;margin-top:20px;align-items:center">'+
@@ -16779,31 +16872,39 @@ function cuaPintarPortada(){
     return '<button class="cu-b'+(CUP.hoja===h.id?' on':'')+'" '+
       'onclick="cuaCampo(\'hoja\',\''+h.id+'\');cuaPintarPortada()">'+h.n+'</button>';
   }).join('');
-  if($('cup-iconos'))$('cup-iconos').innerHTML=CUA_ICONOS.map(function(ic){
-    return '<div class="cup-i'+(CUP.icono===ic?' on':'')+'" '+
-      'onclick="cuaCampo(\'icono\',\''+ic+'\');cuaPintarPortada()">'+ic+'</div>';
+  if($('cup-fuentes'))$('cup-fuentes').innerHTML=CUA_FUENTES.map(function(f){
+    return '<button class="cu-b'+(CUP.fuente===f.id?' on':'')+'" '+
+      'style="font-family:'+f.css+';font-size:13px" '+
+      'onclick="cuaCampo(\'fuente\',\''+f.id+'\');cuaPintarPortada()">'+f.n+'</button>';
+  }).join('');
+  if($('cup-iconos'))$('cup-iconos').innerHTML=CUA_GRUPOS.map(function(g){
+    return '<div style="font-size:9.5px;color:var(--t3);text-transform:uppercase;'+
+      'letter-spacing:.07em;margin:9px 0 5px">'+g.n+'</div><div class="cup-rej">'+
+      g.l.split(' ').filter(Boolean).map(function(ic){
+        return '<div class="cup-i'+(CUP.icono===ic?' on':'')+'" '+
+          'onclick="cuaCampo(\'icono\',\''+ic+'\');cuaPintarPortada()">'+ic+'</div>';
+      }).join('')+'</div>';
   }).join('');
   cuaPrevPortada();
 }
 function cuaPrevPortada(){
   var p=document.getElementById('cup-prev');
   if(!p)return;
-  var l={t:CUP.t||'Sin título',materia:CUP.materia,profe:CUP.profe,portada:CUP.portada,
-         trama:CUP.trama,icono:CUP.icono,
-         paginas:CUP.id?(cuaLibro(CUP.id)||{paginas:[]}).paginas:[1]};
-  p.innerHTML=cuaTapaHTML(l);
+  p.innerHTML=cuaTapaHTML({t:CUP.t||'Sin título',materia:CUP.materia,profe:CUP.profe,
+    portada:CUP.portada,trama:CUP.trama,icono:CUP.icono,
+    paginas:CUP.id?(cuaLibro(CUP.id)||{paginas:[]}).paginas:[1]});
 }
 function cuaGuardarPortada(){
   if(!(CUP.t||'').trim()){ try{T('Falta el título','Ponle nombre al cuaderno','⚠️');}catch(e){} return; }
   if(CUP.id){
     var l=cuaLibro(CUP.id);
     if(l){ l.t=CUP.t; l.materia=CUP.materia; l.profe=CUP.profe; l.portada=CUP.portada;
-           l.trama=CUP.trama; l.icono=CUP.icono; l.hoja=CUP.hoja; l.ts=Date.now(); }
+           l.trama=CUP.trama; l.icono=CUP.icono; l.hoja=CUP.hoja; l.fuente=CUP.fuente;
+           l.ts=Date.now(); }
     cuaGuardar(true);
-  }else{
-    cuaNuevoLibro(CUP);
-  }
+  }else{ cuaNuevoLibro(CUP); }
   cuaCerrarPortada(); cuaRenderEstante();
+  if(CU.libro)cuaRenderLibro();
 }
 function cuaBorrarLibro(){
   var l=cuaLibro(CUP.id); if(!l)return;
@@ -16817,7 +16918,7 @@ function cuaCerrarPortada(){ var b=document.getElementById('cup-bg'); if(b)b.cla
 
 // ── El cuaderno abierto ─────────────────────────────────────────
 var CU={ libro:null, pag:0, modo:'texto', herr:'lapiz',
-         color:CUA_COLORES[0], grosor:1, deshacer:[], rehacer:[] };
+         color:CUA_COLORES[0], grosor:1, deshacer:[], rehacer:[], lleno:false };
 
 function cuaAbrir(id){
   var l=cuaLibro(id); if(!l)return;
@@ -16829,6 +16930,7 @@ function cuaAbrir(id){
 function cuaCerrarLibro(){
   cuaGuardarPagina();
   CU.libro=null;
+  if(CU.lleno)cuaLleno(false);
   var a=document.getElementById('cua-abierto'), e=document.getElementById('cua-estante-wrap');
   if(a)a.classList.remove('on');
   if(e)e.classList.remove('off');
@@ -16838,6 +16940,14 @@ function cuaPagina(){
   if(!CU.libro)return null;
   return (CU.libro.paginas||[])[CU.pag]||null;
 }
+function cuaLleno(v){
+  CU.lleno=(v===undefined)?!CU.lleno:!!v;
+  var vista=document.getElementById('v-cuadernos');
+  if(vista)vista.classList.toggle('lleno',CU.lleno);
+  cuaRenderLibro();
+  setTimeout(cuaDibujarTodo,120);
+}
+
 function cuaRenderLibro(){
   var l=CU.libro; if(!l)return;
   var b=document.getElementById('cua-barra');
@@ -16847,18 +16957,29 @@ function cuaRenderLibro(){
       '<span class="tit">'+cuaEsc(l.t)+'</span>'+
       (l.materia?'<span style="font-size:11px;color:var(--t3)">'+cuaEsc(l.materia)+'</span>':'')+
       '<span class="sp"></span>'+
+      '<button class="cu-b'+(CU.lleno?' on':' sutil')+'" onclick="cuaLleno()" '+
+        'title="Ocupar toda la pantalla"><i class="fa fa-'+(CU.lleno?'compress':'expand')+'"></i> '+
+        (CU.lleno?'Salir':'Pantalla completa')+'</button>'+
       '<button class="cu-b sutil" onclick="cuaEditarPortada(\''+l.id+'\')" title="Portada">'+
         '<i class="fa fa-palette"></i></button>'+
       '<button class="cu-b sutil" onclick="cuaExportar(\''+l.id+'\')" title="Guardar copia del cuaderno">'+
         '<i class="fa fa-file-export"></i></button>'+
       '<button class="cu-b sutil" onclick="cuaPDF(\''+l.id+'\')"><i class="fa fa-file-pdf"></i> PDF</button>';
   }
-  cuaRenderTools();
-  cuaRenderHoja();
+  cuaRenderTools(); cuaRenderHoja();
 }
+
+var CUA_FORMAS=[
+  {id:'',        n:'Mano alzada', i:'fa-pen'},
+  {id:'linea',   n:'Regla',       i:'fa-ruler'},
+  {id:'flecha',  n:'Flecha',      i:'fa-arrow-right-long'},
+  {id:'caja',    n:'Rectángulo',  i:'fa-square'},
+  {id:'circulo', n:'Círculo',     i:'fa-circle'}
+];
+
 function cuaRenderTools(){
   var t=document.getElementById('cua-tools'); if(!t)return;
-  var dib=CU.modo==='dibujo';
+  var dib=CU.modo==='dibujo', p=cuaPagina(), l=CU.libro;
   var h=[
     '<button class="cu-b'+(!dib?' on':'')+'" onclick="cuaModo(\'texto\')"><i class="fa fa-keyboard"></i> Escribir</button>',
     '<button class="cu-b'+(dib?' on':'')+'" onclick="cuaModo(\'dibujo\')"><i class="fa fa-pen"></i> Dibujar</button>',
@@ -16870,6 +16991,13 @@ function cuaRenderTools(){
         h.push('<button class="cu-b'+(CU.herr===x[0]?' on':'')+'" title="'+x[1]+'" '+
                'onclick="cuaHerr(\''+x[0]+'\')"><i class="fa '+x[2]+'"></i></button>');
       });
+    h.push('<div class="cu-sep"></div>');
+    // Regla y formas: se traza de un punto a otro y sale derecho.
+    CUA_FORMAS.forEach(function(f){
+      if(!f.id)return;
+      h.push('<button class="cu-b'+(CU.herr===f.id?' on':'')+'" title="'+f.n+'" '+
+             'onclick="cuaHerr(\''+f.id+'\')"><i class="fa '+f.i+'"></i></button>');
+    });
     h.push('<div class="cu-sep"></div>');
     CUA_COLORES.forEach(function(c){
       h.push('<div class="cu-col'+(CU.color===c?' on':'')+'" style="background:'+c+'" '+
@@ -16886,31 +17014,50 @@ function cuaRenderTools(){
     h.push('<button class="cu-b sutil" onclick="cuaLimpiar()" title="Borrar todo el dibujo de esta hoja">'+
            '<i class="fa fa-broom"></i></button>');
   }else{
-    h.push('<span style="font-size:10.5px;color:var(--t3)">Tamaño</span>');
-    [['s','A'],['m','A'],['l','A']].forEach(function(x,i){
-      var p=cuaPagina();
+    h.push('<span style="font-size:10.5px;color:var(--t3)">Letra</span>');
+    h.push('<select class="cu-sel" onchange="cuaPonerFuente(this.value)">'+
+      CUA_FUENTES.map(function(f){
+        return '<option value="'+f.id+'"'+(((l&&l.fuente)||'coming')===f.id?' selected':'')+'>'+f.n+'</option>';
+      }).join('')+'</select>');
+    [['s','Pequeña'],['m','Normal'],['l','Grande']].forEach(function(x,i){
       h.push('<button class="cu-b'+((p&&p.tam||'m')===x[0]?' on':'')+'" onclick="cuaTam(\''+x[0]+'\')" '+
-             'style="font-size:'+(11+i*3)+'px;padding:4px 10px">A</button>');
+             'style="font-size:'+(10.5+i*2.5)+'px;padding:4px 10px" title="'+x[1]+'">A</button>');
     });
   }
   h.push('<div class="cu-sep"></div>');
-  h.push('<span style="font-size:10.5px;color:var(--t3)">Hoja</span>');
-  CUA_HOJAS.forEach(function(x){
-    var p=cuaPagina();
-    h.push('<button class="cu-b'+((p&&p.hoja)===x.id?' on':'')+'" onclick="cuaHoja(\''+x.id+'\')">'+x.n+'</button>');
-  });
+  h.push('<button class="cu-b'+(CUA_PAL?' on':' sutil')+'" onclick="cuaPaleta()" '+
+         'title="Pegar un ícono en la hoja"><i class="fa fa-icons"></i> Pegatinas</button>');
+  h.push('<div class="cu-sep"></div>');
+  h.push('<select class="cu-sel" title="Tipo de hoja" onchange="cuaHoja(this.value)">'+
+    CUA_HOJAS.map(function(x){
+      return '<option value="'+x.id+'"'+((p&&p.hoja)===x.id?' selected':'')+'>'+x.n+'</option>';
+    }).join('')+'</select>');
+  h.push('<button class="cu-b'+(((l&&l.orient)||'v')==='h'?' on':'')+'" onclick="cuaOrientar()" '+
+         'title="Vertical u horizontal"><i class="fa fa-'+
+         (((l&&l.orient)||'v')==='h'?'rectangle-list':'file-lines')+'"></i> '+
+         (((l&&l.orient)||'v')==='h'?'Acostada':'De pie')+'</button>');
   t.innerHTML=h.join('');
 }
+
 function cuaRenderHoja(){
   var l=CU.libro, p=cuaPagina();
   if(!l||!p)return;
   var hoja=document.getElementById('cua-hoja');
   var papel=document.getElementById('cua-papel');
   var txt=document.getElementById('cua-texto');
-  if(hoja){ hoja.className=CU.modo==='dibujo'?'modo-dibujo':'modo-texto'; }
-  if(papel)papel.setAttribute('style',cuaPapelCSS(p.hoja));
-  if(txt){ txt.value=p.texto||''; txt.className=(p.tam||'m'); }
+  if(hoja)hoja.className=(CU.modo==='dibujo'?'modo-dibujo':'modo-texto')+
+                         (((l.orient||'v')==='h')?' ancha':'');
+  if(papel)papel.setAttribute('style',cuaPapelCSS(p.hoja,cuaAltoLinea(p)));
+  if(txt){
+    txt.value=p.texto||'';
+    txt.className=(p.tam||'m');
+    var f=cuaFuente(l.fuente||'coming');
+    txt.style.fontFamily=f.css;
+    txt.style.fontSize=Math.round(cuaTamBase(p)*(f.esc||1))+'px';
+    txt.style.lineHeight=cuaAltoLinea(p)+'px';
+  }
   cuaDibujarTodo();
+  cuaRenderPegatinas();
   var pies=document.getElementById('cua-pies');
   if(pies){
     var n=(l.paginas||[]).length;
@@ -16927,12 +17074,31 @@ function cuaRenderHoja(){
         '<i class="fa fa-trash"></i></button>':'');
   }
 }
+function cuaTamBase(p){ return (p&&p.tam==='s')?13:(p&&p.tam==='l')?18:15; }
+function cuaAltoLinea(p){ return (p&&p.tam==='s')?26:(p&&p.tam==='l')?34:30; }
+
 function cuaModo(m){ cuaGuardarPagina(); CU.modo=m; cuaRenderTools(); cuaRenderHoja(); }
 function cuaHerr(h){ CU.herr=h; cuaRenderTools(); }
-function cuaColor(c){ CU.color=c; CU.herr=(CU.herr==='borrador')?'lapiz':CU.herr; cuaRenderTools(); }
+function cuaColor(c){
+  CU.color=c;
+  if(CU.herr==='borrador')CU.herr='lapiz';
+  cuaRenderTools();
+}
 function cuaGrosor(i){ CU.grosor=i; cuaRenderTools(); }
 function cuaTam(t){ var p=cuaPagina(); if(!p)return; p.tam=t; cuaGuardar(); cuaRenderTools(); cuaRenderHoja(); }
 function cuaHoja(h){ var p=cuaPagina(); if(!p)return; p.hoja=h; cuaGuardar(); cuaRenderTools(); cuaRenderHoja(); }
+function cuaOrientar(){
+  if(!CU.libro)return;
+  CU.libro.orient=((CU.libro.orient||'v')==='v')?'h':'v';
+  CU.libro.ts=Date.now();
+  cuaGuardar(true); cuaRenderTools(); cuaRenderHoja();
+  setTimeout(cuaDibujarTodo,120);
+}
+function cuaPonerFuente(f){
+  if(!CU.libro)return;
+  CU.libro.fuente=f; CU.libro.ts=Date.now();
+  cuaGuardar(true); cuaRenderHoja();
+}
 function cuaIrPag(d){
   cuaGuardarPagina();
   var n=(CU.libro.paginas||[]).length;
@@ -16965,8 +17131,88 @@ function cuaGuardarPagina(){
   cuaGuardar();
 }
 
+// ── Pegatinas ───────────────────────────────────────────────────
+var CUA_PAL=false;
+function cuaPaleta(){
+  CUA_PAL=!CUA_PAL;
+  var c=document.getElementById('cua-paleta');
+  if(!c)return;
+  c.classList.toggle('on',CUA_PAL);
+  if(CUA_PAL&&!c.innerHTML){
+    c.innerHTML=CUA_GRUPOS.map(function(g){
+      return '<div class="gr">'+g.n+'</div><div class="fila">'+
+        g.l.split(' ').filter(Boolean).map(function(ic){
+          return '<div class="pg" onclick="cuaPegar(\''+ic+'\')">'+ic+'</div>';
+        }).join('')+'</div>';
+    }).join('');
+  }
+  cuaRenderTools();
+}
+function cuaPegar(ic){
+  var p=cuaPagina(); if(!p)return;
+  p.pegatinas=p.pegatinas||[];
+  // Escalonadas: si todas cayeran en el mismo punto quedarían una
+  // encima de otra y solo se podría arrastrar la de arriba.
+  var k=p.pegatinas.length;
+  p.pegatinas.push({e:ic, x:+(0.42+(k%4)*0.055).toFixed(4),
+                          y:+(0.34+(Math.floor(k/4)%4)*0.07).toFixed(4),
+                          s:34, id:cuaId()});
+  p.ts=Date.now(); if(CU.libro)CU.libro.ts=Date.now();
+  cuaGuardar(true); cuaRenderPegatinas();
+  try{ T('Pegatina puesta','Arrástrala a donde la quieras','📌'); }catch(e){}
+}
+function cuaRenderPegatinas(){
+  var c=document.getElementById('cua-pegas');
+  var p=cuaPagina();
+  if(!c||!p)return;
+  c.innerHTML=(p.pegatinas||[]).map(function(x){
+    return '<div class="cu-pega" data-id="'+x.id+'" style="left:'+(x.x*100)+'%;top:'+(x.y*100)+'%;'+
+      'font-size:'+x.s+'px" title="Arrastra para mover · doble toque para quitar">'+x.e+'</div>';
+  }).join('');
+}
+var CUP_MOV=null;
+function cuaPegaDown(ev){
+  var el=ev.target.closest('.cu-pega');
+  if(!el||CU.modo==='dibujo')return;
+  var p=cuaPagina(); if(!p)return;
+  ev.preventDefault();
+  CUP_MOV={el:el, id:el.getAttribute('data-id')};
+  el.classList.add('mov');
+  try{ el.setPointerCapture(ev.pointerId); }catch(e){}
+}
+function cuaPegaMove(ev){
+  if(!CUP_MOV)return;
+  var hoja=document.getElementById('cua-hoja');
+  var r=hoja.getBoundingClientRect();
+  var x=Math.max(0.02,Math.min(0.98,(ev.clientX-r.left)/r.width));
+  var y=Math.max(0.02,Math.min(0.98,(ev.clientY-r.top)/r.height));
+  CUP_MOV.el.style.left=(x*100)+'%';
+  CUP_MOV.el.style.top=(y*100)+'%';
+  CUP_MOV.x=x; CUP_MOV.y=y;
+}
+function cuaPegaUp(){
+  if(!CUP_MOV)return;
+  var p=cuaPagina();
+  if(p&&CUP_MOV.x!=null){
+    (p.pegatinas||[]).forEach(function(x){
+      if(x.id===CUP_MOV.id){ x.x=+CUP_MOV.x.toFixed(4); x.y=+CUP_MOV.y.toFixed(4); }
+    });
+    p.ts=Date.now(); cuaGuardar();
+  }
+  CUP_MOV.el.classList.remove('mov');
+  CUP_MOV=null;
+}
+function cuaPegaDoble(ev){
+  var el=ev.target.closest('.cu-pega');
+  if(!el)return;
+  var p=cuaPagina(); if(!p)return;
+  var id=el.getAttribute('data-id');
+  p.pegatinas=(p.pegatinas||[]).filter(function(x){return x.id!==id;});
+  p.ts=Date.now(); cuaGuardar(true); cuaRenderPegatinas();
+}
+
 // ── El lienzo ───────────────────────────────────────────────────
-var CUL={ pintando:false, trazo:null, ctx:null, w:0, h:0 };
+var CUL={ pintando:false, trazo:null, ctx:null, w:0, h:0, lapizVisto:false };
 
 function cuaAjustarLienzo(){
   var c=document.getElementById('cua-lienzo');
@@ -16989,12 +17235,37 @@ function cuaPintarTrazo(ctx,t,w,h){
   if(!pts.length)return;
   ctx.save();
   ctx.lineCap='round'; ctx.lineJoin='round';
-  if(t.h==='r'){ ctx.globalAlpha=.32; ctx.globalCompositeOperation='source-over'; }
+  if(t.h==='r'){ ctx.globalAlpha=.32; }
   else if(t.h==='b'){ ctx.globalCompositeOperation='destination-out'; }
   ctx.strokeStyle=t.c||'#1f2937';
+  ctx.fillStyle=t.c||'#1f2937';
+  ctx.lineWidth=(t.w||3);
+
+  // Regla y formas: de un punto a otro, siempre derecho
+  if(t.f && pts.length>1){
+    var a=pts[0], b=pts[pts.length-1];
+    var x1=a[0]*w, y1=a[1]*h, x2=b[0]*w, y2=b[1]*h;
+    ctx.beginPath();
+    if(t.f==='caja'){ ctx.rect(x1,y1,x2-x1,y2-y1); ctx.stroke(); }
+    else if(t.f==='circulo'){
+      ctx.ellipse((x1+x2)/2,(y1+y2)/2,Math.abs(x2-x1)/2,Math.abs(y2-y1)/2,0,0,6.2832);
+      ctx.stroke();
+    }else{
+      ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+      if(t.f==='flecha'){
+        var ang=Math.atan2(y2-y1,x2-x1), L=Math.max(9,(t.w||3)*3.4);
+        ctx.beginPath();
+        ctx.moveTo(x2,y2);
+        ctx.lineTo(x2-L*Math.cos(ang-0.42), y2-L*Math.sin(ang-0.42));
+        ctx.moveTo(x2,y2);
+        ctx.lineTo(x2-L*Math.cos(ang+0.42), y2-L*Math.sin(ang+0.42));
+        ctx.stroke();
+      }
+    }
+    ctx.restore(); return;
+  }
+
   if(pts.length===1){
-    ctx.fillStyle=t.c||'#1f2937';
-    if(t.h==='b')ctx.globalCompositeOperation='destination-out';
     ctx.beginPath();
     ctx.arc(pts[0][0]*w, pts[0][1]*h, Math.max(.8,(t.w||3)/2), 0, 6.2832);
     ctx.fill(); ctx.restore(); return;
@@ -17002,11 +17273,9 @@ function cuaPintarTrazo(ctx,t,w,h){
   ctx.beginPath();
   ctx.moveTo(pts[0][0]*w, pts[0][1]*h);
   for(var i=1;i<pts.length;i++){
-    var a=pts[i-1], b=pts[i];
-    var mx=(a[0]+b[0])/2*w, my=(a[1]+b[1])/2*h;
-    ctx.quadraticCurveTo(a[0]*w, a[1]*h, mx, my);
+    var q=pts[i-1], z=pts[i];
+    ctx.quadraticCurveTo(q[0]*w, q[1]*h, (q[0]+z[0])/2*w, (q[1]+z[1])/2*h);
   }
-  ctx.lineWidth=(t.w||3);
   ctx.stroke();
   ctx.restore();
 }
@@ -17016,6 +17285,7 @@ function cuaDibujarTodo(){
   ctx.clearRect(0,0,CUL.w,CUL.h);
   var p=cuaPagina(); if(!p)return;
   (p.trazos||[]).forEach(function(t){ cuaPintarTrazo(ctx,t,CUL.w,CUL.h); });
+  if(CUL.pintando&&CUL.trazo)cuaPintarTrazo(ctx,CUL.trazo,CUL.w,CUL.h);
 }
 function cuaPunto(ev){
   var c=document.getElementById('cua-lienzo');
@@ -17025,15 +17295,20 @@ function cuaPunto(ev){
            +((ev.clientY-r.top )/r.height).toFixed(4),
            +pr.toFixed(2) ];
 }
+function cuaEsForma(h){
+  return h==='linea'||h==='flecha'||h==='caja'||h==='circulo';
+}
 function cuaEmpezar(ev){
   if(CU.modo!=='dibujo'||!cuaPagina())return;
   if(ev.pointerType==='touch'&&CUL.lapizVisto)return;   // con lápiz, el dedo no pinta
   if(ev.pointerType==='pen')CUL.lapizVisto=true;
   ev.preventDefault();
   var g=CUA_GROSORES[CU.grosor].w;
+  var forma=cuaEsForma(CU.herr)?CU.herr:'';
   CUL.pintando=true;
   CUL.trazo={ h: CU.herr==='marcador'?'r':CU.herr==='borrador'?'b':'l',
-              c: CU.herr==='marcador'?CU.color:CU.color,
+              f: forma,
+              c: CU.color,
               w: CU.herr==='marcador'?g*4.5:CU.herr==='borrador'?g*5:g,
               p: [cuaPunto(ev)] };
   try{ ev.target.setPointerCapture(ev.pointerId); }catch(e){}
@@ -17041,24 +17316,32 @@ function cuaEmpezar(ev){
 function cuaMover(ev){
   if(!CUL.pintando||!CUL.trazo)return;
   ev.preventDefault();
-  var p=cuaPunto(ev), ult=CUL.trazo.p[CUL.trazo.p.length-1];
+  var p=cuaPunto(ev);
+  if(CUL.trazo.f){
+    // en las formas solo cuenta de dónde a dónde
+    CUL.trazo.p[1]=p;
+    cuaDibujarTodo();
+    return;
+  }
+  var ult=CUL.trazo.p[CUL.trazo.p.length-1];
   var dx=(p[0]-ult[0])*CUL.w, dy=(p[1]-ult[1])*CUL.h;
-  if(dx*dx+dy*dy < 2)return;                 // puntos de más = archivo de más
+  if(dx*dx+dy*dy < 2)return;              // puntos de más = archivo de más
   CUL.trazo.p.push(p);
-  // pintar solo el tramo nuevo, no todo otra vez
   var ctx=CUL.ctx; if(!ctx)return;
   cuaPintarTrazo(ctx,{h:CUL.trazo.h,c:CUL.trazo.c,w:CUL.trazo.w,
                       p:CUL.trazo.p.slice(-3)},CUL.w,CUL.h);
 }
-function cuaSoltar(ev){
+function cuaSoltar(){
   if(!CUL.pintando)return;
   CUL.pintando=false;
   var p=cuaPagina();
-  if(p&&CUL.trazo&&CUL.trazo.p.length){
+  var t=CUL.trazo;
+  var sirve = t && t.p.length && !(t.f && t.p.length<2);
+  if(p&&sirve){
     CU.deshacer.push(JSON.stringify(p.trazos||[]));
     if(CU.deshacer.length>40)CU.deshacer.shift();
     CU.rehacer=[];
-    p.trazos=(p.trazos||[]).concat([CUL.trazo]);
+    p.trazos=(p.trazos||[]).concat([t]);
     p.ts=Date.now(); if(CU.libro)CU.libro.ts=Date.now();
     cuaGuardar();
   }
@@ -17118,79 +17401,98 @@ function cuaImportar(){
 }
 
 // ── A PDF ───────────────────────────────────────────────────────
+// Cada hoja se dibuja completa en un lienzo y se mete como imagen.
+// Es la única forma de que el PDF salga EXACTAMENTE como se ve:
+// con la letra de mano, las pegatinas y los trazos en su sitio. A
+// cambio, el texto del PDF no se puede seleccionar ni buscar.
 function cuaPDF(id){
   var l=cuaLibro(id); if(!l)return;
   var J=(window.jspdf&&window.jspdf.jsPDF)||window.jsPDF;
   if(!J){ try{T('Falta el generador de PDF','Conéctate a internet una vez y vuelve a intentar','⚠️');}catch(e){} return; }
   try{ T('Armando el PDF','Un momento…','📄'); }catch(e){}
-  var doc=new J({unit:'pt',format:'a4'});
-  var W=595.28, H=841.89, M=46;
-  var paginas=l.paginas||[];
 
-  paginas.forEach(function(p,idx){
-    if(idx)doc.addPage();
-    // el papel
-    doc.setFillColor(253,253,248); doc.rect(0,0,W,H,'F');
-    cuaPDFPapel(doc,p.hoja,W,H,M);
-    // lo escrito
-    var tam=p.tam==='s'?10.5:p.tam==='l'?14:12;
-    var alto=p.tam==='s'?18:p.tam==='l'?24:21;
-    doc.setTextColor(31,41,55); doc.setFontSize(tam);
-    var y=M+alto;
-    String(p.texto||'').split('\n').forEach(function(linea){
-      var trozos=doc.splitTextToSize(linea||' ', W-M*2);
-      trozos.forEach(function(t){
-        if(y>H-M)return;
-        doc.text(t, M, y); y+=alto;
-      });
+  var listo=(document.fonts&&document.fonts.ready)?document.fonts.ready:Promise.resolve();
+  listo.then(function(){
+    var hor=((l.orient||'v')==='h');
+    var doc=new J({unit:'pt',format:'a4',orientation:hor?'landscape':'portrait'});
+    var W=hor?841.89:595.28, H=hor?595.28:841.89;
+    var ESC=2;                                  // el doble de resolución
+    var paginas=l.paginas||[];
+    var f=cuaFuente(l.fuente||'coming');
+
+    paginas.forEach(function(p,idx){
+      if(idx)doc.addPage();
+      var c=document.createElement('canvas');
+      c.width=Math.round(W*ESC); c.height=Math.round(H*ESC);
+      var x=c.getContext('2d');
+      x.scale(ESC,ESC);
+      cuaPDFHoja(x,p,l,f,W,H);
+      doc.addImage(c.toDataURL('image/jpeg',0.9),'JPEG',0,0,W,H);
+      doc.setFontSize(7.5); doc.setTextColor(150,160,172);
+      doc.text(l.t+(l.materia?' · '+l.materia:''), 46, H-20);
+      doc.text(String(idx+1)+' / '+paginas.length, W-46, H-20, {align:'right'});
     });
-    // lo dibujado
-    (p.trazos||[]).forEach(function(t){
-      if(t.h==='b')return;                     // el borrador no se "pinta"
-      var pts=t.p||[]; if(pts.length<1)return;
-      var rgb=cuaHex(t.c||'#1f2937');
-      doc.setDrawColor(rgb[0],rgb[1],rgb[2]);
-      doc.setLineWidth(Math.max(.4,(t.w||3)*0.72));
-      if(doc.setLineCap)doc.setLineCap('round');
-      if(doc.setLineJoin)doc.setLineJoin('round');
-      if(t.h==='r'&&doc.setGState){ try{ doc.setGState(new doc.GState({opacity:.32})); }catch(e){} }
-      for(var i=1;i<pts.length;i++){
-        doc.line(pts[i-1][0]*W, pts[i-1][1]*H, pts[i][0]*W, pts[i][1]*H);
-      }
-      if(t.h==='r'&&doc.setGState){ try{ doc.setGState(new doc.GState({opacity:1})); }catch(e){} }
-    });
-    // pie
-    doc.setFontSize(7.5); doc.setTextColor(150,160,172);
-    doc.text(l.t+(l.materia?' · '+l.materia:''), M, H-22);
-    doc.text(String(idx+1)+' / '+paginas.length, W-M, H-22, {align:'right'});
+    doc.save('cuaderno-'+String(l.t).replace(/[^a-z0-9]+/gi,'-').toLowerCase()+'.pdf');
   });
-  doc.save('cuaderno-'+String(l.t).replace(/[^a-z0-9]+/gi,'-').toLowerCase()+'.pdf');
 }
-function cuaPDFPapel(doc,hoja,W,H,M){
-  doc.setLineWidth(.4);
-  if(hoja==='rayada'||hoja==='cornell'){
-    doc.setDrawColor(203,218,240);
-    for(var y=M+22;y<H-M;y+=22) doc.line(M,y,W-M,y);
+function cuaPDFHoja(x,p,l,f,W,H){
+  // papel
+  x.fillStyle='#fdfdf8'; x.fillRect(0,0,W,H);
+  var M=46, alto=cuaAltoLinea(p)*1.0;
+  x.strokeStyle='rgba(37,99,235,.17)'; x.lineWidth=.7;
+  if(p.hoja==='rayada'||p.hoja==='cornell'){
+    for(var y=M+alto;y<H-M;y+=alto){ x.beginPath(); x.moveTo(M,y); x.lineTo(W-M,y); x.stroke(); }
   }
-  if(hoja==='cuadros'){
-    doc.setDrawColor(210,224,244);
-    for(var x=M;x<W-M;x+=18) doc.line(x,M,x,H-M);
-    for(var y2=M;y2<H-M;y2+=18) doc.line(M,y2,W-M,y2);
+  if(p.hoja==='cuadros'){
+    for(var a=M;a<W-M;a+=24){ x.beginPath(); x.moveTo(a,M); x.lineTo(a,H-M); x.stroke(); }
+    for(var b=M;b<H-M;b+=24){ x.beginPath(); x.moveTo(M,b); x.lineTo(W-M,b); x.stroke(); }
   }
-  if(hoja==='puntos'){
-    doc.setFillColor(198,214,238);
-    for(var x2=M;x2<W-M;x2+=18)
-      for(var y3=M;y3<H-M;y3+=18) doc.circle(x2,y3,.7,'F');
+  if(p.hoja==='puntos'){
+    x.fillStyle='rgba(37,99,235,.3)';
+    for(var c1=M;c1<W-M;c1+=24)
+      for(var d1=M;d1<H-M;d1+=24){ x.beginPath(); x.arc(c1,d1,.9,0,6.2832); x.fill(); }
   }
-  if(hoja==='cornell'){
-    doc.setDrawColor(228,160,160);
-    doc.line(W*0.27,M,W*0.27,H*0.78);
-    doc.line(M,H*0.78,W-M,H*0.78);
+  if(p.hoja==='cornell'){
+    x.strokeStyle='rgba(220,38,38,.3)';
+    x.beginPath(); x.moveTo(W*0.27,M); x.lineTo(W*0.27,H*0.78); x.stroke();
+    x.beginPath(); x.moveTo(M,H*0.78); x.lineTo(W-M,H*0.78); x.stroke();
   }
+  // lo escrito, con la letra elegida
+  var tam=Math.round(cuaTamBase(p)*(f.esc||1));
+  x.fillStyle='#1f2937';
+  x.font=tam+'px '+f.css.replace(/var\(--fm\)/,'sans-serif').replace(/var\(--mono\)/,'monospace');
+  x.textBaseline='alphabetic';
+  var y2=M+alto;
+  String(p.texto||'').split('\n').forEach(function(linea){
+    cuaEnvolver(x,linea,W-M*2).forEach(function(t){
+      if(y2>H-M)return;
+      x.fillText(t, M, y2-5); y2+=alto;
+    });
+  });
+  // lo dibujado
+  (p.trazos||[]).forEach(function(t){
+    if(t.h==='b')return;                     // el borrador no se "pinta"
+    cuaPintarTrazo(x,t,W,H);
+  });
+  // las pegatinas
+  (p.pegatinas||[]).forEach(function(pe){
+    x.save();
+    x.font=Math.round(pe.s*(W/820))+'px sans-serif';
+    x.textAlign='center'; x.textBaseline='middle';
+    x.fillText(pe.e, pe.x*W, pe.y*H);
+    x.restore();
+  });
 }
-function cuaHex(h){
-  var m=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(String(h));
-  return m?[parseInt(m[1],16),parseInt(m[2],16),parseInt(m[3],16)]:[31,41,55];
+function cuaEnvolver(x,txt,ancho){
+  if(!txt)return [' '];
+  var pal=txt.split(' '), lineas=[], act='';
+  pal.forEach(function(p){
+    var prueba=act?act+' '+p:p;
+    if(x.measureText(prueba).width>ancho&&act){ lineas.push(act); act=p; }
+    else act=prueba;
+  });
+  lineas.push(act);
+  return lineas;
 }
 
 // ── Montar la vista ─────────────────────────────────────────────
@@ -17209,10 +17511,12 @@ function cuaMontarVista(){
     '<div id="cua-abierto">'+
       '<div id="cua-barra"></div>'+
       '<div id="cua-tools"></div>'+
+      '<div id="cua-paleta"></div>'+
       '<div id="cua-hoja-caja"><div id="cua-hoja" class="modo-texto">'+
         '<div id="cua-papel"></div>'+
         '<textarea id="cua-texto" spellcheck="false" placeholder="Escribe aquí…"></textarea>'+
         '<canvas id="cua-lienzo"></canvas>'+
+        '<div id="cua-pegas"></div>'+
       '</div></div>'+
       '<div id="cua-pies"></div>'+
     '</div>';
@@ -17225,6 +17529,13 @@ function cuaMontarVista(){
   c.addEventListener('pointercancel',cuaSoltar);
   c.addEventListener('pointerleave',cuaSoltar);
 
+  var pg=document.getElementById('cua-pegas');
+  pg.addEventListener('pointerdown',cuaPegaDown);
+  pg.addEventListener('pointermove',cuaPegaMove);
+  pg.addEventListener('pointerup',cuaPegaUp);
+  pg.addEventListener('pointercancel',cuaPegaUp);
+  pg.addEventListener('dblclick',cuaPegaDoble);
+
   var t=document.getElementById('cua-texto');
   t.addEventListener('input',function(){ cuaGuardarPagina(); });
 
@@ -17233,6 +17544,10 @@ function cuaMontarVista(){
     clearTimeout(redib);
     redib=setTimeout(function(){ if(CU.libro)cuaDibujarTodo(); },180);
   });
+  // salir de pantalla completa con Esc
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&CU.lleno)cuaLleno(false);
+  });
   return true;
 }
 
@@ -17240,7 +17555,6 @@ function cuaPintarVista(){
   if(CU.libro)cuaRenderLibro(); else cuaRenderEstante();
 }
 
-// ── Entrada en el menú y registro de la vista ───────────────────
 function cuaEntradaMenu(){
   if(document.getElementById('cua-si'))return;
   var items=document.querySelectorAll('.sbs .si');
@@ -17298,7 +17612,7 @@ function cuaEntradaMenu(){
 // ═══════════════════════════════════════════════════════════════
 
 var EST_VER='estudio-1';
-var EST_KEY='em_estudio_v1';
+var EST_KEY=emMigrar('em_estudio_v1');
 
 var EST_DIAS=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 var EST_COLORES=['#6366f1','#0ea5e9','#14b8a6','#22c55e','#eab308','#f97316',
@@ -18299,8 +18613,16 @@ function estArmar(){
     g2.children[0].appendChild(caja2);
   }
 
+  estEnvolver();
+  agPintarRango();
   v.setAttribute('data-est',ESTILO_VER);
-  estContar();
+  estVacios(); estBarras(); estContar();
+  // El escritorio ya se había pintado con los datos viejos. Se
+  // vuelve a pintar una vez, ya con todo en su sitio.
+  setTimeout(function(){
+    try{ renderDash(); }catch(e){}
+    try{ if(typeof renderMeets==='function')renderMeets(); }catch(e){}
+  },400);
   return true;
 }
 
@@ -18384,12 +18706,19 @@ function estContar(){
           var orig=renderDash;
           renderDash=function(){
             var r=orig.apply(this,arguments);
-            try{ estArmar(); estContar(); }catch(e){}
+            // OJO: renderDash vuelve a escribir el HTML de las
+            // tarjetas, así que lo de estEnvolver se pierde en cada
+            // pintada y hay que rehacerlo. Sin esto, el número y el
+            // texto quedan uno al lado del otro y se recortan.
+            try{ estArmar(); estEnvolver(); estVacios(); estBarras(); estContar(); }catch(e){}
             return r;
           };
         }
-        setTimeout(estContar,1200);
-        setTimeout(estContar,4000);
+        var repasar=function(){
+          try{ estEnvolver(); estVacios(); estBarras(); estContar(); agPintarRango(); }catch(e){}
+        };
+        setTimeout(repasar,1200);
+        setTimeout(repasar,4000);
         return;
       }
     }catch(e){}
