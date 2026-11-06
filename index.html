@@ -16558,8 +16558,12 @@ var CUA_HOJAS=[
   {id:'blanca',  n:'Blanca'},
   {id:'cornell', n:'Cornell'}
 ];
-var CUA_COLORES=['#1f2937','#1d4ed8','#dc2626','#15803d','#b45309','#7c3aed','#0891b2','#be185d'];
-var CUA_GROSORES=[{n:'Fino',w:1.6},{n:'Medio',w:3},{n:'Grueso',w:5.5}];
+var CUA_COLORES=[
+  '#1f2937','#64748b','#1d4ed8','#0891b2','#0d9488','#15803d','#65a30d','#ca8a04',
+  '#ea580c','#dc2626','#be185d','#a21caf','#7c3aed','#4338ca','#78350f','#000000'
+];
+var CUA_GROSORES=[{n:'Muy fino',w:1},{n:'Fino',w:1.8},{n:'Medio',w:3.2},
+                  {n:'Grueso',w:5.5},{n:'Muy grueso',w:9}];
 
 // ── Las letras ──────────────────────────────────────────────────
 // Las de mano son las que se piden para un cuaderno. Coming Soon es
@@ -16615,7 +16619,7 @@ function cuaId(){ return 'cu'+Date.now().toString(36)+Math.random().toString(36)
 function cuaLibro(id){ return (CUA.libros||[]).filter(function(l){return l.id===id;})[0]||null; }
 function cuaPaginaNueva(hoja){
   return {id:cuaId(), hoja:hoja||'rayada', texto:'', tam:'m',
-          trazos:[], pegatinas:[], ts:Date.now()};
+          trazos:[], pegatinas:[], listas:[], audio:null, ts:Date.now()};
 }
 function cuaNuevoLibro(d){
   var l={ id:cuaId(), t:(d&&d.t)||'Cuaderno nuevo',
@@ -16680,7 +16684,8 @@ function cuaCSS(){
   '.cu-b.sutil{background:transparent}',
   '#cua-tools{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:11px}',
   '.cu-sep{width:1px;height:22px;background:var(--bd)}',
-  '.cu-col{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;',
+  '.cu-cols{display:grid;grid-template-columns:repeat(8,18px);gap:3px}',
+  '.cu-col{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid transparent;',
     'transition:var(--tr)}',
   '.cu-col.on{border-color:var(--t1);transform:scale(1.14)}',
   '.cu-gr{width:30px;height:26px;border:1px solid var(--bd);border-radius:7px;cursor:pointer;',
@@ -16710,6 +16715,61 @@ function cuaCSS(){
     'line-height:1;pointer-events:auto;touch-action:none}',
   '.cu-pega.mov{cursor:grabbing;opacity:.75}',
   '#cua-hoja.modo-dibujo .cu-pega{pointer-events:none}',
+  // listas de tareas sobre la hoja
+  '#cua-listas{position:absolute;inset:0;pointer-events:none}',
+  '.cu-lista{position:absolute;pointer-events:auto;min-width:210px;max-width:62%;',
+    'background:rgba(255,255,255,.72);border:1px solid rgba(37,99,235,.22);border-radius:10px;',
+    'padding:7px 9px 8px;backdrop-filter:blur(2px);touch-action:none}',
+  '.cu-lista.sel{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.14)}',
+  '.cu-lista .cab{display:flex;align-items:center;gap:6px;margin-bottom:4px}',
+  '.cu-lista .cab .mv{cursor:grab;color:#94a3b8;font-size:12px}',
+  '.cu-lista .cab b{flex:1;font-size:10.5px;color:#64748b;font-weight:600;',
+    'text-transform:uppercase;letter-spacing:.06em}',
+  '.cu-lista .cab button{background:none;border:none;color:#94a3b8;cursor:pointer;',
+    'font-size:11px;padding:2px 5px;border-radius:5px}',
+  '.cu-lista .cab button:hover{background:rgba(0,0,0,.06);color:#1f2937}',
+  '.cu-it{display:flex;align-items:flex-start;gap:7px;padding:2px 0}',
+  '.cu-it input{margin-top:3px;width:14px;height:14px;cursor:pointer;accent-color:#2563eb;flex-shrink:0}',
+  '.cu-it .tx{flex:1;outline:none;font-size:13.5px;line-height:1.45;color:#1f2937;',
+    'word-break:break-word;min-height:18px}',
+  '.cu-it.ok .tx{text-decoration:line-through;color:#94a3b8}',
+  '.cu-it .x{background:none;border:none;color:#cbd5e1;cursor:pointer;font-size:11px;',
+    'padding:0 3px;opacity:0}',
+  '.cu-it:hover .x{opacity:1}',
+  '.cu-it .x:hover{color:#dc2626}',
+  '.cu-lista .mas{background:none;border:none;color:#64748b;cursor:pointer;font-size:11px;',
+    'padding:3px 0 0;margin-top:2px}',
+  '.cu-lista .mas:hover{color:#2563eb}',
+  '#cua-hoja.modo-dibujo .cu-lista{pointer-events:none;opacity:.85}',
+
+  // barra de audio
+  '#cua-audio{display:none;align-items:center;gap:9px;margin-bottom:11px;padding:9px 12px;',
+    'border:1px solid var(--bd);border-radius:var(--r);background:var(--bg3)}',
+  '#cua-audio.on{display:flex}',
+  '#cua-audio .pun{width:9px;height:9px;border-radius:50%;background:var(--danger);flex-shrink:0}',
+  '#cua-audio.grabando .pun{animation:cuaLat 1s infinite}',
+  '@keyframes cuaLat{0%,100%{opacity:1}50%{opacity:.25}}',
+  '#cua-audio .t{font-family:var(--mono);font-size:12px;color:var(--t1);flex-shrink:0}',
+  '#cua-audio .barra{flex:1;height:5px;background:var(--bd);border-radius:99px;position:relative;',
+    'cursor:pointer;min-width:60px}',
+  '#cua-audio .barra .lleno{position:absolute;left:0;top:0;bottom:0;background:var(--ac);border-radius:99px}',
+  '#cua-audio .barra .mk{position:absolute;top:-3px;width:2px;height:11px;background:var(--warn);',
+    'border-radius:1px;opacity:.75}',
+  '#cua-audio .nota{font-size:10.5px;color:var(--t3)}',
+
+  // buscador
+  '#cua-buscar{display:flex;gap:7px;align-items:center;margin-bottom:14px}',
+  '#cua-buscar input{flex:1;max-width:320px;background:var(--bg3);border:1px solid var(--bd);',
+    'border-radius:9px;padding:8px 11px;color:var(--t1);font-size:12.5px;font-family:inherit;outline:none}',
+  '#cua-buscar input:focus{border-color:var(--ac)}',
+  '#cua-res{margin-bottom:16px}',
+  '.cu-res{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border:1px solid var(--bd);',
+    'border-radius:10px;margin-bottom:7px;cursor:pointer;background:var(--bg3)}',
+  '.cu-res:hover{border-color:var(--ac)}',
+  '.cu-res b{font-size:12.5px;color:var(--t1)}',
+  '.cu-res span{font-size:11px;color:var(--t3);display:block;margin-top:2px;line-height:1.45}',
+  '.cu-res mark{background:rgba(255,184,0,.3);color:inherit;border-radius:3px;padding:0 2px}',
+
   '#cua-lienzo{position:absolute;inset:0;touch-action:none;cursor:crosshair}',
   '#cua-hoja.modo-texto #cua-lienzo{pointer-events:none}',
   '#cua-hoja.modo-dibujo #cua-texto{pointer-events:none}',
@@ -16748,8 +16808,13 @@ function cuaCSS(){
   '#cua-paleta .pg:hover{border-color:var(--ac);transform:scale(1.12)}',
   // la pegatina elegida muestra sus botones: funciona con el dedo
   '.cu-pega.sel{outline:2px dashed var(--ac);outline-offset:3px;border-radius:6px}',
+  // El menú vive dentro de la capa de pegatinas, que ignora los
+  // toques para no estorbar al lienzo. Sin esto, los botones +, − y
+  // la papelera se veían pero no respondían: el toque les pasaba por
+  // encima y llegaba al dibujo.
   '#cua-pegamenu{display:none;position:absolute;z-index:40;gap:4px;background:var(--bg2);',
-    'border:1px solid var(--bd);border-radius:9px;padding:4px;box-shadow:0 8px 22px rgba(0,0,0,.35)}',
+    'border:1px solid var(--bd);border-radius:9px;padding:4px;pointer-events:auto;',
+    'box-shadow:0 8px 22px rgba(0,0,0,.35)}',
   '#cua-pegamenu.on{display:flex}',
   '#cua-pegamenu button{background:none;border:none;color:var(--t2);cursor:pointer;font-size:12px;',
     'width:28px;height:26px;border-radius:6px}',
@@ -16954,7 +17019,8 @@ function cuaCerrarPortada(){ var b=document.getElementById('cup-bg'); if(b)b.cla
 
 // ── El cuaderno abierto ─────────────────────────────────────────
 var CU={ libro:null, pag:0, modo:'texto', herr:'lapiz',
-         color:CUA_COLORES[0], grosor:1, deshacer:[], rehacer:[], lleno:false };
+         color:CUA_COLORES[0], grosor:2, deshacer:[], rehacer:[], lleno:false,
+         autoforma:false, relleno:false };
 
 function cuaAbrir(id){
   var l=cuaLibro(id); if(!l)return;
@@ -17006,45 +17072,57 @@ function cuaRenderLibro(){
 }
 
 var CUA_FORMAS=[
-  {id:'',        n:'Mano alzada', i:'fa-pen'},
-  {id:'linea',   n:'Regla',       i:'fa-ruler'},
-  {id:'flecha',  n:'Flecha',      i:'fa-arrow-right-long'},
-  {id:'caja',    n:'Rectángulo',  i:'fa-square'},
-  {id:'circulo', n:'Círculo',     i:'fa-circle'}
+  {id:'',        n:'Mano alzada',  i:'fa-pen'},
+  {id:'linea',   n:'Regla',        i:'fa-ruler'},
+  {id:'punteada',n:'Línea punteada',i:'fa-ellipsis'},
+  {id:'flecha',  n:'Flecha',       i:'fa-arrow-right-long'},
+  {id:'caja',    n:'Rectángulo',   i:'fa-square'},
+  {id:'circulo', n:'Círculo',      i:'fa-circle'},
+  {id:'triangulo',n:'Triángulo',   i:'fa-play'}
 ];
 
 function cuaRenderTools(){
   var t=document.getElementById('cua-tools'); if(!t)return;
   var dib=CU.modo==='dibujo', p=cuaPagina(), l=CU.libro;
+  var sep='<div class="cu-sep"></div>';
   var h=[
-    '<button class="cu-b'+(!dib?' on':'')+'" onclick="cuaModo(\'texto\')"><i class="fa fa-keyboard"></i> Escribir</button>',
-    '<button class="cu-b'+(dib?' on':'')+'" onclick="cuaModo(\'dibujo\')"><i class="fa fa-pen"></i> Dibujar</button>',
-    '<div class="cu-sep"></div>'
+    '<button class="cu-b'+(!dib?' on':'')+'" onclick="cuaModo(\'texto\')">'+
+      '<i class="fa fa-keyboard"></i> Escribir</button>',
+    '<button class="cu-b'+(dib?' on':'')+'" onclick="cuaModo(\'dibujo\')">'+
+      '<i class="fa fa-pen"></i> Dibujar</button>', sep
   ];
   if(dib){
-    [['lapiz','Lápiz','fa-pen'],['marcador','Resaltador','fa-highlighter'],['borrador','Borrador','fa-eraser']]
-      .forEach(function(x){
-        h.push('<button class="cu-b'+(CU.herr===x[0]?' on':'')+'" title="'+x[1]+'" '+
-               'onclick="cuaHerr(\''+x[0]+'\')"><i class="fa '+x[2]+'"></i></button>');
-      });
-    h.push('<div class="cu-sep"></div>');
-    // Regla y formas: se traza de un punto a otro y sale derecho.
+    [['lapiz','Lápiz','fa-pen'],['marcador','Resaltador','fa-highlighter'],
+     ['borrador','Borrador','fa-eraser']].forEach(function(x){
+      h.push('<button class="cu-b'+(CU.herr===x[0]?' on':'')+'" title="'+x[1]+'" '+
+             'onclick="cuaHerr(\''+x[0]+'\')"><i class="fa '+x[2]+'"></i></button>');
+    });
+    h.push(sep);
     CUA_FORMAS.forEach(function(f){
       if(!f.id)return;
       h.push('<button class="cu-b'+(CU.herr===f.id?' on':'')+'" title="'+f.n+'" '+
              'onclick="cuaHerr(\''+f.id+'\')"><i class="fa '+f.i+'"></i></button>');
     });
-    h.push('<div class="cu-sep"></div>');
-    CUA_COLORES.forEach(function(c){
-      h.push('<div class="cu-col'+(CU.color===c?' on':'')+'" style="background:'+c+'" '+
-             'onclick="cuaColor(\''+c+'\')"></div>');
-    });
-    h.push('<div class="cu-sep"></div>');
+    h.push('<button class="cu-b'+(CU.relleno?' on':'')+'" title="Figuras rellenas" '+
+           'onclick="cuaRelleno()"><i class="fa fa-fill-drip"></i></button>');
+    h.push('<button class="cu-b'+(CU.autoforma?' on':'')+'" '+
+           'title="Autoforma: enderezar lo que dibujes a pulso" '+
+           'onclick="cuaAutoforma()"><i class="fa fa-wand-magic-sparkles"></i> Autoforma</button>');
+    h.push(sep);
+    h.push('<div class="cu-cols">'+CUA_COLORES.map(function(c){
+      return '<div class="cu-col'+(CU.color===c?' on':'')+'" style="background:'+c+'" '+
+             'onclick="cuaColor(\''+c+'\')"></div>';
+    }).join('')+'</div>');
+    h.push('<label class="cu-b sutil" title="Otro color" style="padding:4px 7px">'+
+           '<i class="fa fa-eye-dropper"></i>'+
+           '<input type="color" value="'+CU.color+'" style="width:20px;height:20px;border:none;'+
+           'background:none;padding:0;cursor:pointer" oninput="cuaColor(this.value)"></label>');
+    h.push(sep);
     CUA_GROSORES.forEach(function(g,i){
       h.push('<div class="cu-gr'+(CU.grosor===i?' on':'')+'" title="'+g.n+'" onclick="cuaGrosor('+i+')">'+
-             '<i style="width:'+(g.w*2.6)+'px;height:'+Math.max(2,g.w)+'px"></i></div>');
+             '<i style="width:'+Math.min(20,g.w*2.4)+'px;height:'+Math.max(2,Math.min(9,g.w))+'px"></i></div>');
     });
-    h.push('<div class="cu-sep"></div>');
+    h.push(sep);
     h.push('<button class="cu-b sutil" onclick="cuaDeshacer()" title="Deshacer"><i class="fa fa-rotate-left"></i></button>');
     h.push('<button class="cu-b sutil" onclick="cuaRehacer()" title="Rehacer"><i class="fa fa-rotate-right"></i></button>');
     h.push('<button class="cu-b sutil" onclick="cuaLimpiar()" title="Borrar todo el dibujo de esta hoja">'+
@@ -17060,10 +17138,15 @@ function cuaRenderTools(){
              'style="font-size:'+(10.5+i*2.5)+'px;padding:4px 10px" title="'+x[1]+'">A</button>');
     });
   }
-  h.push('<div class="cu-sep"></div>');
-  h.push('<button class="cu-b'+(CUA_PAL?' on':' sutil')+'" onclick="cuaPaleta()" '+
+  h.push(sep);
+  h.push('<button class="cu-b" onclick="cuaListaNueva()" title="Poner una lista de tareas en la hoja">'+
+         '<i class="fa fa-list-check"></i> Lista</button>');
+  h.push('<button class="cu-b'+(CUA_PAL?' on':'')+'" onclick="cuaPaleta()" '+
          'title="Pegar un ícono en la hoja"><i class="fa fa-icons"></i> Pegatinas</button>');
-  h.push('<div class="cu-sep"></div>');
+  h.push('<button class="cu-b'+(CUA_REC.grabando?' on':'')+'" onclick="cuaGrabar()" '+
+         'title="Grabar audio mientras escribes"><i class="fa fa-microphone"></i>'+
+         (CUA_REC.grabando?' Grabando':'')+'</button>');
+  h.push(sep);
   h.push('<select class="cu-sel" title="Tipo de hoja" onchange="cuaHoja(this.value)">'+
     CUA_HOJAS.map(function(x){
       return '<option value="'+x.id+'"'+((p&&p.hoja)===x.id?' selected':'')+'>'+x.n+'</option>';
@@ -17073,6 +17156,14 @@ function cuaRenderTools(){
          (((l&&l.orient)||'v')==='h'?'rectangle-list':'file-lines')+'"></i> '+
          (((l&&l.orient)||'v')==='h'?'Acostada':'De pie')+'</button>');
   t.innerHTML=h.join('');
+}
+function cuaRelleno(){ CU.relleno=!CU.relleno; cuaRenderTools(); }
+function cuaAutoforma(){
+  CU.autoforma=!CU.autoforma;
+  cuaRenderTools();
+  try{ T(CU.autoforma?'Autoforma encendida':'Autoforma apagada',
+         CU.autoforma?'Lo que dibujes a pulso se endereza solo':'Los trazos quedan tal cual',
+         CU.autoforma?'✨':'✍️'); }catch(e){}
 }
 
 function cuaRenderHoja(){
@@ -17094,6 +17185,8 @@ function cuaRenderHoja(){
   }
   cuaDibujarTodo();
   cuaRenderPegatinas();
+  cuaRenderListas();
+  cuaRenderAudio();
   var pies=document.getElementById('cua-pies');
   if(pies){
     var n=(l.paginas||[]).length;
@@ -17290,6 +17383,382 @@ function cuaPegaUp(){
   else cuaRenderPegatinas();
 }
 
+// ═══════════════════════════════════════════════════════════════
+// LISTAS DE TAREAS SOBRE LA HOJA
+// Una tarjetita con casillas que se arrastra a donde uno quiera.
+// Va en su propia capa, encima de lo escrito y del dibujo, así que
+// no estorba ni al teclado ni al lápiz.
+// ═══════════════════════════════════════════════════════════════
+var CUA_LSEL=null;
+function cuaListaNueva(){
+  var p=cuaPagina(); if(!p)return;
+  p.listas=p.listas||[];
+  var k=p.listas.length;
+  p.listas.push({ id:cuaId(), x:+(0.14+(k%3)*0.06).toFixed(4),
+                  y:+(0.22+(k%4)*0.08).toFixed(4), t:'Por hacer',
+                  items:[{id:cuaId(), t:'', hecho:false}] });
+  CUA_LSEL=p.listas[p.listas.length-1].id;
+  p.ts=Date.now(); if(CU.libro)CU.libro.ts=Date.now();
+  cuaGuardar(true); cuaRenderListas();
+  setTimeout(function(){
+    var e=document.querySelector('.cu-lista[data-id="'+CUA_LSEL+'"] .tx');
+    if(e)e.focus();
+  },40);
+}
+function cuaLista(id){
+  var p=cuaPagina();
+  return p?((p.listas||[]).filter(function(l){return l.id===id;})[0]||null):null;
+}
+function cuaRenderListas(){
+  var c=document.getElementById('cua-listas');
+  var p=cuaPagina();
+  if(!c||!p)return;
+  c.innerHTML=(p.listas||[]).map(function(l){
+    var hechos=(l.items||[]).filter(function(i){return i.hecho;}).length;
+    return '<div class="cu-lista'+(CUA_LSEL===l.id?' sel':'')+'" data-id="'+l.id+'" '+
+      'style="left:'+(l.x*100)+'%;top:'+(l.y*100)+'%">'+
+      '<div class="cab"><span class="mv" data-a="lmover">&#x2237;</span>'+
+        '<b contenteditable="true" data-a="ltitulo">'+cuaEsc(l.t||'Por hacer')+'</b>'+
+        '<span style="font-size:10px;color:#94a3b8">'+hechos+'/'+(l.items||[]).length+'</span>'+
+        '<button data-a="lborrar" title="Quitar la lista"><i class="fa fa-trash"></i></button></div>'+
+      (l.items||[]).map(function(it){
+        return '<div class="cu-it'+(it.hecho?' ok':'')+'" data-it="'+it.id+'">'+
+          '<input type="checkbox" data-a="lchk"'+(it.hecho?' checked':'')+'>'+
+          '<div class="tx" contenteditable="true" data-a="ltexto" '+
+            'data-ph="Escribe la tarea">'+cuaEsc(it.t||'')+'</div>'+
+          '<button class="x" data-a="lquitar">&times;</button></div>';
+      }).join('')+
+      '<button class="mas" data-a="lmas">+ otra tarea</button></div>';
+  }).join('');
+}
+var CUA_LMOV=null;
+function cuaListasEnganchar(){
+  var c=document.getElementById('cua-listas');
+  if(!c)return;
+  c.addEventListener('click',function(e){
+    var b=e.target.closest('[data-a]'); if(!b)return;
+    var caja=b.closest('.cu-lista'); if(!caja)return;
+    var l=cuaLista(caja.getAttribute('data-id')); if(!l)return;
+    var a=b.getAttribute('data-a');
+    var p=cuaPagina();
+    if(a==='lchk'){
+      var fila=b.closest('.cu-it');
+      (l.items||[]).forEach(function(it){
+        if(it.id===fila.getAttribute('data-it'))it.hecho=b.checked;
+      });
+      p.ts=Date.now(); cuaGuardar(true); cuaRenderListas();
+    }
+    else if(a==='lmas'){
+      l.items=l.items||[];
+      l.items.push({id:cuaId(), t:'', hecho:false});
+      cuaGuardar(true); cuaRenderListas();
+      setTimeout(function(){
+        var ls=document.querySelectorAll('.cu-lista[data-id="'+l.id+'"] .tx');
+        if(ls.length)ls[ls.length-1].focus();
+      },30);
+    }
+    else if(a==='lquitar'){
+      var f=b.closest('.cu-it');
+      l.items=(l.items||[]).filter(function(it){return it.id!==f.getAttribute('data-it');});
+      if(!l.items.length)l.items.push({id:cuaId(), t:'', hecho:false});
+      cuaGuardar(true); cuaRenderListas();
+    }
+    else if(a==='lborrar'){
+      if(!confirm('¿Quitar la lista «'+(l.t||'Por hacer')+'» de esta hoja?'))return;
+      p.listas=(p.listas||[]).filter(function(x){return x.id!==l.id;});
+      CUA_LSEL=null; cuaGuardar(true); cuaRenderListas();
+    }
+  });
+  // guardar lo escrito
+  c.addEventListener('focusout',function(e){
+    var el=e.target.closest('[data-a="ltexto"],[data-a="ltitulo"]');
+    if(!el)return;
+    var caja=el.closest('.cu-lista');
+    var l=cuaLista(caja.getAttribute('data-id')); if(!l)return;
+    if(el.getAttribute('data-a')==='ltitulo'){ l.t=(el.textContent||'').trim()||'Por hacer'; }
+    else{
+      var fila=el.closest('.cu-it');
+      (l.items||[]).forEach(function(it){
+        if(it.id===fila.getAttribute('data-it'))it.t=(el.textContent||'').trim();
+      });
+    }
+    var p=cuaPagina(); if(p)p.ts=Date.now();
+    cuaGuardar();
+  },true);
+  c.addEventListener('keydown',function(e){
+    var el=e.target.closest('[data-a="ltexto"]');
+    if(!el)return;
+    if(e.key==='Enter'){
+      e.preventDefault();
+      el.blur();
+      var caja=el.closest('.cu-lista');
+      var b=caja.querySelector('[data-a="lmas"]');
+      if(b)b.click();
+    }
+  });
+  c.addEventListener('focusin',function(e){
+    var caja=e.target.closest('.cu-lista');
+    if(caja){ CUA_LSEL=caja.getAttribute('data-id');
+      [].forEach.call(c.querySelectorAll('.cu-lista'),function(x){
+        x.classList.toggle('sel', x===caja);
+      });
+    }
+  });
+  // arrastrar por el manubrio
+  c.addEventListener('pointerdown',function(e){
+    var m=e.target.closest('[data-a="lmover"]');
+    if(!m)return;
+    e.preventDefault();
+    var caja=m.closest('.cu-lista');
+    CUA_LMOV={el:caja, id:caja.getAttribute('data-id')};
+    try{ m.setPointerCapture(e.pointerId); }catch(_){}
+  });
+  c.addEventListener('pointermove',function(e){
+    if(!CUA_LMOV)return;
+    var r=document.getElementById('cua-hoja').getBoundingClientRect();
+    var x=Math.max(0.01,Math.min(0.8,(e.clientX-r.left)/r.width));
+    var y=Math.max(0.01,Math.min(0.92,(e.clientY-r.top)/r.height));
+    CUA_LMOV.el.style.left=(x*100)+'%';
+    CUA_LMOV.el.style.top=(y*100)+'%';
+    CUA_LMOV.x=x; CUA_LMOV.y=y;
+  });
+  c.addEventListener('pointerup',function(){
+    if(!CUA_LMOV)return;
+    var l=cuaLista(CUA_LMOV.id);
+    if(l&&CUA_LMOV.x!=null){
+      l.x=+CUA_LMOV.x.toFixed(4); l.y=+CUA_LMOV.y.toFixed(4);
+      var p=cuaPagina(); if(p)p.ts=Date.now();
+      cuaGuardar();
+    }
+    CUA_LMOV=null;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GRABAR MIENTRAS SE ESCRIBE
+// Es lo que hace Notability y por lo que la usan en clase: se graba
+// al profesor y cada trazo queda marcado con el segundo en que se
+// hizo. Después, al tocar un apunte, el audio salta a ese momento.
+//
+// El audio va en IndexedDB, no en la gaveta normal: un minuto de
+// grabación pesa más que todo lo demás junto y llenaría el cupo.
+// ═══════════════════════════════════════════════════════════════
+var CUA_REC={ grabando:false, t0:0, mr:null, trozos:[], audio:null, timer:null };
+
+function cuaBD(){
+  return new Promise(function(ok,mal){
+    var r=indexedDB.open('em_cuadernos_audio',1);
+    r.onupgradeneeded=function(){ r.result.createObjectStore('a'); };
+    r.onsuccess=function(){ ok(r.result); };
+    r.onerror=function(){ mal(r.error); };
+  });
+}
+function cuaAudioGuardar(id,blob){
+  return cuaBD().then(function(db){
+    return new Promise(function(ok,mal){
+      var t=db.transaction('a','readwrite');
+      t.objectStore('a').put(blob,id);
+      t.oncomplete=function(){ ok(); }; t.onerror=function(){ mal(t.error); };
+    });
+  });
+}
+function cuaAudioLeer(id){
+  return cuaBD().then(function(db){
+    return new Promise(function(ok){
+      var t=db.transaction('a','readonly').objectStore('a').get(id);
+      t.onsuccess=function(){ ok(t.result||null); };
+      t.onerror=function(){ ok(null); };
+    });
+  });
+}
+function cuaAudioBorrar(id){
+  return cuaBD().then(function(db){
+    return new Promise(function(ok){
+      var t=db.transaction('a','readwrite');
+      t.objectStore('a').delete(id);
+      t.oncomplete=function(){ ok(); }; t.onerror=function(){ ok(); };
+    });
+  });
+}
+function cuaMMSS(s){
+  s=Math.max(0,Math.round(s||0));
+  return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+}
+function cuaGrabar(){
+  var p=cuaPagina(); if(!p)return;
+  if(CUA_REC.grabando)return cuaParar();
+  if(p.audio&&!confirm('Esta hoja ya tiene una grabación. Si grabas otra, la anterior se borra.\n\n¿Seguir?'))return;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    try{ T('Sin micrófono','Este equipo o este navegador no deja grabar','⚠️'); }catch(e){}
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(st){
+    var mr;
+    try{ mr=new MediaRecorder(st,{mimeType:'audio/webm'}); }
+    catch(e){ mr=new MediaRecorder(st); }
+    CUA_REC.mr=mr; CUA_REC.trozos=[]; CUA_REC.t0=Date.now(); CUA_REC.grabando=true;
+    mr.ondataavailable=function(e){ if(e.data&&e.data.size)CUA_REC.trozos.push(e.data); };
+    mr.onstop=function(){
+      st.getTracks().forEach(function(t){ t.stop(); });
+      var blob=new Blob(CUA_REC.trozos,{type:mr.mimeType||'audio/webm'});
+      var pg=cuaPagina(); if(!pg)return;
+      var id='au'+Date.now().toString(36);
+      cuaAudioGuardar(id,blob).then(function(){
+        if(pg.audio)cuaAudioBorrar(pg.audio.id);
+        pg.audio={ id:id, dur:(Date.now()-CUA_REC.t0)/1000, ts:Date.now() };
+        pg.ts=Date.now(); cuaGuardar(true); cuaRenderAudio();
+        try{ T('Grabación guardada', cuaMMSS(pg.audio.dur)+' · toca un apunte para saltar ahí','🎙️'); }catch(e){}
+      }).catch(function(){
+        try{ T('No se pudo guardar el audio','El equipo se quedó sin espacio','⚠️'); }catch(e){}
+      });
+    };
+    mr.start();
+    cuaRenderAudio();
+    CUA_REC.timer=setInterval(cuaRenderAudio,500);
+    try{ T('Grabando','Cada trazo queda marcado con su segundo','🔴'); }catch(e){}
+  }).catch(function(){
+    try{ T('No se pudo abrir el micrófono','Dale permiso al navegador e inténtalo otra vez','⚠️'); }catch(e){}
+  });
+}
+function cuaParar(){
+  if(!CUA_REC.grabando)return;
+  CUA_REC.grabando=false;
+  clearInterval(CUA_REC.timer);
+  try{ CUA_REC.mr.stop(); }catch(e){}
+  cuaRenderAudio();
+}
+function cuaBorrarAudio(){
+  var p=cuaPagina(); if(!p||!p.audio)return;
+  if(!confirm('Se borra la grabación de esta hoja. No se puede deshacer.\n\n¿Seguir?'))return;
+  cuaAudioBorrar(p.audio.id);
+  p.audio=null; p.ts=Date.now(); cuaGuardar(true);
+  var a=document.getElementById('cua-son'); if(a){ a.pause(); a.removeAttribute('src'); }
+  cuaRenderAudio();
+}
+function cuaSonar(){
+  var p=cuaPagina(); if(!p||!p.audio)return;
+  var a=document.getElementById('cua-son');
+  if(!a)return;
+  if(!a.src){
+    cuaAudioLeer(p.audio.id).then(function(b){
+      if(!b){ try{T('No encuentro el audio','Puede que se haya borrado del equipo','⚠️');}catch(e){} return; }
+      a.src=URL.createObjectURL(b);
+      a.play(); cuaRenderAudio();
+    });
+    return;
+  }
+  if(a.paused)a.play(); else a.pause();
+  cuaRenderAudio();
+}
+// Tocar un apunte y que el audio salte a ese momento
+function cuaSaltarA(ev){
+  var p=cuaPagina();
+  if(!p||!p.audio||CU.modo==='dibujo')return;
+  var con=(p.trazos||[]).filter(function(t){ return t.a!=null; });
+  if(!con.length)return;
+  var r=document.getElementById('cua-hoja').getBoundingClientRect();
+  var x=(ev.clientX-r.left)/r.width, y=(ev.clientY-r.top)/r.height;
+  var mejor=null, dist=1e9;
+  con.forEach(function(t){
+    (t.p||[]).forEach(function(q){
+      var d=(q[0]-x)*(q[0]-x)+(q[1]-y)*(q[1]-y);
+      if(d<dist){ dist=d; mejor=t; }
+    });
+  });
+  if(!mejor||dist>0.012)return;            // muy lejos de cualquier trazo
+  var a=document.getElementById('cua-son');
+  var ir=function(){ a.currentTime=Math.max(0,mejor.a-0.6); a.play(); cuaRenderAudio(); };
+  if(!a.src){ cuaAudioLeer(p.audio.id).then(function(b){ if(b){ a.src=URL.createObjectURL(b); ir(); } }); }
+  else ir();
+}
+function cuaRenderAudio(){
+  var c=document.getElementById('cua-audio');
+  var p=cuaPagina();
+  if(!c||!p)return;
+  var a=document.getElementById('cua-son');
+  if(CUA_REC.grabando){
+    c.className='on grabando';
+    c.innerHTML='<span class="pun"></span>'+
+      '<span class="t">'+cuaMMSS((Date.now()-CUA_REC.t0)/1000)+'</span>'+
+      '<span class="nota" style="flex:1">Grabando. Lo que dibujes queda marcado con su segundo.</span>'+
+      '<button class="cu-b on" onclick="cuaParar()"><i class="fa fa-stop"></i> Parar</button>';
+    return;
+  }
+  if(!p.audio){ c.className=''; c.innerHTML=''; return; }
+  var dur=p.audio.dur||1;
+  var ahora=(a&&a.src&&!isNaN(a.currentTime))?a.currentTime:0;
+  var marcas=(p.trazos||[]).filter(function(t){return t.a!=null;}).slice(0,220)
+    .map(function(t){ return '<div class="mk" style="left:'+Math.min(99,(t.a/dur)*100)+'%"></div>'; }).join('');
+  c.className='on';
+  c.innerHTML='<button class="cu-b" onclick="cuaSonar()">'+
+      '<i class="fa fa-'+((a&&a.src&&!a.paused)?'pause':'play')+'"></i></button>'+
+    '<span class="t">'+cuaMMSS(ahora)+' / '+cuaMMSS(dur)+'</span>'+
+    '<div class="barra" onclick="cuaBuscarAudio(event)">'+
+      '<div class="lleno" style="width:'+Math.min(100,(ahora/dur)*100)+'%"></div>'+marcas+'</div>'+
+    '<span class="nota">Toca un apunte y el audio salta ahí</span>'+
+    '<button class="cu-b sutil" onclick="cuaGrabar()" title="Grabar otra"><i class="fa fa-microphone"></i></button>'+
+    '<button class="cu-b sutil" style="color:var(--danger)" onclick="cuaBorrarAudio()">'+
+      '<i class="fa fa-trash"></i></button>';
+}
+function cuaBuscarAudio(ev){
+  var p=cuaPagina(); if(!p||!p.audio)return;
+  var a=document.getElementById('cua-son'); if(!a)return;
+  var r=ev.currentTarget.getBoundingClientRect();
+  var f=(ev.clientX-r.left)/r.width;
+  var ir=function(){ a.currentTime=f*(p.audio.dur||1); a.play(); cuaRenderAudio(); };
+  if(!a.src)cuaAudioLeer(p.audio.id).then(function(b){ if(b){ a.src=URL.createObjectURL(b); ir(); } });
+  else ir();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BUSCAR EN TODOS LOS CUADERNOS
+// Busca en lo escrito con teclado y en las listas de tareas. Lo
+// dibujado a mano no se puede buscar: haría falta reconocer la
+// letra, y eso no se hace aquí.
+// ═══════════════════════════════════════════════════════════════
+function cuaBuscar(q){
+  q=(q||'').trim().toLowerCase();
+  var c=document.getElementById('cua-res');
+  var est=document.getElementById('cua-estante');
+  if(!c)return;
+  if(q.length<2){ c.innerHTML=''; if(est)est.style.display=''; return; }
+  if(est)est.style.display='none';
+  var hits=[];
+  (CUA.libros||[]).forEach(function(l){
+    (l.paginas||[]).forEach(function(p,i){
+      var textos=[String(p.texto||'')];
+      (p.listas||[]).forEach(function(li){
+        textos.push(li.t||'');
+        (li.items||[]).forEach(function(it){ textos.push(it.t||''); });
+      });
+      var todo=textos.join(' \n ');
+      var pos=todo.toLowerCase().indexOf(q);
+      if(pos>=0){
+        var ini=Math.max(0,pos-45);
+        var frag=todo.slice(ini,pos+q.length+55).replace(/\s+/g,' ');
+        hits.push({l:l, i:i, frag:frag, pos:pos-ini});
+      }
+    });
+  });
+  c.innerHTML = hits.length
+    ? '<div style="font-size:11px;color:var(--t3);margin-bottom:9px">'+hits.length+
+      ' resultado'+(hits.length>1?'s':'')+'</div>'+
+      hits.slice(0,30).map(function(h){
+        var f=cuaEsc(h.frag);
+        var marcado=f.replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<mark>$1</mark>');
+        return '<div class="cu-res" onclick="cuaIrA(\''+h.l.id+'\','+h.i+')">'+
+          '<span style="font-size:17px">'+(h.l.icono||'📘')+'</span>'+
+          '<div><b>'+cuaEsc(h.l.t)+'</b> <span style="display:inline;color:var(--t3)">· hoja '+(h.i+1)+'</span>'+
+          '<span>…'+marcado+'…</span></div></div>';
+      }).join('')
+    : '<div style="padding:22px 4px;color:var(--t3);font-size:12px">Nada con «'+cuaEsc(q)+'».</div>';
+}
+function cuaIrA(libro,pag){
+  cuaAbrir(libro);
+  CU.pag=pag;
+  cuaRenderTools(); cuaRenderHoja();
+}
+
 // ── El lienzo ───────────────────────────────────────────────────
 var CUL={ pintando:false, trazo:null, ctx:null, w:0, h:0, lapizVisto:false };
 
@@ -17324,11 +17793,20 @@ function cuaPintarTrazo(ctx,t,w,h){
   if(t.f && pts.length>1){
     var a=pts[0], b=pts[pts.length-1];
     var x1=a[0]*w, y1=a[1]*h, x2=b[0]*w, y2=b[1]*h;
+    if(t.f==='punteada')ctx.setLineDash([Math.max(4,(t.w||3)*2.2), Math.max(4,(t.w||3)*2)]);
     ctx.beginPath();
-    if(t.f==='caja'){ ctx.rect(x1,y1,x2-x1,y2-y1); ctx.stroke(); }
+    if(t.f==='caja'){ ctx.rect(x1,y1,x2-x1,y2-y1);
+      if(t.r)ctx.fill(); ctx.stroke(); }
     else if(t.f==='circulo'){
       ctx.ellipse((x1+x2)/2,(y1+y2)/2,Math.abs(x2-x1)/2,Math.abs(y2-y1)/2,0,0,6.2832);
-      ctx.stroke();
+      if(t.r)ctx.fill(); ctx.stroke();
+    }
+    else if(t.f==='triangulo'){
+      ctx.moveTo((x1+x2)/2, Math.min(y1,y2));
+      ctx.lineTo(Math.min(x1,x2), Math.max(y1,y2));
+      ctx.lineTo(Math.max(x1,x2), Math.max(y1,y2));
+      ctx.closePath();
+      if(t.r)ctx.fill(); ctx.stroke();
     }else{
       ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
       if(t.f==='flecha'){
@@ -17358,6 +17836,63 @@ function cuaPintarTrazo(ctx,t,w,h){
   ctx.stroke();
   ctx.restore();
 }
+// ═══════════════════════════════════════════════════════════════
+// AUTOFORMA
+// Lo que hacen Goodnotes y Samsung Notes: uno dibuja un círculo
+// torcido y queda redondo. Aquí se mira el trazo recién hecho y se
+// decide si era una línea, un rectángulo, un círculo o un
+// triángulo; si no se parece a ninguno, se deja tal cual.
+//
+// Cómo se decide: se compara el ÁREA que encierra el trazo con la
+// del rectángulo que lo contiene. Un rectángulo lo llena casi
+// entero (≈1), un círculo llena el 78%, un triángulo la mitad.
+// ═══════════════════════════════════════════════════════════════
+function cuaReconocer(t,w,h){
+  var p=t.p||[];
+  if(p.length<6)return null;
+  var xs=p.map(function(q){return q[0]*w;}), ys=p.map(function(q){return q[1]*h;});
+  var minX=Math.min.apply(null,xs), maxX=Math.max.apply(null,xs);
+  var minY=Math.min.apply(null,ys), maxY=Math.max.apply(null,ys);
+  var bw=maxX-minX, bh=maxY-minY;
+  if(bw<18&&bh<18)return null;                       // muy chiquito
+
+  // largo del recorrido
+  var largo=0;
+  for(var i=1;i<p.length;i++){
+    largo+=Math.hypot(xs[i]-xs[i-1], ys[i]-ys[i-1]);
+  }
+  var cierra=Math.hypot(xs[0]-xs[xs.length-1], ys[0]-ys[ys.length-1]);
+
+  // ¿recta? la mayor desviación respecto de la cuerda es mínima
+  var x1=xs[0],y1=ys[0],x2=xs[xs.length-1],y2=ys[ys.length-1];
+  var cuerda=Math.hypot(x2-x1,y2-y1);
+  if(cuerda>24){
+    var desvio=0;
+    for(var j=0;j<p.length;j++){
+      var d=Math.abs((y2-y1)*xs[j]-(x2-x1)*ys[j]+x2*y1-y2*x1)/cuerda;
+      if(d>desvio)desvio=d;
+    }
+    if(desvio < Math.max(5, cuerda*0.055) && largo < cuerda*1.22)
+      return {f:'linea', p:[[xs[0]/w,ys[0]/h],[x2/w,y2/h]]};
+  }
+
+  // ¿cerrado? entonces es una figura
+  if(cierra < largo*0.26 && largo>70){
+    var area=0;
+    for(var k=0;k<p.length;k++){
+      var l=(k+1)%p.length;
+      area+=xs[k]*ys[l]-xs[l]*ys[k];
+    }
+    area=Math.abs(area)/2;
+    var razon=area/Math.max(1,bw*bh);
+    var caja=[[minX/w,minY/h],[maxX/w,maxY/h]];
+    if(razon>0.84)  return {f:'caja',      p:caja};
+    if(razon>0.62)  return {f:'circulo',   p:caja};
+    if(razon>0.34)  return {f:'triangulo', p:caja};
+  }
+  return null;
+}
+
 function cuaDibujarTodo(){
   var ctx=cuaAjustarLienzo();
   if(!ctx)return;
@@ -17388,8 +17923,11 @@ function cuaEmpezar(ev){
   CUL.trazo={ h: CU.herr==='marcador'?'r':CU.herr==='borrador'?'b':'l',
               f: forma,
               c: CU.color,
+              r: (CU.relleno&&forma&&forma!=='linea'&&forma!=='punteada'&&forma!=='flecha')?1:0,
               w: CU.herr==='marcador'?g*4.5:CU.herr==='borrador'?g*5:g,
               p: [cuaPunto(ev)] };
+  // si hay grabación andando, se anota el segundo exacto del trazo
+  if(CUA_REC.grabando)CUL.trazo.a=+((Date.now()-CUA_REC.t0)/1000).toFixed(2);
   try{ ev.target.setPointerCapture(ev.pointerId); }catch(e){}
 }
 function cuaMover(ev){
@@ -17416,6 +17954,10 @@ function cuaSoltar(){
   var p=cuaPagina();
   var t=CUL.trazo;
   var sirve = t && t.p.length && !(t.f && t.p.length<2);
+  if(p&&sirve&&CU.autoforma&&!t.f&&t.h==='l'){
+    var r=cuaReconocer(t,CUL.w,CUL.h);
+    if(r){ t.f=r.f; t.p=r.p; t.r=CU.relleno?1:0; }
+  }
   if(p&&sirve){
     CU.deshacer.push(JSON.stringify(p.trazos||[]));
     if(CU.deshacer.length>40)CU.deshacer.shift();
@@ -17553,6 +18095,36 @@ function cuaPDFHoja(x,p,l,f,W,H){
     if(t.h==='b')return;                     // el borrador no se "pinta"
     cuaPintarTrazo(x,t,W,H);
   });
+  // las listas de tareas
+  (p.listas||[]).forEach(function(li){
+    var lx=li.x*W, ly=li.y*H, an=Math.min(W*0.5, 230);
+    var alto=26+(li.items||[]).length*17;
+    x.save();
+    x.fillStyle='rgba(255,255,255,.78)'; x.strokeStyle='rgba(37,99,235,.25)'; x.lineWidth=.8;
+    x.beginPath(); x.rect(lx,ly,an,alto); x.fill(); x.stroke();
+    x.fillStyle='#64748b'; x.font='bold 8px sans-serif';
+    x.fillText((li.t||'POR HACER').toUpperCase(), lx+9, ly+14);
+    (li.items||[]).forEach(function(it,k){
+      var yy=ly+28+k*17;
+      x.strokeStyle='#94a3b8'; x.lineWidth=.9;
+      x.beginPath(); x.rect(lx+9,yy-8,9,9); x.stroke();
+      if(it.hecho){
+        x.beginPath(); x.moveTo(lx+10.5,yy-3.6); x.lineTo(lx+13,yy-1); x.lineTo(lx+16.5,yy-6.6);
+        x.strokeStyle='#2563eb'; x.lineWidth=1.5; x.stroke();
+      }
+      x.fillStyle=it.hecho?'#94a3b8':'#1f2937'; x.font='10px sans-serif';
+      var txt=String(it.t||'');
+      if(x.measureText(txt).width>an-28)
+        txt=txt.slice(0,Math.floor((an-28)/5))+'…';
+      x.fillText(txt, lx+24, yy);
+      if(it.hecho){
+        var an2=x.measureText(txt).width;
+        x.strokeStyle='#94a3b8'; x.lineWidth=.8;
+        x.beginPath(); x.moveTo(lx+24,yy-3); x.lineTo(lx+24+an2,yy-3); x.stroke();
+      }
+    });
+    x.restore();
+  });
   // las pegatinas
   (p.pegatinas||[]).forEach(function(pe){
     x.save();
@@ -17585,18 +18157,27 @@ function cuaMontarVista(){
     '<div id="cua-estante-wrap">'+
       '<div class="pg"><h1 class="pgh1">Cuadernos</h1>'+
         '<p class="pgp">Escribe con teclado y dibuja encima, en la misma hoja.</p></div>'+
+      '<div id="cua-buscar">'+
+        '<input type="search" placeholder="Buscar en todos los cuadernos…" '+
+          'oninput="cuaBuscar(this.value)">'+
+        '<span style="font-size:10.5px;color:var(--t3)">Busca lo escrito y las listas. '+
+          'Lo dibujado a mano no.</span></div>'+
+      '<div id="cua-res"></div>'+
       '<div id="cua-estante"></div>'+
     '</div>'+
     '<div id="cua-abierto">'+
       '<div id="cua-barra"></div>'+
       '<div id="cua-tools"></div>'+
       '<div id="cua-paleta"></div>'+
+      '<div id="cua-audio"></div>'+
       '<div id="cua-hoja-caja"><div id="cua-hoja" class="modo-texto">'+
         '<div id="cua-papel"></div>'+
         '<textarea id="cua-texto" spellcheck="false" placeholder="Escribe aquí…"></textarea>'+
         '<canvas id="cua-lienzo"></canvas>'+
+        '<div id="cua-listas"></div>'+
         '<div id="cua-pegas"></div>'+
       '</div></div>'+
+      '<audio id="cua-son" preload="none"></audio>'+
       '<div id="cua-pies"></div>'+
     '</div>';
   ct.appendChild(v);
@@ -17608,6 +18189,19 @@ function cuaMontarVista(){
   c.addEventListener('pointercancel',cuaSoltar);
   c.addEventListener('pointerleave',cuaSoltar);
 
+  cuaListasEnganchar();
+  // tocar un apunte salta a ese punto de la grabación
+  document.getElementById('cua-hoja').addEventListener('pointerup',function(e){
+    if(e.target.closest('.cu-lista')||e.target.closest('.cu-pega'))return;
+    try{ cuaSaltarA(e); }catch(_){}
+  });
+  var son=document.getElementById('cua-son');
+  if(son){
+    son.addEventListener('timeupdate',function(){
+      if(!CUA_REC.grabando)cuaRenderAudio();
+    });
+    son.addEventListener('ended',cuaRenderAudio);
+  }
   var pg=document.getElementById('cua-pegas');
   pg.addEventListener('pointerdown',cuaPegaDown);
   pg.addEventListener('pointermove',cuaPegaMove);
