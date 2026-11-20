@@ -72,7 +72,7 @@ html,body{height:100%;overflow:hidden;background:#080C14;color:#E8F0FE;font-fami
     </button>
     <div class="sp"></div>
     <button class="tbtn" id="btn-install" onclick="instalarApp()" style="display:none;border-color:#00D4FF;color:#00D4FF;">&#128241; Instalar app</button>
-    <div class="ver"><b style="color:#00D4FF">v9</b> &middot; 11 nov 2026<br>Desarrollado por Ing. Edisson Mac&iacute;as Quevedo</div>
+    <div class="ver"><b style="color:#00D4FF">v10</b> &middot; 20 nov 2026<br>Desarrollado por Ing. Edisson Mac&iacute;as Quevedo</div>
   </div>
   <div id="frames">
     <iframe class="fr off" id="f1" title="Planos"      srcdoc="<!DOCTYPE html>
@@ -14569,6 +14569,146 @@ if(typeof window!=='undefined'){
     try{ T('Marcas soltadas', n+' elemento(s)', '♻️'); }catch(e){}
   };
 }
+
+
+// ═══════════════════════════════════════════════════════════════
+// ARRANQUE SIN SALTOS  ·  SINCRONIZACIÓN LIVIANA  (solo PERSONAL)
+//
+// EL FALLO
+// Al abrir, NeuroNotes pintaba primero la copia del equipo (con
+// cosas que la nube ya había borrado) y un instante después bajaba
+// la nube y lo volvía a pintar todo. Además, cada minuto y cada vez
+// que se volvía a la app se bajaba el documento ENTERO (hasta 1 MB)
+// aunque nada hubiera cambiado. En la tablet eso se sentía pesado.
+//
+// EL ARREGLO
+//   1. Mientras llega la nube se muestra un velo corto ("Sincronizando…"),
+//      con tope de 3 segundos: sin señal la app igual entra con lo local.
+//   2. La revisión periódica pide SOLO la marca de tiempo (ts) y el
+//      equipo. Si coincide con la última vez, no se baja nada.
+//   3. Si cambió, se baja el documento completo como antes y se fusiona
+//      con la misma lógica de siempre.
+// ═══════════════════════════════════════════════════════════════
+
+var ARRANQUE_VER = 'arranque-1';
+
+(function(){
+  if(typeof window==='undefined' || typeof document==='undefined') return;
+
+  var velo=null, quito=false, tope=null;
+
+  function ponerVelo(){
+    try{
+      if(quito || velo || !document.body) return;
+      velo=document.createElement('div');
+      velo.id='nn-velo';
+      velo.setAttribute('style',
+        'position:fixed;inset:0;z-index:99990;display:flex;flex-direction:column;'+
+        'align-items:center;justify-content:center;gap:12px;'+
+        'background:var(--bg,#0b0f1a);color:var(--t2,#9aa5bd);'+
+        'font:600 13px/1.4 system-ui,-apple-system,sans-serif;');
+      velo.innerHTML='<div class="nn-velo-giro" style="width:26px;height:26px;'+
+        'border:3px solid currentColor;border-top-color:transparent;border-radius:50%;'+
+        'animation:nnVeloGiro .8s linear infinite"></div>'+
+        '<div>Sincronizando con la nube…</div>'+
+        '<style>@keyframes nnVeloGiro{to{transform:rotate(360deg)}}</style>';
+      document.body.appendChild(velo);
+      tope=setTimeout(quitarVelo, 3000);
+    }catch(e){}
+  }
+  function quitarVelo(){
+    if(quito) return;
+    quito=true;
+    try{ if(tope) clearTimeout(tope); }catch(e){}
+    try{ if(velo) velo.remove(); }catch(e){}
+    velo=null;
+  }
+
+  // Esperar a que existan las funciones base (el documento ya las trae,
+  // pero este archivo se carga después que el resto del módulo de sync).
+  function cuando(cond, trabajo){
+    var n=0;
+    (function mirar(){
+      var ok=false; try{ ok=!!cond(); }catch(e){}
+      if(ok){ try{ trabajo(); }catch(e){ try{console.warn('arranque',e);}catch(_){} } return; }
+      if(++n<60) setTimeout(mirar, n<10?100:400);
+    })();
+  }
+
+  cuando(function(){ return typeof nnSyncEstado==='function' && typeof nnAplicarRemoto==='function' && typeof nnSyncFallo==='function' && typeof nnCloudUrl==='function'; }, function(){
+
+    // Velo desde el primer instante del módulo
+    ponerVelo();
+
+    // Pedir solo la marca de tiempo y el equipo que la dejó
+    function pedirSoloMarca(url){
+      var liviana=url+'&mask.fieldPaths=ts&mask.fieldPaths=dev';
+      return fetch(liviana).then(function(r){
+        if(r.status===404) return null;
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        return r.json();
+      });
+    }
+
+    // Bajar el documento completo y aplicarlo (igual que antes)
+    function bajarCompleto(url, silencioso, j0){
+      return fetch(url)
+        .then(function(r){
+          if(r.status===404) return null;
+          if(!r.ok) throw new Error('HTTP '+r.status);
+          return r.json();
+        })
+        .then(function(j){
+          if(!j||!j.fields||!j.fields.json){ nnSyncEstado('Nube vacía'); return false; }
+          var r=JSON.parse(j.fields.json.stringValue||'{}');
+          var rts=+(j.fields.ts&&(j.fields.ts.integerValue||j.fields.ts.stringValue))||0;
+          var mismoDev=(j.fields.dev&&j.fields.dev.stringValue)===NN_DEV;
+          if(rts===NN_SYNC_TS){ nnSyncEstado('Al día · '+new Date().toLocaleTimeString('es-CO'),'var(--ok)'); return false; }
+          NN_SYNC_ON=true;
+          nnAplicarRemoto(r, rts>NN_SYNC_TS);
+          NN_SYNC_TS=Math.max(rts,NN_SYNC_TS);
+          NN_SYNC_ON=false;
+          nnSave(true);
+          try{
+            projFillSelect(); calFillProjects(); renderProjects(); renderKB(); renderDash();
+            if(document.getElementById('v-lev')&&document.getElementById('v-lev').classList.contains('on')) lvRender();
+          }catch(e){}
+          nnSyncEstado('Actualizado desde '+((r.dev&&!mismoDev)?r.dev:'la nube')+' · '+new Date().toLocaleTimeString('es-CO'),'var(--ok)');
+          if(!silencioso) try{ T('Sincronizado',(PROJECTS.length)+' proyectos · '+Object.values(KB).flat().length+' tareas','☁️'); }catch(e){}
+          return true;
+        });
+    }
+
+    // Si ya hay una revisión en marcha, se espera esa: no se piden
+    // dos veces la misma cosa al arrancar.
+    var enCurso=null;
+    nnCloudPull=function(silencioso){
+      var url=nnCloudUrl();
+      if(!url){
+        NN_SYNC_ERR=EMCFG_NN?'sinclave':'';
+        nnSyncEstado(EMCFG_NN?'Sin configurar · toca aquí':'Esperando configuración…');
+        return Promise.resolve(false);
+      }
+      if(enCurso) return enCurso;
+      nnSyncEstado('Sincronizando…','var(--warn)');
+      enCurso=pedirSoloMarca(url)
+        .then(function(j){
+          // Nube vacía o sin marca: nada que bajar
+          if(!j||!j.fields||!j.fields.ts){ nnSyncEstado('Nube vacía'); return false; }
+          var rts=+(j.fields.ts.integerValue||j.fields.ts.stringValue)||0;
+          if(rts===NN_SYNC_TS){
+            // Nada nuevo desde la última vez: no se baja el documento
+            nnSyncEstado('Al día · '+new Date().toLocaleTimeString('es-CO'),'var(--ok)');
+            return false;
+          }
+          return bajarCompleto(url, silencioso, j);
+        })
+        .then(function(v){ quitarVelo(); enCurso=null; return v; },
+              function(e){ quitarVelo(); enCurso=null; nnSyncFallo(e); return false; });
+      return enCurso;
+    };
+  });
+})();
 
 
 
