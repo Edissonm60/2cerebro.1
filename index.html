@@ -23120,12 +23120,22 @@ var NUEVO_TIPOS = [
     // Una reunión se identifica igual que en su propio módulo (nn_meet_+id),
     // así Alertas la reconoce como la misma y no la duplica.
     var idBase=Date.now();
-    var ev={id:(tipo.cal==='meet'?'nn_meet_':'nn_cal_')+idBase, title:t, type:tipo.cal, prio:'media', date:fecha, time:hora,
+    var prefijo = tipo.cal==='meet' ? 'nn_meet_' : (tipo.k==='recordatorio' ? 'nn_rec_' : 'nn_cal_');
+    var ev={id:prefijo+idBase, title:t, type:tipo.cal, prio:'media', date:fecha, time:hora,
             project:p?p.name:'', projId:proj||'', notes:notas, link:enlace,
             recur:'', recurEnd:'', sent:'', done:false};
     // Solo un recordatorio suena como alerta. Reuniones, visitas y
     // capacitaciones van a la agenda, sin alarma ni contador.
-    nnEvent(ev, tipo.cal==='task');
+    // Un recordatorio es alarma (suma al contador). Lo demás es agenda:
+    // no suma, pero sí avisa por Telegram al crearse.
+    nnEvent(ev, tipo.k==='recordatorio');
+    if(tipo.k!=='recordatorio'){
+      try{
+        nnTg('<b>'+tipo.n+'</b>: '+nnEsc(t)+
+             '\n📆 '+(typeof nnFechaLarga==='function'?nnFechaLarga(fecha):fecha)+' · 🕐 '+hora+
+             (lugar?'\n📍 '+nnEsc(lugar):'')+(enlace?'\n🔗 '+enlace:''));
+      }catch(e){}
+    }
     if(tipo.cal==='meet'){
       try{
         MEETS.unshift({id:idBase, t:t, time:hora, date:nnCorto(fecha), plat:tipo.plat||'presencial',
@@ -23145,7 +23155,12 @@ var NUEVO_TIPOS = [
     var t=v('new-title');
     if(!t){ try{ T('Falta el título','Ponle un nombre para saber qué es','⚠️'); }catch(e){} return; }
     if(tipo&&tipo.ev){ guardarEvento(tipo); return; }
+    // Tarea con fecha: también avisa por Telegram al crearse
+    var fTarea=v('new-date'), hTarea=v('new-time')||'09:00';
     if(guardarOriginal) guardarOriginal();   // tarea o nota
+    if(k==='task' && fTarea){
+      try{ nnTg('<b>Tarea</b>: '+nnEsc(t)+'\n📆 '+(typeof nnFechaLarga==='function'?nnFechaLarga(fTarea):fTarea)+' · 🕐 '+hTarea); }catch(e){}
+    }
   }
 
   // ── Quitar lo que sobra ────────────────────────────────────────
@@ -23357,6 +23372,87 @@ var NUEVO_TIPOS = [
       }catch(err){}
       return original.apply(this,arguments);
     };
+  })();
+})();
+
+// ── "Lo que viene": citas y tareas, aparte de las alarmas ─────────
+// La agenda (visitas, reuniones, capacitaciones y tareas) se muestra
+// en "Lo que viene". Los recordatorios van en su lista y son los
+// únicos que cuentan como alarma.
+(function(){
+  if(typeof window==='undefined' || typeof document==='undefined') return;
+  var ultimos=[];
+  function esAgenda(e){
+    var id=String(e.id||'');
+    return /^nn_(meet|cal|task)_/.test(id) && !/^nn_rec_/.test(id);
+  }
+  function hoyISO(){ return new Date().toISOString().split('T')[0]; }
+  function icono(e){
+    if(e.type==='meet') return e.link ? 'fa-video' : 'fa-users';
+    if(e.type==='visita') return 'fa-hard-hat';
+    if(e.type==='capacita') return 'fa-bullseye';
+    return 'fa-check';
+  }
+  function etiqueta(e){
+    var n=String(e.notes||'');
+    if(e.type==='meet') return /virtual/i.test(n)||e.link ? 'Reunión virtual' : 'Reunión presencial';
+    if(e.type==='visita') return 'Visita técnica';
+    if(e.type==='capacita') return 'Capacitación';
+    return 'Tarea';
+  }
+  function dibujarLista(){
+    var tod=hoyISO();
+    var act=(ultimos||[]).filter(function(e){return !e.done;});
+    var agenda=act.filter(function(e){return esAgenda(e) && e.date>=tod;})
+      .sort(function(a,b){ return (a.date+(a.time||'')).localeCompare(b.date+(b.time||'')); }).slice(0,8);
+    var alarmas=act.filter(function(e){return !esAgenda(e);});
+
+    var lv=document.getElementById('dash-meets');
+    if(lv){
+      lv.innerHTML = agenda.length ? agenda.map(function(e){
+        return '<div style="display:flex;gap:10px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--bd,rgba(127,140,170,.2))">'+
+          '<i class="fa '+icono(e)+'" style="color:var(--ac,#4f8cff);width:18px;text-align:center"></i>'+
+          '<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+nnEsc(e.title)+'</div>'+
+          '<div style="font-size:10.5px;color:var(--t3,#7a8498)">'+etiqueta(e)+' · '+(typeof nnFechaLarga==='function'?nnFechaLarga(e.date):e.date)+(e.time?' · '+e.time:'')+'</div></div></div>';
+      }).join('') : '<div style="text-align:center;padding:18px;color:var(--t3,#7a8498);font-size:12px">Nada agendado. Usa <b>+ Nuevo elemento</b> arriba.</div>';
+    }
+    var la=document.getElementById('dash-alerts-list');
+    if(la){
+      la.innerHTML = alarmas.length ? alarmas.slice(0,6).map(function(e){
+        return '<div style="padding:8px 12px;font-size:12px;border-bottom:1px solid var(--bd,rgba(127,140,170,.2))">'+nnEsc(e.title)+' <span style="color:var(--t3,#7a8498)">· '+(typeof nnFechaLarga==='function'?nnFechaLarga(e.date):e.date)+'</span></div>';
+      }).join('') : '<div style="text-align:center;padding:18px;color:var(--t3,#7a8498);font-size:12px">Sin recordatorios</div>';
+    }
+    var cnt=document.getElementById('ds-alerts-count');
+    if(cnt) cnt.textContent=alarmas.length;
+    var sub=document.getElementById('ds-alerts-sub');
+    if(sub) sub.textContent = alarmas.length ? 'Recordatorios pendientes' : 'Sin alertas activas';
+    // Títulos: lo que se viene y los recordatorios
+    document.querySelectorAll('#dash-meets, #dash-alerts-list').forEach(function(x){
+      var sec=x.previousElementSibling; if(!sec) return;
+      var t=(sec.textContent||'').trim();
+      if(/REUNIONES/i.test(t)) sec.textContent='LO QUE SE VIENE';
+      if(/ALERTAS/i.test(t)) sec.textContent='RECORDATORIOS';
+    });
+  }
+  var n=0;
+  (function mirar(){
+    if(typeof window._renderAlertas!=='function' || typeof window.renderDash!=='function'){
+      if(++n<60) setTimeout(mirar,300); return;
+    }
+    var rA=window._renderAlertas;
+    window._renderAlertas=function(evs){
+      ultimos=evs||[];
+      var r=rA.apply(this,arguments);   // primero la original, luego lo nuestro
+      try{ dibujarLista(); }catch(e){}
+      return r;
+    };
+    var rD=window.renderDash;
+    window.renderDash=function(){
+      var r=rD.apply(this,arguments);
+      try{ dibujarLista(); }catch(e){}
+      return r;
+    };
+    try{ dibujarLista(); }catch(e){}
   })();
 })();
 
