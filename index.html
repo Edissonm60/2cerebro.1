@@ -23117,13 +23117,16 @@ var NUEVO_TIPOS = [
     var p=(proj&&typeof projFind==='function')?projFind(proj):null;
     var lugar=v('new-lugar'), enlace=v('new-link'), desc=v('new-desc');
     var notas=tipo.lab+(lugar?' · '+lugar:'')+(desc?'\n'+desc:'');
-    var ev={id:'nn_cal_'+Date.now(), title:t, type:tipo.cal, prio:'media', date:fecha, time:hora,
+    // Una reunión se identifica igual que en su propio módulo (nn_meet_+id),
+    // así Alertas la reconoce como la misma y no la duplica.
+    var idBase=Date.now();
+    var ev={id:(tipo.cal==='meet'?'nn_meet_':'nn_cal_')+idBase, title:t, type:tipo.cal, prio:'media', date:fecha, time:hora,
             project:p?p.name:'', projId:proj||'', notes:notas, link:enlace,
             recur:'', recurEnd:'', sent:'', done:false};
     nnEvent(ev,true);
     if(tipo.cal==='meet'){
       try{
-        MEETS.unshift({id:Date.now(), t:t, time:hora, date:nnCorto(fecha), plat:tipo.plat||'presencial',
+        MEETS.unshift({id:idBase, t:t, time:hora, date:nnCorto(fecha), plat:tipo.plat||'presencial',
           parts:['Yo'], agenda:notas, link:enlace, when:(typeof nnHoy==='function'&&fecha===nnHoy())?'today':'upcoming'});
       }catch(e){}
     }
