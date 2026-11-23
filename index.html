@@ -72,7 +72,7 @@ html,body{height:100%;overflow:hidden;background:#080C14;color:#E8F0FE;font-fami
     </button>
     <div class="sp"></div>
     <button class="tbtn" id="btn-install" onclick="instalarApp()" style="display:none;border-color:#00D4FF;color:#00D4FF;">&#128241; Instalar app</button>
-    <div class="ver"><b style="color:#00D4FF">v10</b> &middot; 20 nov 2026<br>Desarrollado por Ing. Edisson Mac&iacute;as Quevedo</div>
+    <div class="ver"><b style="color:#00D4FF">v11</b> &middot; 20 nov 2026<br>Desarrollado por Ing. Edisson Mac&iacute;as Quevedo</div>
   </div>
   <div id="frames">
     <iframe class="fr off" id="f1" title="Planos"      srcdoc="<!DOCTYPE html>
@@ -14597,6 +14597,16 @@ var ARRANQUE_VER = 'arranque-1';
 
   var velo=null, quito=false, tope=null;
 
+  // El velo toma el color del tema que ya está puesto, para que no
+  // aparezca un negro de la nada antes de que llegue el claro.
+  function fondoDelTema(){
+    try{
+      var c=getComputedStyle(document.body).backgroundColor;
+      if(c && c!=='rgba(0, 0, 0, 0)' && c!=='transparent') return c;
+    }catch(e){}
+    return '#f1f4f9';
+  }
+
   function ponerVelo(){
     try{
       if(quito || velo || !document.body) return;
@@ -14605,7 +14615,7 @@ var ARRANQUE_VER = 'arranque-1';
       velo.setAttribute('style',
         'position:fixed;inset:0;z-index:99990;display:flex;flex-direction:column;'+
         'align-items:center;justify-content:center;gap:12px;'+
-        'background:var(--bg,#0b0f1a);color:var(--t2,#9aa5bd);'+
+        'background:'+fondoDelTema()+';color:var(--t2,#5b6478);'+
         'font:600 13px/1.4 system-ui,-apple-system,sans-serif;');
       velo.innerHTML='<div class="nn-velo-giro" style="width:26px;height:26px;'+
         'border:3px solid currentColor;border-top-color:transparent;border-radius:50%;'+
@@ -22933,6 +22943,315 @@ else if(document.readyState==='loading')
 else mandoArrancar();
 setTimeout(mandoArrancar,1500);
 setTimeout(mandoArrancar,4000);
+
+
+// ═══════════════════════════════════════════════════════════════
+// UN SOLO "NUEVO ELEMENTO"
+//
+// Antes había cinco caminos para crear algo: el botón de la barra,
+// el de la portada, "Ver calendario", el formulario del calendario
+// y el de Alertas. El de "Evento" del formulario central ni siquiera
+// guardaba nada. Ahora todo sale de un solo lugar, con chips por tipo.
+//
+// Además: se quitan Control técnico y Notas técnicas, las imágenes se
+// achican antes de guardarlas (si no, llenan el espacio del navegador
+// y la sincronización se corta) y el velo de arranque toma el color
+// del tema para no parpadear en negro.
+// ═══════════════════════════════════════════════════════════════
+
+var NUEVO_VER = 'nuevo-1';
+
+var NUEVO_TIPOS = [
+  {k:'visita',       n:'Visita técnica',     i:'hard-hat',   ev:true, cal:'visita',  lab:'Visita técnica',     lugar:true},
+  {k:'capacita',     n:'Capacitación',       i:'bullseye',   ev:true, cal:'capacita',lab:'Capacitación',       lugar:true},
+  {k:'meet',         n:'Reunión presencial', i:'users',      ev:true, cal:'meet',    lab:'Reunión presencial', plat:'presencial', lugar:true},
+  {k:'meetv',        n:'Reunión virtual',    i:'video',      ev:true, cal:'meet',    lab:'Reunión virtual',    plat:'teams', enlace:true},
+  {k:'recordatorio', n:'Recordatorio',       i:'bell',       ev:true, cal:'task',    lab:'Recordatorio'},
+  {k:'task',         n:'Tarea',              i:'check',      ev:false},
+  {k:'note',         n:'Nota',               i:'file-lines', ev:false}
+];
+
+(function(){
+  if(typeof window==='undefined' || typeof document==='undefined') return;
+
+  var CSS = '' +
+    '#mo-new .md{max-width:560px}' +
+    '.nv-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}' +
+    '@media(max-width:620px){.nv-grid{grid-template-columns:repeat(2,1fr)}}' +
+    '.nv-chip{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;' +
+      'border-radius:14px;border:1px solid var(--bd,rgba(127,140,170,.25));background:var(--bg3,transparent);' +
+      'color:var(--t2,inherit);font:600 11px/1.25 system-ui,sans-serif;cursor:pointer;text-align:center;' +
+      'transition:transform .12s,box-shadow .12s,border-color .12s}' +
+    '.nv-chip i{font-size:17px;color:var(--ac,#4f8cff)}' +
+    '.nv-chip:hover{transform:translateY(-1px)}' +
+    '.nv-chip.on{border-color:var(--ac,#4f8cff);box-shadow:0 0 0 2px rgba(79,140,255,.18) inset;color:var(--t1,inherit)}' +
+    '.nv-fila{display:grid;grid-template-columns:1fr 1fr;gap:10px}' +
+    '@media(max-width:520px){.nv-fila{grid-template-columns:1fr}}' +
+    '.nv-quitar{display:none !important}';
+
+  function ponerCSS(){
+    try{
+      if(document.getElementById('nuevo-css')) return;
+      var st=document.createElement('style'); st.id='nuevo-css'; st.textContent=CSS;
+      document.head.appendChild(st);
+    }catch(e){}
+  }
+
+  function v(id){ var e=document.getElementById(id); return e?(e.value||'').trim():''; }
+  function tipoDe(k){ for(var i=0;i<NUEVO_TIPOS.length;i++) if(NUEVO_TIPOS[i].k===k) return NUEVO_TIPOS[i]; return null; }
+
+  // ── El formulario único ────────────────────────────────────────
+  function armarFormulario(){
+    var m=document.getElementById('mo-new');
+    if(!m||m.getAttribute('data-nuevo')) return;
+    m.setAttribute('data-nuevo','1');
+    var md=m.querySelector('.md'); if(!md) return;
+
+    var chips=NUEVO_TIPOS.map(function(t){
+      return '<button type="button" class="nv-chip" data-k="'+t.k+'" onclick="nuevoElegir(\''+t.k+'\')">'+
+             '<i class="fa fa-'+t.i+'"></i>'+t.n+'</button>';
+    }).join('');
+
+    md.innerHTML=
+      '<div class="mdh"><i class="fa fa-plus-circle" style="color:var(--ac)"></i><h3>Nuevo elemento</h3>'+
+      '<button class="xb" onclick="closeModal(\'mo-new\')"><i class="fa fa-times"></i></button></div>'+
+      '<div class="mdc">'+
+        '<input type="hidden" id="new-type" value="visita">'+
+        '<input type="hidden" id="new-col" value="Pendiente">'+
+        '<div class="nv-grid">'+chips+'</div>'+
+        '<div class="fg"><label class="fl">Título</label>'+
+          '<input class="fi" id="new-title" placeholder="Ej: Visita a Conjunto Los Pinos"></div>'+
+        '<div class="nv-fila">'+
+          '<div class="fg"><label class="fl">Fecha</label><input class="fi" type="date" id="new-date"></div>'+
+          '<div class="fg"><label class="fl">Hora</label><input class="fi" type="time" id="new-time" value="09:00"></div>'+
+        '</div>'+
+        '<div class="fg" id="new-f-lugar"><label class="fl" id="new-l-lugar">Lugar o cliente</label>'+
+          '<input class="fi" id="new-lugar" placeholder="Dirección, sala o cliente"></div>'+
+        '<div class="fg" id="new-f-enlace"><label class="fl">Enlace de la reunión</label>'+
+          '<input class="fi" id="new-link" placeholder="https://teams.microsoft.com/…"></div>'+
+        '<div class="nv-fila" id="new-f-tarea">'+
+          '<div class="fg"><label class="fl">Categoría</label><select class="fs" id="new-cat">'+
+            '<option>Trabajo</option><option>CCTV</option><option>Acceso</option><option>Alarma</option>'+
+            '<option>Red</option><option>Personal</option><option>Urgente</option></select></div>'+
+          '<div class="fg"><label class="fl">Prioridad</label><select class="fs" id="new-prio">'+
+            '<option>Urgente</option><option>Alta</option><option selected>Normal</option><option>Baja</option></select></div>'+
+        '</div>'+
+        '<div class="fg"><label class="fl">Proyecto</label><select class="fs" id="new-proj"><option value="">— Sin proyecto —</option></select></div>'+
+        '<div class="fg"><label class="fl">Descripción o notas</label><textarea class="ft" id="new-desc" placeholder="Detalles..."></textarea></div>'+
+      '</div>'+
+      '<div class="mdf"><button class="bs" onclick="closeModal(\'mo-new\')">Cancelar</button>'+
+        '<button class="bp" onclick="addNew()"><i class="fa fa-check" style="margin-right:5px"></i>Crear</button></div>';
+    try{ if(typeof projFillSelect==='function') projFillSelect(); }catch(e){}
+    nuevoElegir('visita');
+  }
+
+  // Muestra solo los campos que le sirven a cada tipo
+  window.nuevoElegir=function(k){
+    var t=tipoDe(k)||NUEVO_TIPOS[0];
+    var h=document.getElementById('new-type'); if(h) h.value=t.k;
+    document.querySelectorAll('#mo-new .nv-chip').forEach(function(b){
+      b.classList.toggle('on', b.getAttribute('data-k')===t.k);
+    });
+    var es=t.ev;
+    var f=function(id,on){ var e=document.getElementById(id); if(e) e.style.display=on?'':'none'; };
+    f('new-f-lugar', !!t.lugar);
+    f('new-f-enlace', !!t.enlace);
+    f('new-f-tarea', t.k==='task');
+    var fe=document.querySelector('#mo-new .nv-fila'); // fecha y hora
+    var tl=document.querySelector('#new-date'); if(tl&&tl.closest('.nv-fila')) tl.closest('.nv-fila').style.display=(t.k==='note')?'none':'';
+    var lbl=document.getElementById('new-l-lugar'); if(lbl) lbl.textContent=(t.k==='visita')?'Cliente o dirección':'Lugar o sala';
+    var tt=document.getElementById('new-title'); if(tt) tt.placeholder=
+      t.k==='visita'?'Ej: Revisión de CCTV conjunto Los Pinos':
+      t.k==='capacita'?'Ej: Capacitación de la app a residentes':
+      t.k==='meetv'?'Ej: Revisión de avance con el cliente':
+      t.k==='meet'?'Ej: Reunión con la administración':
+      t.k==='recordatorio'?'Ej: Llamar al proveedor de puertas':
+      t.k==='note'?'Título de la nota':'Ej: Pedir cotización de cámaras';
+    if(!es && t.k==='note'){ /* nota: sin fecha */ }
+  };
+
+  // Abre el formulario ya en el tipo que se pidió
+  window.nuevoAbrir=function(k){
+    armarFormulario();
+    nuevoElegir(k||'visita');
+    try{ openModal('mo-new'); }catch(e){}
+  };
+
+  function limpiar(){
+    ['new-title','new-desc','new-lugar','new-link'].forEach(function(id){
+      var e=document.getElementById(id); if(e) e.value='';
+    });
+  }
+
+  // ── Guardar: tarea y nota siguen su camino de siempre ──────────
+  var guardarOriginal=null;
+  function guardarEvento(tipo){
+    var t=v('new-title');
+    var fecha=v('new-date')||(typeof nnHoy==='function'?nnHoy():new Date().toISOString().slice(0,10));
+    var hora=v('new-time')||'09:00';
+    var proj=v('new-proj');
+    var p=(proj&&typeof projFind==='function')?projFind(proj):null;
+    var lugar=v('new-lugar'), enlace=v('new-link'), desc=v('new-desc');
+    var notas=tipo.lab+(lugar?' · '+lugar:'')+(desc?'\n'+desc:'');
+    var ev={id:'nn_cal_'+Date.now(), title:t, type:tipo.cal, prio:'media', date:fecha, time:hora,
+            project:p?p.name:'', projId:proj||'', notes:notas, link:enlace,
+            recur:'', recurEnd:'', sent:'', done:false};
+    nnEvent(ev,true);
+    if(tipo.cal==='meet'){
+      try{
+        MEETS.unshift({id:Date.now(), t:t, time:hora, date:nnCorto(fecha), plat:tipo.plat||'presencial',
+          parts:['Yo'], agenda:notas, link:enlace, when:(typeof nnHoy==='function'&&fecha===nnHoy())?'today':'upcoming'});
+      }catch(e){}
+    }
+    try{ nnSave(); }catch(e){}
+    closeModal('mo-new'); limpiar();
+    try{ renderCalFull(); }catch(e){}
+    try{ renderDash(); }catch(e){}
+    try{ avEvento('nuevo',ev); }catch(e){}
+    try{ T('Creado', tipo.n+' · '+t, '📅'); }catch(e){}
+  }
+
+  function nuevoGuardar(){
+    var k=v('new-type')||'visita';
+    var tipo=tipoDe(k);
+    var t=v('new-title');
+    if(!t){ try{ T('Falta el título','Ponle un nombre para saber qué es','⚠️'); }catch(e){} return; }
+    if(tipo&&tipo.ev){ guardarEvento(tipo); return; }
+    if(guardarOriginal) guardarOriginal();   // tarea o nota
+  }
+
+  // ── Quitar lo que sobra ────────────────────────────────────────
+  function quitarSobrantes(){
+    // Control técnico y Notas técnicas salen del menú
+    document.querySelectorAll('[onclick]').forEach(function(s){
+      var on=s.getAttribute('onclick')||'';
+      if(/V\('control'\)|V\('notes'\)/.test(on)) s.remove();
+    });
+    // "Ver calendario" en el panel principal: la agenda ya está ahí
+    document.querySelectorAll('button').forEach(function(b){
+      if((b.textContent||'').trim()==='Ver calendario') b.remove();
+    });
+    // El formulario inline del calendario: se reemplaza por el único
+    var t=document.getElementById('cal-new-title');
+    if(t){
+      var caja=t.closest('.card')||t.parentElement;
+      if(caja && !caja.getAttribute('data-nuevo')){
+        caja.setAttribute('data-nuevo','1');
+        var b=document.createElement('div');
+        b.style.cssText='margin-bottom:12px';
+        b.innerHTML='<button class="bp" onclick="nuevoAbrir(\'visita\')"><i class="fa fa-plus" style="margin-right:6px"></i>Nuevo elemento</button>';
+        caja.parentNode.insertBefore(b,caja);
+        caja.style.display='none';
+      }
+    }
+    // Las reuniones abren el mismo formulario
+    document.querySelectorAll('[onclick*="openModal(\'mo-meet\')"]').forEach(function(b){
+      b.setAttribute('onclick','nuevoAbrir(\'meet\')');
+    });
+    // Alertas: los recordatorios se crean desde el único formulario
+    document.querySelectorAll('[onclick="apOpenForm()"]').forEach(function(b){
+      var n=document.createElement('div');
+      n.style.cssText='font-size:11px;color:var(--t3);margin:6px 0';
+      n.innerHTML='Para crear un recordatorio usa <b>+ Nuevo elemento</b> en el menú.';
+      b.parentNode.insertBefore(n,b);
+      b.style.display='none';
+    });
+  }
+
+  // ── Imágenes: se achican antes de guardarlas ───────────────────
+  function achicar(f, maxL, calidad, cb){
+    var r=new FileReader();
+    r.onload=function(){
+      var im=new Image();
+      im.onload=function(){
+        var w=im.width, h=im.height, e=Math.min(1, maxL/Math.max(w,h))||1;
+        var c=document.createElement('canvas');
+        c.width=Math.max(1,Math.round(w*e)); c.height=Math.max(1,Math.round(h*e));
+        var x=c.getContext('2d');
+        x.fillStyle='#ffffff'; x.fillRect(0,0,c.width,c.height);   // sin fondo negro en los PNG transparentes
+        x.drawImage(im,0,0,c.width,c.height);
+        cb(c.toDataURL('image/jpeg',calidad));
+      };
+      im.onerror=function(){ try{T('No se pudo abrir la imagen','Prueba con otra','⚠️');}catch(e){} };
+      im.src=r.result;
+    };
+    r.readAsDataURL(f);
+  }
+
+  function ponerImagen(b){
+    var i=document.createElement('input');
+    i.type='file'; i.accept='image/*';
+    i.style.cssText='position:fixed;left:-9999px;opacity:0';
+    document.body.appendChild(i);
+    var quitar=function(){ try{ i.remove(); }catch(e){} };
+    i.onchange=function(){
+      var f=i.files&&i.files[0]; quitar();
+      if(!f) return;
+      achicar(f, 1400, 0.85, function(url){
+        b.src=url;
+        try{ pagGuardar(true); pagRenderBloques(); }catch(e){}
+      });
+    };
+    i.click();
+  }
+
+  function cuando(cond, trabajo){
+    var n=0;
+    (function mirar(){
+      var ok=false; try{ ok=!!cond(); }catch(e){}
+      if(ok){ try{ trabajo(); }catch(e){ try{console.warn('nuevo',e);}catch(_){} } return; }
+      if(++n<60) setTimeout(mirar, n<10?100:400);
+    })();
+  }
+
+  cuando(function(){ return typeof addNew==='function' && typeof openModal==='function'; }, function(){
+    ponerCSS();
+    guardarOriginal=addNew;
+    addNew=nuevoGuardar;
+    try{ armarFormulario(); }catch(e){}
+    quitarSobrantes();
+  });
+
+  cuando(function(){ return typeof pagImagen==='function'; }, function(){
+    pagImagen=ponerImagen;
+  });
+})();
+
+// ── Borrar cuaderno desde el estante ──────────────────────────────
+// El botón de borrar vivía solo dentro del editor de portada. Ahora
+// cada cuaderno trae su basurero a la vista.
+(function(){
+  if(typeof window==='undefined') return;
+  window.nuevoBorrarCuaderno=function(id){
+    try{ CUP={id:id}; cuaBorrarLibro(); }catch(e){
+      try{ T('No se pudo borrar','Intenta de nuevo','⚠️'); }catch(_){}
+    }
+  };
+  var n=0;
+  (function mirar(){
+    var ok=false; try{ ok=typeof cuaRenderEstante==='function' && typeof cuaBorrarLibro==='function'; }catch(e){}
+    if(!ok){ if(++n<60) setTimeout(mirar,200); return; }
+    var original=cuaRenderEstante;
+    cuaRenderEstante=function(){
+      original.apply(this,arguments);
+      try{
+        document.querySelectorAll('#cua-estante .cu-lib .pie').forEach(function(pie){
+          var b=pie.querySelector('b[onclick]'); if(!b) return;
+          var id=(b.getAttribute('onclick')||'').match(/cuaAbrir\('([^']+)'\)/);
+          if(!id) return;
+          if(pie.querySelector('[data-borrar]')) return;
+          var t=document.createElement('button');
+          t.setAttribute('data-borrar','1'); t.title='Borrar cuaderno';
+          t.style.color='var(--danger,#ff5a5a)';
+          t.setAttribute('onclick',"nuevoBorrarCuaderno('"+id[1]+"')");
+          t.innerHTML='<i class="fa fa-trash"></i>';
+          pie.appendChild(t);
+        });
+      }catch(e){}
+    };
+    try{ if(document.getElementById('cua-estante')) cuaRenderEstante(); }catch(e){}
+  })();
+})();
 
 
 
