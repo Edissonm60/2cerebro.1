@@ -72,7 +72,7 @@ html,body{height:100%;overflow:hidden;background:#080C14;color:#E8F0FE;font-fami
     </button>
     <div class="sp"></div>
     <button class="tbtn" id="btn-install" onclick="instalarApp()" style="display:none;border-color:#00D4FF;color:#00D4FF;">&#128241; Instalar app</button>
-    <div class="ver"><b style="color:#00D4FF">v12</b> &middot; 20 nov 2026<br>Desarrollado por Ing. Edisson Mac&iacute;as Quevedo</div>
+    <div class="ver"><b style="color:#00D4FF">v13</b> &middot; 20 nov 2026<br>Desarrollado por Ing. Edisson Mac&iacute;as Quevedo</div>
   </div>
   <div id="frames">
     <iframe class="fr off" id="f1" title="Planos"      srcdoc="<!DOCTYPE html>
@@ -23086,6 +23086,183 @@ var COLORES_LLAVE_BASE = 'em_colores_v1';
 
 
 // ═══════════════════════════════════════════════════════════════
+// LA FICHA DE CADA REUNIÓN Y SUS AVISOS
+//
+// Tocar una reunión abre su ficha: se ve y se edita todo (fecha, hora,
+// lugar, enlace, notas), con mapa y enlace de un toque. Se puede
+// cancelar o marcar como hecha. Avisa a Telegram y en pantalla 15
+// minutos antes, a la hora, y cuando se cancela.
+// ═══════════════════════════════════════════════════════════════
+var REUNIONES_VER = 'reuniones-1';
+
+(function(){
+  if(typeof window==='undefined' || typeof document==='undefined') return;
+  var AVISOS_KEY='em_reu_avisos_v1';
+  var ANTES_MIN=15;
+  var PLAT={teams:'Teams',meet:'Google Meet',zoom:'Zoom',presencial:'Presencial',llamada:'Llamada'};
+
+  function esc(x){ return String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function isoDe(m){
+    if(m.fecha) return m.fecha;
+    try{ return nnParseDate(m.date)||''; }catch(e){ return ''; }
+  }
+  function inicioDe(m){
+    var f=isoDe(m); if(!f||!m.time) return null;
+    var d=new Date(f+'T'+m.time+':00');
+    return isNaN(d.getTime())?null:d;
+  }
+  function avisos(){ try{ return JSON.parse(localStorage.getItem(AVISOS_KEY)||'{}')||{}; }catch(e){ return {}; } }
+  function avisado(k){ var a=avisos(); if(a[k]) return true; a[k]=Date.now(); var lim=Date.now()-4*864e5; Object.keys(a).forEach(function(x){ if(a[x]<lim) delete a[x]; }); try{ localStorage.setItem(AVISOS_KEY,JSON.stringify(a)); }catch(e){} return false; }
+  function lugarTxt(m){ return (m.lugar||'') || (m.plat==='presencial' ? (m.agenda||'') : ''); }
+
+  // ── Tarjeta: se puede tocar y muestra si está cancelada ──────────
+  function ponerTarjeta(){
+    if(typeof window.meetHTML!=='function'){ return false; }
+    var orig=window.meetHTML;
+    window.meetHTML=function(m,mini){
+      var h=orig.apply(this,arguments);
+      if(!m) return h;
+      var extra=' data-mid="'+esc(m.id)+'" onclick="reunionVer(\''+esc(m.id)+'\')" style="cursor:pointer'+(m.cancelada?';opacity:.55':'')+'"';
+      h=h.replace('<div class="meet-item"', '<div class="meet-item"'+extra);
+      if(m.cancelada) h=h.replace('<h4>', '<h4 style="text-decoration:line-through">CANCELADA · ');
+      return h;
+    };
+    try{ if(typeof renderMeets==='function') renderMeets(); }catch(e){}
+    return true;
+  }
+
+  // ── La ficha ──────────────────────────────────────────────────────
+  window.reunionVer=function(id){
+    var m=(MEETS||[]).filter(function(x){return String(x.id)===String(id);})[0];
+    if(!m) return;
+    var v=document.getElementById('reu-panel'); if(v) v.remove();
+    var caja=document.createElement('div');
+    caja.id='reu-panel';
+    caja.setAttribute('style','position:fixed;inset:0;z-index:99996;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:14px');
+    var ini=inicioDe(m);
+    var lugar=lugarTxt(m);
+    var platOpc=Object.keys(PLAT).map(function(k){ return '<option value="'+k+'"'+(m.plat===k?' selected':'')+'>'+PLAT[k]+'</option>'; }).join('');
+    var campo=function(lbl,html){ return '<label style="display:block;margin-top:10px;font-size:11px;color:var(--t2,#4b5a6e)">'+lbl+'</label>'+html; };
+    var inp='style="width:100%;box-sizing:border-box;margin-top:4px;padding:8px 10px;border-radius:9px;border:1px solid var(--bd,#dde3ec);background:var(--bg,#fff);color:var(--t1,#131a26);font:500 13px system-ui,sans-serif"';
+    var btn='style="flex:1;padding:9px 6px;border-radius:10px;border:1px solid var(--bd,#dde3ec);background:transparent;color:var(--t1,#131a26);cursor:pointer;font:600 12px system-ui,sans-serif"';
+    caja.innerHTML=
+      '<div style="background:var(--bg3,#fff);color:var(--t1,#131a26);border:1px solid var(--bd,#dde3ec);border-radius:16px;width:min(460px,100%);max-height:92vh;overflow:auto;padding:18px 20px;box-shadow:0 20px 60px rgba(0,0,0,.35);font:500 13px/1.4 system-ui,sans-serif">'+
+        '<div style="display:flex;align-items:center;gap:8px"><i class="fa fa-video" style="color:var(--ac,#0284c7)"></i>'+
+          '<b style="font-size:15px;flex:1">'+(m.cancelada?'Reunión cancelada':'Reunión')+'</b>'+
+          '<button data-x style="background:none;border:none;color:var(--t2,#4b5a6e);cursor:pointer;font-size:16px">✕</button></div>'+
+        campo('Título','<input id="reu-t" '+inp+' value="'+esc(m.t||'')+'">')+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
+          '<div>'+campo('Fecha','<input id="reu-f" type="date" '+inp+' value="'+esc(ini?isoDe(m):'')+'">')+'</div>'+
+          '<div>'+campo('Hora','<input id="reu-h" type="time" '+inp+' value="'+esc(m.time||'')+'">')+'</div>'+
+        '</div>'+
+        campo('Tipo','<select id="reu-p" '+inp+'>'+platOpc+'</select>')+
+        campo('Lugar o dirección','<input id="reu-l" '+inp+' value="'+esc(lugar)+'" placeholder="Dirección, sala o cliente">')+
+        campo('Enlace de la reunión','<input id="reu-e" '+inp+' value="'+esc(m.link||'')+'" placeholder="https://…">')+
+        campo('Notas','<textarea id="reu-n" rows="4" '+inp+'>'+esc(m.agenda||'')+'</textarea>')+
+        '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">'+
+          '<button data-mapa '+btn+'><i class="fa fa-map-marker-alt"></i> Ver mapa</button>'+
+          '<button data-enlace '+btn+'><i class="fa fa-link"></i> Abrir enlace</button>'+
+          '<button data-hecha '+btn+'><i class="fa fa-check"></i> Ya se hizo</button>'+
+        '</div>'+
+        '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'+
+          '<button data-cancelar '+btn+' style="flex:1;padding:9px 6px;border-radius:10px;border:1px solid rgba(255,68,68,.4);background:transparent;color:#dc2626;cursor:pointer;font:600 12px system-ui,sans-serif">Cancelar reunión</button>'+
+          '<button data-borrar '+btn+' style="flex:1;padding:9px 6px;border-radius:10px;border:1px solid var(--bd,#dde3ec);background:transparent;color:var(--t2,#4b5a6e);cursor:pointer;font:600 12px system-ui,sans-serif">Borrar</button>'+
+        '</div>'+
+        '<button data-guardar style="width:100%;margin-top:12px;padding:10px;border-radius:10px;border:none;background:var(--ac,#0284c7);color:#fff;font-weight:700;cursor:pointer">Guardar cambios</button>'+
+      '</div>';
+    document.body.appendChild(caja);
+    var cerrar=function(){ caja.remove(); };
+    caja.querySelector('[data-x]').onclick=cerrar;
+    caja.onclick=function(e){ if(e.target===caja) cerrar(); };
+
+    var leerCampos=function(){
+      var g=function(i){ var e=document.getElementById(i); return e?(e.value||'').trim():''; };
+      m.t=g('reu-t')||m.t;
+      m.fecha=g('reu-f')||isoDe(m);
+      m.date=nnCorto(m.fecha);
+      m.time=g('reu-h')||m.time;
+      m.plat=g('reu-p')||m.plat;
+      m.lugar=g('reu-l');
+      m.link=g('reu-e');
+      m.agenda=document.getElementById('reu-n').value;
+      m.when=(typeof nnHoy==='function'&&m.fecha===nnHoy())?'today':(m.fecha<(typeof nnHoy==='function'?nnHoy():m.fecha)?'past':'upcoming');
+    };
+    var refrescar=function(){
+      try{ if(typeof meetWhen==='function') meetWhen(); }catch(e){}
+      try{ nnSave(); }catch(e){}
+      try{ renderMeets(); }catch(e){}
+      try{ renderDash(); }catch(e){}
+      try{ if(typeof renderCalFull==='function') renderCalFull(); }catch(e){}
+    };
+
+    caja.querySelector('[data-guardar]').onclick=function(){ leerCampos(); refrescar(); T('Reunión guardada', m.t||'', '✅'); cerrar(); };
+    caja.querySelector('[data-mapa]').onclick=function(){
+      var d=(document.getElementById('reu-l').value||'').trim();
+      if(!d){ try{ T('Falta el lugar','Escribe una dirección para ver el mapa','⚠️'); }catch(e){} return; }
+      window.open('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(d),'_blank');
+    };
+    caja.querySelector('[data-enlace]').onclick=function(){
+      var u=(document.getElementById('reu-e').value||'').trim();
+      if(!u){ try{ T('Sin enlace','Pega el enlace de la reunión','⚠️'); }catch(e){} return; }
+      if(!/^https?:\/\//i.test(u)) u='https://'+u;
+      window.open(u,'_blank');
+    };
+    caja.querySelector('[data-hecha]').onclick=function(){ leerCampos(); m.done=true; refrescar(); try{ T('Reunión hecha', m.t||'', '✅'); }catch(e){} cerrar(); };
+    caja.querySelector('[data-cancelar]').onclick=function(){
+      if(!confirm('¿Cancelar la reunión «'+(m.t||'')+'»?\n\nSe avisa por Telegram.')) return;
+      m.cancelada=true; m.cancelada_ts=Date.now();
+      refrescar();
+      avisarTelegram('❌ <b>Reunión cancelada</b>: '+esc(m.t||'')+'\n📆 '+esc(isoDe(m))+' · 🕐 '+esc(m.time||''));
+      try{ T('Reunión cancelada','Se avisó por Telegram','❌'); }catch(e){}
+      cerrar();
+    };
+    caja.querySelector('[data-borrar]').onclick=function(){
+      if(!confirm('¿Borrar la reunión «'+(m.t||'')+'»?')) return;
+      try{ deleteMeet(m.id); }catch(e){}
+      cerrar();
+    };
+  };
+
+  function avisarTelegram(html){ try{ nnTg(html); }catch(e){} }
+  function detalle(m){
+    var l=lugarTxt(m), s='';
+    if(l) s+='\n📍 '+esc(l);
+    if(m.link) s+='\n🔗 '+esc(m.link);
+    return s;
+  }
+
+  // ── Los avisos: 15 minutos antes, a la hora ───────────────────────
+  function revisar(){
+    if(typeof MEETS==='undefined') return;
+    var ahora=Date.now();
+    (MEETS||[]).forEach(function(m){
+      if(m.done||m.cancelada) return;
+      var ini=inicioDe(m); if(!ini) return;
+      var t0=ini.getTime(), id=String(m.id);
+      if(ahora>=t0-ANTES_MIN*60000 && ahora<t0 && !avisado(id+'_antes')){
+        try{ T('En '+ANTES_MIN+' min: '+(m.t||'Reunión'), m.time||'', '⏰'); }catch(e){}
+        avisarTelegram('⏰ <b>En '+ANTES_MIN+' min</b>: '+esc(m.t||'Reunión')+'\n🕐 '+esc(m.time||'')+detalle(m));
+      }
+      if(ahora>=t0 && ahora<t0+10*60000 && !avisado(id+'_ahora')){
+        try{ T('Empieza ahora: '+(m.t||'Reunión'), lugarTxt(m)||'', '🟢'); }catch(e){}
+        avisarTelegram('🟢 <b>Empieza ahora</b>: '+esc(m.t||'Reunión')+'\n🕐 '+esc(m.time||'')+detalle(m));
+      }
+    });
+  }
+
+  var n=0;
+  (function mirar(){
+    if(typeof MEETS==='undefined' || typeof meetHTML!=='function' || typeof renderMeets!=='function'){
+      if(++n<80) setTimeout(mirar,300); return;
+    }
+    ponerTarjeta();
+    setInterval(function(){ try{ revisar(); }catch(e){} }, 30000);
+    setTimeout(function(){ try{ revisar(); }catch(e){} }, 3000);
+  })();
+})();
+
+
+// ═══════════════════════════════════════════════════════════════
 // UN SOLO "NUEVO ELEMENTO"
 //
 // Antes había cinco caminos para crear algo: el botón de la barra,
@@ -23241,7 +23418,7 @@ var NUEVO_TIPOS = [
       // Una reunión vive en Reuniones (y de ahí en la agenda). No va a Alertas.
       try{
         MEETS.unshift({id:idBase, t:t, time:hora, date:nnCorto(fecha), fecha:fecha,
-          plat:tipo.plat||'presencial', parts:['Yo'], agenda:notasR, link:enlace,
+          plat:tipo.plat||'presencial', parts:['Yo'], agenda:desc||'', lugar:lugar, link:enlace,
           when:(typeof nnHoy==='function'&&fecha===nnHoy())?'today':'upcoming'});
       }catch(e){}
       try{ if(typeof renderMeets==='function') renderMeets(); }catch(e){}
