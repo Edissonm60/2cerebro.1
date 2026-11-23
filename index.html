@@ -14692,6 +14692,30 @@ var ARRANQUE_VER = 'arranque-1';
     // Si ya hay una revisión en marcha, se espera esa: no se piden
     // dos veces la misma cosa al arrancar.
     var enCurso=null;
+
+    // ── No subir si nada cambió ─────────────────────────────────
+    // Cada guardado programaba una subida de hasta 1 MB, aunque lo que
+    // se guardó fuera igual a lo último que ya estaba en la nube.
+    var huellaSubida=null;
+    function huella(){
+      try{
+        var e=nnEstado(); delete e.ts; delete e.dev;
+        return JSON.stringify(e);
+      }catch(err){ return null; }
+    }
+    var subirOriginal=nnCloudPush;
+    nnCloudPush=function(forzar){
+      var h=huella();
+      if(!forzar && h && h===huellaSubida){
+        try{ nnSyncEstado('Al día · '+new Date().toLocaleTimeString('es-CO'),'var(--ok)'); }catch(e){}
+        return Promise.resolve(true);
+      }
+      return subirOriginal.apply(this,arguments).then(function(ok){
+        if(ok) huellaSubida=h;
+        return ok;
+      });
+    };
+
     nnCloudPull=function(silencioso){
       var url=nnCloudUrl();
       if(!url){
@@ -23250,6 +23274,32 @@ var NUEVO_TIPOS = [
       }catch(e){}
     };
     try{ if(document.getElementById('cua-estante')) cuaRenderEstante(); }catch(e){}
+  })();
+})();
+
+// ── Menú más corto: las secciones secundarias se pliegan ─────────
+// Finanzas detalle e Integraciones quedan cerradas al abrir la app.
+// Un toque las despliega. Nada se borra: solo se oculta.
+(function(){
+  var n=0;
+  (function mirar(){
+    var pl=document.querySelectorAll('.sl');
+    if(!pl.length){ if(++n<60) setTimeout(mirar,200); return; }
+    pl.forEach(function(h){
+      var t=(h.textContent||'').trim();
+      if(!/^(Finanzas detalle|Integraciones)$/.test(t) || h.getAttribute('data-plegable')) return;
+      h.setAttribute('data-plegable','1');
+      var items=[], s=h.nextElementSibling;
+      while(s && !s.classList.contains('sl')){ items.push(s); s=s.nextElementSibling; }
+      items.forEach(function(i){ i.style.display='none'; });
+      h.style.cursor='pointer';
+      h.textContent=t+'  ▸';
+      h.onclick=function(){
+        var abierto=items.length && items[0].style.display!=='none';
+        items.forEach(function(i){ i.style.display=abierto?'none':''; });
+        h.textContent=t+(abierto?'  ▸':'  ▾');
+      };
+    });
   })();
 })();
 
