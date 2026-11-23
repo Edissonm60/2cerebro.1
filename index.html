@@ -72,7 +72,7 @@ html,body{height:100%;overflow:hidden;background:#080C14;color:#E8F0FE;font-fami
     </button>
     <div class="sp"></div>
     <button class="tbtn" id="btn-install" onclick="instalarApp()" style="display:none;border-color:#00D4FF;color:#00D4FF;">&#128241; Instalar app</button>
-    <div class="ver"><b style="color:#00D4FF">v11</b> &middot; 20 nov 2026<br>Desarrollado por Ing. Edisson Mac&iacute;as Quevedo</div>
+    <div class="ver"><b style="color:#00D4FF">v12</b> &middot; 20 nov 2026<br>Desarrollado por Ing. Edisson Mac&iacute;as Quevedo</div>
   </div>
   <div id="frames">
     <iframe class="fr off" id="f1" title="Planos"      srcdoc="<!DOCTYPE html>
@@ -22967,6 +22967,122 @@ else if(document.readyState==='loading')
 else mandoArrancar();
 setTimeout(mandoArrancar,1500);
 setTimeout(mandoArrancar,4000);
+
+
+// ═══════════════════════════════════════════════════════════════
+// COLORES A MI GUSTO
+//
+// Un panel con selectores para el fondo, las tarjetas, el texto, el
+// acento y los bordes. Se ven al momento, se guardan en este equipo y
+// se pueden volver al tema de siempre con un toque. Encima del tema
+// elegido: cambiar de tema después no pierde estos colores.
+// ═══════════════════════════════════════════════════════════════
+var COLORES_VER = 'colores-1';
+
+var COLORES_CAMPOS = [
+  {k:'--bg',  n:'Fondo de la pantalla',   d:'#f1f4f9'},
+  {k:'--bg3', n:'Fondo de las tarjetas',  d:'#ffffff'},
+  {k:'--t1',  n:'Texto principal',        d:'#131a26'},
+  {k:'--t2',  n:'Texto secundario',       d:'#4b5a6e'},
+  {k:'--ac',  n:'Color de acento',        d:'#0284c7'},
+  {k:'--ac2', n:'Segundo acento',         d:'#7c3aed'},
+  {k:'--bd',  n:'Bordes y líneas',        d:'#dde3ec'}
+];
+var COLORES_LLAVE_BASE = 'em_colores_v1';
+
+(function(){
+  if(typeof window==='undefined' || typeof document==='undefined') return;
+
+  function llave(){ try{ return (typeof emLlave==='function')?emLlave(COLORES_LLAVE_BASE):COLORES_LLAVE_BASE; }catch(e){ return COLORES_LLAVE_BASE; } }
+  function leer(){ try{ return JSON.parse(localStorage.getItem(llave())||'{}')||{}; }catch(e){ return {}; } }
+  function guardar(o){ try{ localStorage.setItem(llave(), JSON.stringify(o)); }catch(e){} }
+
+  function aplicar(o){
+    var r=document.documentElement;
+    COLORES_CAMPOS.forEach(function(c){
+      if(o[c.k]) r.style.setProperty(c.k, o[c.k]); else r.style.removeProperty(c.k);
+    });
+  }
+
+  // Al abrir la app, lo guardado se aplica antes de pintar lo demás
+  aplicar(leer());
+
+  function ponerBoton(){
+    var tba=document.querySelector('#tb .tba');
+    if(!tba || document.getElementById('colores-btn')) return false;
+    var b=document.createElement('button');
+    b.id='colores-btn'; b.className='bs';
+    b.setAttribute('style','font-size:12px;padding:7px 12px;white-space:nowrap');
+    b.innerHTML='<i class="fa fa-palette" style="margin-right:6px"></i>Colores';
+    b.onclick=abrir;
+    var nuevo=document.getElementById('nuevo-top');
+    if(nuevo && nuevo.parentNode===tba) tba.insertBefore(b, nuevo.nextSibling);
+    else tba.insertBefore(b, tba.firstChild);
+    return true;
+  }
+
+  function abrir(){
+    var viejo=document.getElementById('colores-panel'); if(viejo){ viejo.remove(); }
+    var o=leer();
+    var actual={};
+    var cs=getComputedStyle(document.documentElement);
+    COLORES_CAMPOS.forEach(function(c){
+      actual[c.k]=o[c.k] || (cs.getPropertyValue(c.k).trim()) || c.d;
+    });
+    // Los selectores aceptan solo #rrggbb
+    COLORES_CAMPOS.forEach(function(c){ actual[c.k]=aHex(actual[c.k]); });
+
+    var caja=document.createElement('div');
+    caja.id='colores-panel';
+    caja.setAttribute('style','position:fixed;inset:0;z-index:99995;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px');
+    var filas=COLORES_CAMPOS.map(function(c){
+      return '<label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(127,140,170,.2);font-size:13px">'+
+        '<span style="flex:1;color:var(--t1,#131a26)">'+c.n+'</span>'+
+        '<input type="color" data-k="'+c.k+'" value="'+actual[c.k]+'" style="width:44px;height:30px;border:none;background:none;cursor:pointer">'+
+        '</label>';
+    }).join('');
+    caja.innerHTML=
+      '<div style="background:var(--bg3,#fff);color:var(--t1,#131a26);border:1px solid var(--bd,#dde3ec);border-radius:16px;'+
+        'width:min(420px,100%);padding:18px 20px;box-shadow:0 20px 60px rgba(0,0,0,.35);font:500 13px/1.4 system-ui,sans-serif">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><i class="fa fa-palette" style="color:var(--ac,#0284c7)"></i>'+
+          '<b style="font-size:15px;flex:1">Mis colores</b>'+
+          '<button data-x style="background:none;border:none;color:var(--t2,#4b5a6e);cursor:pointer;font-size:16px">✕</button></div>'+
+        '<div style="font-size:11.5px;color:var(--t2,#4b5a6e);margin-bottom:10px">Se ven al momento y se guardan en este equipo.</div>'+
+        filas+
+        '<div style="display:flex;gap:8px;margin-top:14px">'+
+          '<button data-reset style="flex:1;padding:9px;border-radius:10px;border:1px solid var(--bd,#dde3ec);background:transparent;color:var(--t1,#131a26);cursor:pointer">Volver al tema</button>'+
+          '<button data-ok style="flex:1;padding:9px;border-radius:10px;border:none;background:var(--ac,#0284c7);color:#fff;font-weight:700;cursor:pointer">Listo</button>'+
+        '</div></div>';
+    document.body.appendChild(caja);
+
+    caja.querySelectorAll('input[type=color]').forEach(function(inp){
+      inp.oninput=function(){
+        var nuevo=leer(); nuevo[inp.getAttribute('data-k')]=inp.value; guardar(nuevo); aplicar(nuevo);
+      };
+    });
+    caja.querySelector('[data-reset]').onclick=function(){ guardar({}); aplicar({}); caja.remove(); };
+    caja.querySelector('[data-ok]').onclick=function(){ caja.remove(); };
+    caja.querySelector('[data-x]').onclick=function(){ caja.remove(); };
+    caja.onclick=function(e){ if(e.target===caja) caja.remove(); };
+  }
+
+  // Convierte cualquier color CSS a #rrggbb (para el selector)
+  function aHex(c){
+    if(/^#[0-9a-f]{6}$/i.test(c)) return c;
+    try{
+      var x=document.createElement('canvas').getContext('2d');
+      x.fillStyle='#000'; x.fillStyle=c;
+      var h=x.fillStyle; if(/^#[0-9a-f]{6}$/i.test(h)) return h;
+    }catch(e){}
+    return '#888888';
+  }
+
+  var n=0;
+  (function mirar(){
+    if(ponerBoton()) return;
+    if(++n<60) setTimeout(mirar,300);
+  })();
+})();
 
 
 // ═══════════════════════════════════════════════════════════════
