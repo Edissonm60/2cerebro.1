@@ -23120,28 +23120,28 @@ var NUEVO_TIPOS = [
     // Una reunión se identifica igual que en su propio módulo (nn_meet_+id),
     // así Alertas la reconoce como la misma y no la duplica.
     var idBase=Date.now();
-    var prefijo = tipo.cal==='meet' ? 'nn_meet_' : (tipo.k==='recordatorio' ? 'nn_rec_' : 'nn_cal_');
-    var ev={id:prefijo+idBase, title:t, type:tipo.cal, prio:'media', date:fecha, time:hora,
-            project:p?p.name:'', projId:proj||'', notes:notas, link:enlace,
-            recur:'', recurEnd:'', sent:'', done:false};
-    // Solo un recordatorio suena como alerta. Reuniones, visitas y
-    // capacitaciones van a la agenda, sin alarma ni contador.
-    // Un recordatorio es alarma (suma al contador). Lo demás es agenda:
-    // no suma, pero sí avisa por Telegram al crearse.
-    nnEvent(ev, tipo.k==='recordatorio');
-    if(tipo.k!=='recordatorio'){
-      try{
-        nnTg('<b>'+tipo.n+'</b>: '+nnEsc(t)+
-             '\n📆 '+(typeof nnFechaLarga==='function'?nnFechaLarga(fecha):fecha)+' · 🕐 '+hora+
-             (lugar?'\n📍 '+nnEsc(lugar):'')+(enlace?'\n🔗 '+enlace:''));
-      }catch(e){}
-    }
+    var notasR=tipo.lab+(lugar?' · '+lugar:'')+(desc?'\n'+desc:'');
     if(tipo.cal==='meet'){
+      // Una reunión vive en Reuniones (y de ahí en la agenda). No va a Alertas.
       try{
-        MEETS.unshift({id:idBase, t:t, time:hora, date:nnCorto(fecha), plat:tipo.plat||'presencial',
-          parts:['Yo'], agenda:notas, link:enlace, when:(typeof nnHoy==='function'&&fecha===nnHoy())?'today':'upcoming'});
+        MEETS.unshift({id:idBase, t:t, time:hora, date:nnCorto(fecha), fecha:fecha,
+          plat:tipo.plat||'presencial', parts:['Yo'], agenda:notasR, link:enlace,
+          when:(typeof nnHoy==='function'&&fecha===nnHoy())?'today':'upcoming'});
       }catch(e){}
+      try{ if(typeof renderMeets==='function') renderMeets(); }catch(e){}
+    }else{
+      var ev={id:(tipo.k==='recordatorio'?'nn_rec_':'nn_cal_')+idBase, title:t, type:tipo.cal, prio:'media',
+              date:fecha, time:hora, project:p?p.name:'', projId:proj||'', notes:notasR, link:enlace,
+              recur:'', recurEnd:'', sent:'', done:false};
+      // Un recordatorio es alarma (suma al contador). Lo demás va a la agenda sin alarma.
+      nnEvent(ev, tipo.k==='recordatorio');
     }
+    // Aviso por Telegram de todo lo que se agenda (escapado para que Telegram lo acepte)
+    try{
+      nnTg('<b>'+nnEsc(tipo.n)+'</b>: '+nnEsc(t)+
+           '\n📆 '+nnEsc(typeof nnFechaLarga==='function'?nnFechaLarga(fecha):fecha)+' · 🕐 '+nnEsc(hora)+
+           (lugar?'\n📍 '+nnEsc(lugar):'')+(enlace?'\n🔗 '+nnEsc(enlace):''));
+    }catch(e){}
     try{ nnSave(); }catch(e){}
     closeModal('mo-new'); limpiar();
     try{ renderCalFull(); }catch(e){}
@@ -23155,12 +23155,7 @@ var NUEVO_TIPOS = [
     var t=v('new-title');
     if(!t){ try{ T('Falta el título','Ponle un nombre para saber qué es','⚠️'); }catch(e){} return; }
     if(tipo&&tipo.ev){ guardarEvento(tipo); return; }
-    // Tarea con fecha: también avisa por Telegram al crearse
-    var fTarea=v('new-date'), hTarea=v('new-time')||'09:00';
-    if(guardarOriginal) guardarOriginal();   // tarea o nota
-    if(k==='task' && fTarea){
-      try{ nnTg('<b>Tarea</b>: '+nnEsc(t)+'\n📆 '+(typeof nnFechaLarga==='function'?nnFechaLarga(fTarea):fTarea)+' · 🕐 '+hTarea); }catch(e){}
-    }
+    if(guardarOriginal) guardarOriginal();   // tarea o nota: su camino de siempre
   }
 
   // ── Quitar lo que sobra ────────────────────────────────────────
@@ -23403,8 +23398,17 @@ var NUEVO_TIPOS = [
   function dibujarLista(){
     var tod=hoyISO();
     var act=(ultimos||[]).filter(function(e){return !e.done;});
-    var agenda=act.filter(function(e){return esAgenda(e) && e.date>=tod;})
-      .sort(function(a,b){ return (a.date+(a.time||'')).localeCompare(b.date+(b.time||'')); }).slice(0,8);
+    // Agenda: lo de Alertas que es cita o tarea, más las reuniones de su lista
+    var desdeCal=[];
+    try{ if(typeof calEvents==='function') desdeCal=calEvents()||[]; }catch(e){}
+    var todo={}, agenda=[];
+    act.filter(function(e){return esAgenda(e);}).concat(desdeCal).forEach(function(e){
+      if(!e||!e.date||e.date<tod) return;
+      var k=String(e.id||(e.date+e.title));
+      if(todo[k]) return; todo[k]=1; agenda.push(e);
+    });
+    agenda.sort(function(a,b){ return (a.date+(a.time||'')).localeCompare(b.date+(b.time||'')); });
+    agenda=agenda.slice(0,8);
     var alarmas=act.filter(function(e){return !esAgenda(e);});
 
     var lv=document.getElementById('dash-meets');
@@ -23453,6 +23457,44 @@ var NUEVO_TIPOS = [
       return r;
     };
     try{ dibujarLista(); }catch(e){}
+  })();
+})();
+
+// ── Las reuniones se quedan en Reuniones, no en Alertas ───────────
+// El importador copiaba cada reunión a Alertas como evento de alarma.
+// Ahora lee una copia sin reuniones (la de NeuroNotes no se toca) y
+// limpia una sola vez las copias que ya quedaron de antes.
+(function(){
+  if(typeof window==='undefined') return;
+  var CLAVE='neuronotes_v2_data';
+  var n=0;
+  (function mirar(){
+    if(typeof window.emImportNN!=='function'){ if(++n<60) setTimeout(mirar,300); return; }
+    var original=window.emImportNN;
+    window.emImportNN=function(manual){
+      var raw=null;
+      try{ raw=localStorage.getItem(CLAVE); }catch(e){}
+      if(!raw) return original.apply(this,arguments);
+      try{
+        var o=JSON.parse(raw); o.MEETS=[];
+        localStorage.setItem(CLAVE, JSON.stringify(o));
+        return original.apply(this,arguments);
+      }catch(e){
+        return original.apply(this,arguments);
+      }finally{
+        try{ localStorage.setItem(CLAVE, raw); }catch(e){}
+      }
+    };
+    // Una vez: sacar las reuniones que ya se copiaron a Alertas
+    setTimeout(function(){
+      try{
+        if(localStorage.getItem('em_sin_reuniones_v1')) return;
+        var lista=(window._apEventsList&&window._apEventsList())||[];
+        lista.filter(function(e){ return /^nn_meet_/.test(String(e.id)); })
+             .forEach(function(e){ if(window._apDeleteEvent) window._apDeleteEvent(e.id); });
+        localStorage.setItem('em_sin_reuniones_v1','1');
+      }catch(e){}
+    }, 4000);
   })();
 })();
 
