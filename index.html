@@ -23123,7 +23123,9 @@ var NUEVO_TIPOS = [
     var ev={id:(tipo.cal==='meet'?'nn_meet_':'nn_cal_')+idBase, title:t, type:tipo.cal, prio:'media', date:fecha, time:hora,
             project:p?p.name:'', projId:proj||'', notes:notas, link:enlace,
             recur:'', recurEnd:'', sent:'', done:false};
-    nnEvent(ev,true);
+    // Solo un recordatorio suena como alerta. Reuniones, visitas y
+    // capacitaciones van a la agenda, sin alarma ni contador.
+    nnEvent(ev, tipo.cal==='task');
     if(tipo.cal==='meet'){
       try{
         MEETS.unshift({id:idBase, t:t, time:hora, date:nnCorto(fecha), plat:tipo.plat||'presencial',
@@ -23134,7 +23136,6 @@ var NUEVO_TIPOS = [
     closeModal('mo-new'); limpiar();
     try{ renderCalFull(); }catch(e){}
     try{ renderDash(); }catch(e){}
-    try{ avEvento('nuevo',ev); }catch(e){}
     try{ T('Creado', tipo.n+' · '+t, '📅'); }catch(e){}
   }
 
@@ -23328,6 +23329,34 @@ var NUEVO_TIPOS = [
     document.querySelectorAll('.bna').forEach(function(x){
       if((x.getAttribute('onclick')||'')==="openModal('mo-new')") x.style.display='none';
     });
+  })();
+})();
+
+// ── Agenda sin alarma ─────────────────────────────────────────────
+// Una reunión, una visita o una capacitación entran a la lista de
+// Alertas para verse en la agenda, pero no suman al contador ni
+// suenan. Un recordatorio suma una sola vez, no dos.
+(function(){
+  if(typeof window==='undefined') return;
+  var silenciar=0;
+  // El aviso de "sumar al contador" se descarta justo al mandarse.
+  // El padre de esta app es la misma ventana, así que basta con esto.
+  var pmOriginal=window.postMessage;
+  window.postMessage=function(msg){
+    if(silenciar>0 && msg && msg.type==='EM_SUITE_BADGE_UPDATE'){ silenciar--; return; }
+    return pmOriginal.apply(this,arguments);
+  };
+  var n=0;
+  (function mirar(){
+    if(typeof window._apReceiveEvent!=='function'){ if(++n<60) setTimeout(mirar,300); return; }
+    var original=window._apReceiveEvent;
+    window._apReceiveEvent=function(ev,opts){
+      try{
+        var ya=(window._apEventsList&&window._apEventsList()||[]).some(function(x){return x.id===(ev&&ev.id);});
+        if(!ya) silenciar++;
+      }catch(err){}
+      return original.apply(this,arguments);
+    };
   })();
 })();
 
