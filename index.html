@@ -23303,6 +23303,31 @@ var NUEVO_TIPOS = [
   })();
 })();
 
+// ── Un solo botón, arriba ─────────────────────────────────────────
+// "+ Nuevo elemento" queda en la barra de arriba, a la vista. El
+// botón de abajo del menú y el "+" suelto se quitan para no tener
+// dos caminos iguales.
+(function(){
+  var n=0;
+  (function mirar(){
+    var tba=document.querySelector('#tb .tba');
+    if(!tba){ if(++n<60) setTimeout(mirar,200); return; }
+    if(document.getElementById('nuevo-top')) return;
+    var b=document.createElement('button');
+    b.id='nuevo-top'; b.className='bp';
+    b.setAttribute('style','font-size:12px;padding:7px 14px;white-space:nowrap');
+    b.innerHTML='<i class="fa fa-plus" style="margin-right:6px"></i>Nuevo elemento';
+    b.onclick=function(){ nuevoAbrir('visita'); };
+    tba.insertBefore(b, tba.firstChild);
+    tba.querySelectorAll('button.bi').forEach(function(x){
+      if((x.getAttribute('onclick')||'')==="openModal('mo-new')") x.style.display='none';
+    });
+    document.querySelectorAll('.bna').forEach(function(x){
+      if((x.getAttribute('onclick')||'')==="openModal('mo-new')") x.style.display='none';
+    });
+  })();
+})();
+
 
 
 // ═══════════════════════════════════════════════════════════════
