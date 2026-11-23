@@ -72,7 +72,7 @@ html,body{height:100%;overflow:hidden;background:#080C14;color:#E8F0FE;font-fami
     </button>
     <div class="sp"></div>
     <button class="tbtn" id="btn-install" onclick="instalarApp()" style="display:none;border-color:#00D4FF;color:#00D4FF;">&#128241; Instalar app</button>
-    <div class="ver"><b style="color:#00D4FF">v13</b> &middot; 20 nov 2026<br>Desarrollado por Ing. Edisson Mac&iacute;as Quevedo</div>
+    <div class="ver"><b style="color:#00D4FF">v14</b> &middot; 20 nov 2026<br>Desarrollado por Ing. Edisson Mac&iacute;as Quevedo</div>
   </div>
   <div id="frames">
     <iframe class="fr off" id="f1" title="Planos"      srcdoc="<!DOCTYPE html>
@@ -22997,17 +22997,47 @@ var COLORES_LLAVE_BASE = 'em_colores_v1';
   function leer(){ try{ return JSON.parse(localStorage.getItem(llave())||'{}')||{}; }catch(e){ return {}; } }
   function guardar(o){ try{ localStorage.setItem(llave(), JSON.stringify(o)); }catch(e){} }
 
+  // Los nombres de Planos y Notas son otros para texto y acento
+  var EXTRA={'--t1':'--txt','--t2':'--txt2','--ac':'--acc'};
+  function setRaiz(doc,o){
+    try{
+      var r=doc.documentElement;
+      COLORES_CAMPOS.forEach(function(c){
+        if(o[c.k]) r.style.setProperty(c.k,o[c.k]); else r.style.removeProperty(c.k);
+        if(EXTRA[c.k]){
+          if(o[c.k]) r.style.setProperty(EXTRA[c.k],o[c.k]); else r.style.removeProperty(EXTRA[c.k]);
+        }
+      });
+    }catch(e){}
+  }
+  // Se aplica a la pantalla principal y a las tres pestañas
   function aplicar(o){
-    var r=document.documentElement;
-    COLORES_CAMPOS.forEach(function(c){
-      if(o[c.k]) r.style.setProperty(c.k, o[c.k]); else r.style.removeProperty(c.k);
+    var top=document;
+    try{ if(window.top && window.top.document) top=window.top.document; }catch(e){}
+    setRaiz(top,o);
+    ['f1','f2','f3'].forEach(function(id){
+      try{
+        var f=top.getElementById(id);
+        if(f && f.contentDocument && f.contentDocument.documentElement) setRaiz(f.contentDocument,o);
+      }catch(e){}
     });
   }
 
   // Al abrir la app, lo guardado se aplica antes de pintar lo demás
   aplicar(leer());
 
+  function ponerEnTemas(){
+    var t=document.querySelector('[onclick^="temaPoner"]');
+    if(!t || !t.parentNode || document.getElementById('colores-tema')) return;
+    var b=document.createElement('button');
+    b.id='colores-tema'; b.className='mod-p';
+    b.innerHTML='<i class="fa fa-palette"></i> Mis colores';
+    b.onclick=abrir;
+    t.parentNode.appendChild(b);
+  }
+
   function ponerBoton(){
+    try{ ponerEnTemas(); }catch(e){}
     var tba=document.querySelector('#tb .tba');
     if(!tba || document.getElementById('colores-btn')) return false;
     var b=document.createElement('button');
@@ -23079,9 +23109,12 @@ var COLORES_LLAVE_BASE = 'em_colores_v1';
 
   var n=0;
   (function mirar(){
-    if(ponerBoton()) return;
+    var listo=ponerBoton();
+    if(listo) return;
     if(++n<60) setTimeout(mirar,300);
   })();
+  // El selector de temas aparece al abrir su sección: se revisa cada tanto
+  setInterval(function(){ try{ ponerEnTemas(); }catch(e){} }, 1500);
 })();
 
 
