@@ -72,7 +72,7 @@ html,body{height:100%;overflow:hidden;background:#080C14;color:#E8F0FE;font-fami
     </button>
     <div class="sp"></div>
     <button class="tbtn" id="btn-install" onclick="instalarApp()" style="display:none;border-color:#00D4FF;color:#00D4FF;">&#128241; Instalar app</button>
-    <div class="ver"><b style="color:#00D4FF">v14</b> &middot; 20 nov 2026<br>Desarrollado por Ing. Edisson Mac&iacute;as Quevedo</div>
+    <div class="ver"><b style="color:#00D4FF">v15</b> &middot; 25 nov 2026<br>Desarrollado por Ing. Edisson Mac&iacute;as Quevedo</div>
   </div>
   <div id="frames">
     <iframe class="fr off" id="f1" title="Planos"      srcdoc="<!DOCTYPE html>
@@ -23822,6 +23822,176 @@ var NUEVO_TIPOS = [
       }catch(e){}
     }, 4000);
   })();
+})();
+
+
+// ═══════════════════════════════════════════════════════════════
+// PROYECTOS CON CATEGORÍAS LIBRES
+//
+// Las categorías de Proyectos estaban fijas en CCTV, Accesos, Alarmas
+// y Redes. Ahora las categorías son nombres que usted elige: General,
+// Contenido, Para vender, Trabajo, Personal, y las que agregue.
+// Cada categoría nueva usa una plantilla genérica de fases.
+//
+// Los proyectos viejos de seguridad siguen funcionando con sus fases
+// originales (no se borran). La categoría se guarda como texto en el
+// proyecto, así que en cualquier equipo se ve el mismo nombre.
+// ═══════════════════════════════════════════════════════════════
+(function () {
+  if (window.PROYECTOS_VER) return;
+  window.PROYECTOS_VER = 'proyectos-1';
+
+  var CLAVE = (typeof emLlave === 'function') ? emLlave('em_categorias_v1') : 'em_categorias_v1';
+  var DEFECTO = ['General', 'Contenido', 'Para vender', 'Trabajo', 'Personal'];
+  var NUEVA = '__nueva__';
+
+  var FASES = [
+    { n: 'Idea y objetivo',        p: 0.00, t: 'task',     pr: 'Alta' },
+    { n: 'Material y recursos',    p: 0.20, t: 'task',     pr: 'Normal' },
+    { n: 'Producción',             p: 0.45, t: 'task',     pr: 'Alta' },
+    { n: 'Revisión',               p: 0.75, t: 'deadline', pr: 'Urgente' },
+    { n: 'Publicación o entrega',  p: 1.00, t: 'task',     pr: 'Alta' }
+  ];
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function leerGuardadas() {
+    try { var v = JSON.parse(localStorage.getItem(CLAVE)); return Array.isArray(v) ? v : []; }
+    catch (e) { return []; }
+  }
+  function guardarLista(l) {
+    try { localStorage.setItem(CLAVE, JSON.stringify(l)); } catch (e) {}
+  }
+
+  // Lista completa: las de siempre, las agregadas y las que ya usan proyectos
+  function categorias() {
+    var l = DEFECTO.slice();
+    leerGuardadas().forEach(function (c) { if (l.indexOf(c) < 0) l.push(c); });
+    (window.PROJECTS || []).forEach(function (p) {
+      if (p && p.type && l.indexOf(p.type) < 0) l.push(p.type);
+    });
+    return l;
+  }
+
+  // Cada categoría tiene plantilla (si no la tiene, usa las fases genéricas)
+  function asegurarPlantillas() {
+    if (!window.PROJ_TPL) return;
+    categorias().forEach(function (c) { if (!PROJ_TPL[c]) PROJ_TPL[c] = FASES; });
+  }
+
+  // ── Selectores de categoría (modal de proyecto y formulario Nuevo) ──
+  function llenarSelect(sel) {
+    if (!sel) return;
+    var lista = categorias();
+    var firma = lista.join('|');
+    if (sel.dataset.firma === firma) {
+      // valor que ya no existe (p. ej. "CCTV" puesto por el formulario viejo)
+      if (lista.indexOf(sel.value) < 0) sel.value = lista[0];
+      return;   // no reiniciar lo que el usuario eligió
+    }
+    var actual = sel.value;
+    sel.innerHTML = lista.map(function (c) {
+      return '<option value="' + esc(c) + '">' + esc(c) + '</option>';
+    }).join('') + '<option value="' + NUEVA + '">+ Nueva categoría…</option>';
+    sel.dataset.firma = firma;
+    sel.value = lista.indexOf(actual) >= 0 ? actual : lista[0];
+    if (!sel.dataset.ligado) {
+      sel.dataset.ligado = '1';
+      sel.addEventListener('change', function () {
+        if (sel.value !== NUEVA) return;
+        var n = agregarCategoria();
+        sel.value = n || categorias()[0];
+        sel.dataset.firma = '';
+        llenarSelect(sel);
+        sel.value = n || sel.value;
+      });
+    }
+    // En el modal de proyecto la etiqueta decía "Tipo de trabajo"
+    var lab = sel.parentElement && sel.parentElement.querySelector('label');
+    if (lab && /Tipo de trabajo/.test(lab.textContent)) lab.textContent = 'Categoría';
+  }
+
+  function agregarCategoria() {
+    var nombre = (window.prompt('Nombre de la nueva categoría (ej: Reels, Stock, Libros):') || '').trim();
+    if (!nombre) return '';
+    var l = categorias();
+    if (l.indexOf(nombre) < 0) {
+      var g = leerGuardadas(); g.push(nombre); guardarLista(g);
+    }
+    asegurarPlantillas();
+    refrescarTodo();
+    return nombre;
+  }
+
+  function quitarCategoria() {
+    var nombre = (window.prompt('Categoría a quitar:') || '').trim();
+    if (!nombre) return;
+    if (DEFECTO.indexOf(nombre) >= 0) { alert('Las categorías básicas no se quitan; puede dejarlas sin usar.'); return; }
+    var usada = (window.PROJECTS || []).some(function (p) { return p && p.type === nombre; });
+    if (usada) { alert('Hay proyectos en "' + nombre + '". Cámbielos de categoría primero.'); return; }
+    guardarLista(leerGuardadas().filter(function (c) { return c !== nombre; }));
+    refrescarTodo();
+  }
+
+  // ── Barra de filtros del tablero de Proyectos ──
+  function barraKanban() {
+    var primero = document.querySelector('#v-kanban .bd2b');
+    return primero ? primero.parentElement : null;
+  }
+
+  function llenarFiltros() {
+    var barra = barraKanban();
+    if (!barra) return;
+    var lista = categorias();
+    var firma = lista.join('|');
+    if (barra.dataset.firma === firma) return;
+    barra.dataset.firma = firma;
+    barra.innerHTML = '';
+    var mk = function (texto, filtro, clase) {
+      var b = document.createElement('button');
+      b.className = 'bd2b ' + (clase || '');
+      b.textContent = texto;
+      b.addEventListener('click', function () {
+        if (filtro === '__agregar__') { refrescarTodo(); agregarCategoria(); return; }
+        if (filtro === '__quitar__')  { quitarCategoria(); return; }
+        if (typeof window.fk === 'function') window.fk(filtro, b);
+      });
+      if (filtro !== '__agregar__' && filtro !== '__quitar__' &&
+          ((window.kbFilter || 'all') === filtro)) b.classList.add('on');
+      if (filtro === 'all' && (window.kbFilter || 'all') === 'all') b.classList.add('on');
+      barra.appendChild(b);
+      return b;
+    };
+    mk('Todos', 'all');
+    lista.forEach(function (c) { mk(c, c); });
+    mk('+ Categoría', '__agregar__', 'cat-acc');
+    mk('− Categoría', '__quitar__', 'cat-acc');
+  }
+
+  function refrescarTodo() {
+    asegurarPlantillas();
+    var sel = document.getElementById('pj-type');
+    if (sel) llenarSelect(sel);
+    var nuevo = document.getElementById('new-cat');
+    if (nuevo) llenarSelect(nuevo);
+    llenarFiltros();
+  }
+
+  // Arranque y vigilancia liviana (cada 1,2 s, solo rehace lo que cambió)
+  function arrancar() {
+    if (!document.getElementById('v-kanban')) return;
+    refrescarTodo();
+    setInterval(function () {
+      try { refrescarTodo(); } catch (e) {}
+    }, 1200);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', arrancar);
+  else arrancar();
 })();
 
 
