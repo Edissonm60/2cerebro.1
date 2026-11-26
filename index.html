@@ -23114,7 +23114,13 @@ var COLORES_LLAVE_BASE = 'em_colores_v1';
     if(++n<60) setTimeout(mirar,300);
   })();
   // El selector de temas aparece al abrir su sección: se revisa cada tanto
-  setInterval(function(){ try{ ponerEnTemas(); }catch(e){} }, 1500);
+  // Arranca rápido (para que aparezca al abrir la sección) y luego baja el ritmo
+  var vueltas=0;
+  (function revisar(){
+    try{ ponerEnTemas(); }catch(e){}
+    vueltas++;
+    setTimeout(revisar, vueltas<25 ? 400 : 4000);
+  })();
 })();
 
 
@@ -23987,11 +23993,30 @@ var NUEVO_TIPOS = [
     refrescarTodo();
     setInterval(function () {
       try { refrescarTodo(); } catch (e) {}
-    }, 1200);
+    }, 3000);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', arrancar);
   else arrancar();
+})();
+
+
+// ═══════════════════════════════════════════════════════════════
+// SIN AVISOS DE CONTEO AL ARRANCAR
+//
+// Al abrir, NeuroNotes mostraba "N elementos cargados desde tu
+// historial". Es solo un conteo: no hace nada, pero aparecía en cada
+// arranque y confundía. Se silencia ese aviso; los datos no cambian.
+// ═══════════════════════════════════════════════════════════════
+(function () {
+  if (window.RENDIMIENTO_VER) return;
+  window.RENDIMIENTO_VER = 'rendimiento-1';
+  var original = window.T;
+  if (typeof original !== 'function') return;
+  window.T = function (titulo, mensaje) {
+    if (titulo === 'NeuroNotes v2 listo') return;
+    return original.apply(this, arguments);
+  };
 })();
 
 
