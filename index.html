@@ -22996,6 +22996,11 @@ var COLORES_LLAVE_BASE = 'em_colores_v1';
   function llave(){ try{ return (typeof emLlave==='function')?emLlave(COLORES_LLAVE_BASE):COLORES_LLAVE_BASE; }catch(e){ return COLORES_LLAVE_BASE; } }
   function leer(){ try{ return JSON.parse(localStorage.getItem(llave())||'{}')||{}; }catch(e){ return {}; } }
   function guardar(o){ try{ localStorage.setItem(llave(), JSON.stringify(o)); }catch(e){} }
+  // Modo: con "tema" mandan los temas; con "propios" mandan sus colores.
+  // Antes los colores propios siempre ganaban y elegir un tema no hacía nada.
+  function llaveModo(){ try{ return (typeof emLlave==='function')?emLlave('em_colores_modo_v1'):'em_colores_modo_v1'; }catch(e){ return 'em_colores_modo_v1'; } }
+  function leerModo(){ try{ return localStorage.getItem(llaveModo())||'tema'; }catch(e){ return 'tema'; } }
+  function ponerModo(m){ try{ localStorage.setItem(llaveModo(), m); }catch(e){} }
 
   // Los nombres de Planos y Notas son otros para texto y acento
   var EXTRA={'--t1':'--txt','--t2':'--txt2','--ac':'--acc'};
@@ -23024,7 +23029,7 @@ var COLORES_LLAVE_BASE = 'em_colores_v1';
   }
 
   // Al abrir la app, lo guardado se aplica antes de pintar lo demás
-  aplicar(leer());
+  aplicar(leerModo()==='propios' ? leer() : {});
 
   function ponerEnTemas(){
     var t=document.querySelector('[onclick^="temaPoner"]');
@@ -23087,10 +23092,10 @@ var COLORES_LLAVE_BASE = 'em_colores_v1';
 
     caja.querySelectorAll('input[type=color]').forEach(function(inp){
       inp.oninput=function(){
-        var nuevo=leer(); nuevo[inp.getAttribute('data-k')]=inp.value; guardar(nuevo); aplicar(nuevo);
+        var nuevo=leer(); nuevo[inp.getAttribute('data-k')]=inp.value; guardar(nuevo); ponerModo('propios'); aplicar(nuevo);
       };
     });
-    caja.querySelector('[data-reset]').onclick=function(){ guardar({}); aplicar({}); caja.remove(); };
+    caja.querySelector('[data-reset]').onclick=function(){ guardar({}); ponerModo('tema'); aplicar({}); caja.remove(); };
     caja.querySelector('[data-ok]').onclick=function(){ caja.remove(); };
     caja.querySelector('[data-x]').onclick=function(){ caja.remove(); };
     caja.onclick=function(e){ if(e.target===caja) caja.remove(); };
@@ -23106,6 +23111,39 @@ var COLORES_LLAVE_BASE = 'em_colores_v1';
     }catch(e){}
     return '#888888';
   }
+
+  // Elegir un tema lo deja mandar: se quitan los colores propios de la pantalla
+  function elegirTema(){
+    var tp=window.temaPoner;
+    if(typeof tp!=='function' || tp._coloresOk) return;
+    var nueva=function(t){
+      var r=tp.apply(this,arguments);
+      ponerModo('tema');
+      aplicar({});
+      try{
+        var raiz=document.documentElement;
+        raiz.style.removeProperty('background'); raiz.style.removeProperty('color');
+      }catch(e){}
+      return r;
+    };
+    nueva._coloresOk=true;
+    window.temaPoner=nueva;
+  }
+  elegirTema();
+
+  // Cada vez que se redibuja el panel de temas, "Mis colores" vuelve al
+  // instante (antes tardaba hasta 4 s y a veces no aparecía al abrir)
+  ['modAbrir','modPintar','temaPintarBotones'].forEach(function(nombre){
+    var f=window[nombre];
+    if(typeof f!=='function' || f._coloresOk) return;
+    var g=function(){
+      var r=f.apply(this,arguments);
+      try{ ponerEnTemas(); }catch(e){}
+      return r;
+    };
+    g._coloresOk=true;
+    window[nombre]=g;
+  });
 
   var n=0;
   (function mirar(){
@@ -24017,6 +24055,220 @@ var NUEVO_TIPOS = [
     if (titulo === 'NeuroNotes v2 listo') return;
     return original.apply(this, arguments);
   };
+})();
+
+
+// ═══════════════════════════════════════════════════════════════
+// CUADERNOS EN LA NUBE (PC, tablet y celular ven lo mismo)
+//
+// Antes los cuadernos vivían solo en el navegador de cada equipo, y
+// el estado general de NeuroNotes (1 MB por documento) no cabía con
+// las imágenes. Ahora cada cuaderno es un documento propio en la
+// colección «cuadernos» de Firestore:
+//   · se sube solo lo que cambió (huella por cuaderno)
+//   · se bajan los cambios de otros equipos (gana el más reciente)
+//   · al borrar, se borra también en la nube
+//   · el cuaderno que está abierto no se reemplaza a mitad de edición
+//
+// Regla necesaria en Firebase (igual que appdata):
+//   match /cuadernos/{doc} { allow read, write: if true; }
+//
+// Las audios (grabaciones) se quedan en cada equipo: son pesadas.
+// ═══════════════════════════════════════════════════════════════
+(function () {
+  if (window.CUA_NUBE_VER) return;
+  if (typeof cuaGuardar !== 'function' || typeof CUA === 'undefined') return;   // solo dentro de NeuroNotes
+  window.CUA_NUBE_VER = 'cuanube-1';
+
+  var COL = 'cuadernos';
+  var LLAVE_M = (typeof emLlave === 'function') ? emLlave('em_cuadernos_sync_v1') : 'em_cuadernos_sync_v1';
+  var LLAVE_T = (typeof emLlave === 'function') ? emLlave('em_cuadernos_tumbas_v1') : 'em_cuadernos_tumbas_v1';
+  var DEV = 'eq' + Math.random().toString(36).slice(2, 8);
+  try { DEV = localStorage.getItem('em_dev_cua') || (localStorage.setItem('em_dev_cua', DEV), DEV); } catch (e) {}
+
+  var M = leer(LLAVE_M, {});       // id → { h: huella, ts: último sincronizado }
+  var TUMBAS = leer(LLAVE_T, {});  // id → momento en que se borró
+  var pendienteApertura = false;
+  var ocupado = false, ultimoAviso = 0;
+
+  function leer(k, por_defecto) {
+    try { var v = JSON.parse(localStorage.getItem(k)); return v || por_defecto; } catch (e) { return por_defecto; }
+  }
+  function guardar(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+  function huella(s) {
+    var h = 5381;
+    for (var i = 0; i < s.length; i++) h = ((h << 5) + h) ^ s.charCodeAt(i);
+    return (h >>> 0).toString(36) + ':' + s.length;
+  }
+
+  function config() {
+    var c = (typeof EMCFG_NN !== 'undefined' && EMCFG_NN) || {};
+    return { proj: c.fbProject || 'em-suite-pro', key: c.fbKey || '' };
+  }
+  function base() {
+    var c = config();
+    if (!c.key) return '';
+    return 'https://firestore.googleapis.com/v1/projects/' + c.proj + '/databases/(default)/documents/' + COL;
+  }
+  function con(url) { return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'key=' + config().key; }
+
+  function avisarFallo(e) {
+    var ahora = Date.now();
+    if (ahora - ultimoAviso < 300000) return;   // no más de un aviso cada 5 min
+    ultimoAviso = ahora;
+    try { T('Cuadernos sin sincronizar', 'Revisa la conexión o la regla de «cuadernos» en Firebase', '⚠️'); } catch (_) {}
+  }
+
+  // ── Subir lo que cambió ───────────────────────────────────────
+  function subirCambios() {
+    var url = base();
+    if (!url) return Promise.resolve();
+    var promesas = [];
+    (CUA.libros || []).forEach(function (l) {
+      var txt = JSON.stringify(l);
+      var h = huella(txt);
+      if (M[l.id] && M[l.id].h === h) return;          // sin cambios
+      if (txt.length > 950000) {                        // documento de Firestore: 1 MB
+        try { T('Cuaderno muy grande', '«' + (l.t || 'Sin nombre') + '» pasa de 1 MB: no se sube. Expórtalo a PDF.', '⚠️'); } catch (_) {}
+        return;
+      }
+      var ts = Date.now();
+      M[l.id] = { h: h, ts: ts };
+      promesas.push(
+        fetch(con(url + '/' + encodeURIComponent(l.id)), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: {
+            json: { stringValue: txt },
+            ts:   { integerValue: String(ts) },
+            dev:  { stringValue: DEV }
+          } })
+        }).then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+        }).catch(function (e) {
+          delete M[l.id];                               // se reintenta en el próximo ciclo
+          avisarFallo(e);
+        })
+      );
+    });
+    guardar(LLAVE_M, M);
+    return Promise.all(promesas);
+  }
+
+  // ── Borrar en la nube lo que se borró aquí ────────────────────
+  function borrarEnNube(id) {
+    var url = base();
+    if (!url) return;
+    fetch(con(url + '/' + encodeURIComponent(id)), { method: 'DELETE' })
+      .catch(function () { /* queda la marca de borrado; se reintenta al abrir */ });
+  }
+
+  // ── Bajar lo que cambió en otros equipos ──────────────────────
+  function bajarCambios() {
+    var url = base();
+    if (!url) return Promise.resolve();
+    return fetch(con(url + '?pageSize=300'))
+      .then(function (r) {
+        if (r.status === 404) return { documents: [] };
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (j) {
+        var cambio = false;
+        var vistos = {};
+        (j.documents || []).forEach(function (d) {
+          var id = d.name.split('/').pop();
+          vistos[id] = true;
+          if (TUMBAS[id]) return;                       // borrado aquí: no revivir
+          var f = d.fields || {};
+          var rts = +((f.ts && (f.ts.integerValue || f.ts.stringValue)) || 0);
+          var m = M[id];
+          if (m && rts <= m.ts) return;                 // ya lo tengo igual o más nuevo
+          var rl;
+          try { rl = JSON.parse((f.json && f.json.stringValue) || 'null'); } catch (e) { return; }
+          if (!rl || !rl.id) return;
+          if (typeof CU !== 'undefined' && CU.libro && CU.libro.id === id) {
+            pendienteApertura = true;                   // no lo cambio mientras lo editas
+            return;
+          }
+          var idx = -1;
+          for (var i = 0; i < CUA.libros.length; i++) if (CUA.libros[i].id === id) { idx = i; break; }
+          if (idx >= 0) CUA.libros[idx] = rl; else CUA.libros.push(rl);
+          M[id] = { h: huella(JSON.stringify(rl)), ts: rts };
+          cambio = true;
+        });
+        // Lo que se borró en otro equipo: se quita aquí, salvo si tiene cambios sin subir
+        Object.keys(M).forEach(function (id) {
+          if (vistos[id]) return;
+          if (typeof CU !== 'undefined' && CU.libro && CU.libro.id === id) return;
+          var idx = -1;
+          for (var k = 0; k < CUA.libros.length; k++) if (CUA.libros[k].id === id) { idx = k; break; }
+          if (idx < 0) { delete M[id]; return; }
+          if (huella(JSON.stringify(CUA.libros[idx])) !== M[id].h) return;
+          CUA.libros.splice(idx, 1);
+          delete M[id];
+          cambio = true;
+        });
+        guardar(LLAVE_M, M);
+        if (cambio) {
+          try { cuaGuardar(true); } catch (_) {}
+          try { if (document.getElementById('cua-estante') && !document.getElementById('cua-abierto').classList.contains('on')) cuaRenderEstante(); } catch (_) {}
+        }
+      });
+  }
+
+  // Un ciclo completo: primero lo mío, luego lo de los demás
+  function ciclo() {
+    if (ocupado || !base()) return;
+    ocupado = true;
+    subirCambios()
+      .then(function () { return bajarCambios(); })
+      .catch(avisarFallo)
+      .then(function () { ocupado = false; });
+  }
+
+  // ── Enganches con lo que ya existe (sin tocar el archivo base) ──
+  var guardarOriginal = window.cuaGuardar;
+  var pendiente = null;
+  window.cuaGuardar = function (ya) {
+    var r = guardarOriginal.apply(this, arguments);
+    clearTimeout(pendiente);
+    pendiente = setTimeout(ciclo, 2500);
+    return r;
+  };
+
+  var borrarOriginal = window.cuaBorrarLibro;
+  if (typeof borrarOriginal === 'function') {
+    window.cuaBorrarLibro = function () {
+      var id = (typeof CUP !== 'undefined' && CUP && CUP.id) || null;
+      var antes = (CUA.libros || []).length;
+      var r = borrarOriginal.apply(this, arguments);
+      if (id && (CUA.libros || []).length < antes && !(CUA.libros || []).some(function (l) { return l.id === id; })) {
+        TUMBAS[id] = Date.now();
+        guardar(LLAVE_T, TUMBAS);
+        delete M[id];
+        guardar(LLAVE_M, M);
+        borrarEnNube(id);
+      }
+      return r;
+    };
+  }
+
+  var cerrarOriginal = window.cuaCerrarLibro;
+  if (typeof cerrarOriginal === 'function') {
+    window.cuaCerrarLibro = function () {
+      var r = cerrarOriginal.apply(this, arguments);
+      if (pendienteApertura) { pendienteApertura = false; setTimeout(ciclo, 300); }
+      return r;
+    };
+  }
+
+  // ── Cuándo se sincroniza ──────────────────────────────────────
+  setTimeout(ciclo, 3000);                              // al abrir
+  setInterval(function () { if (!document.hidden) ciclo(); }, 45000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) ciclo(); });
+  window.addEventListener('focus', function () { ciclo(); });
 })();
 
 
