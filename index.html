@@ -23154,7 +23154,17 @@ var COLORES_LLAVE_BASE = 'em_colores_v1';
   // El selector de temas aparece al abrir su sección: se revisa cada tanto
   // Arranca rápido (para que aparezca al abrir la sección) y luego baja el ritmo
   var vueltas=0;
+  // La entrada «Qué quiero ver» del menú guardó la función original de
+  // abrirla: se apunta siempre a la versión que trae temas y colores
+  function ligarMenu(){
+    var e=document.getElementById('mod-entrada');
+    if(!e || e._ligada) return;
+    e._ligada=true;
+    e.onclick=function(){ if(typeof window.modAbrir==='function') window.modAbrir(); };
+  }
+
   (function revisar(){
+    try{ ligarMenu(); }catch(e){}
     try{ ponerEnTemas(); }catch(e){}
     vueltas++;
     setTimeout(revisar, vueltas<25 ? 400 : 4000);
@@ -24117,7 +24127,11 @@ var NUEVO_TIPOS = [
     var ahora = Date.now();
     if (ahora - ultimoAviso < 300000) return;   // no más de un aviso cada 5 min
     ultimoAviso = ahora;
-    try { T('Cuadernos sin sincronizar', 'Revisa la conexión o la regla de «cuadernos» en Firebase', '⚠️'); } catch (_) {}
+    var motivo = String((e && e.message) || e || '');
+    var causa = /403/.test(motivo) ? 'Firebase no deja escribir en «cuadernos»: falta publicar la regla'
+              : /404/.test(motivo) ? 'No encuentro el proyecto de Firebase: revisa la configuración'
+              : 'Revisa la conexión a internet';
+    try { T('Cuadernos sin sincronizar', causa + ' (' + motivo + ')', '⚠️'); } catch (_) {}
   }
 
   // ── Subir lo que cambió ───────────────────────────────────────
