@@ -24303,15 +24303,34 @@ var NUEVO_TIPOS = [
   }
 
   // ── Bajar lo que cambió en otros equipos ──────────────────────
+  // Primero se leen solo las fechas; el contenido se baja solo de lo que cambió
+  function completar(lista) {
+    var pedir = lista.filter(function (d) {
+      var id = d.name.split('/').pop(), f = d.fields || {};
+      var rts = +((f.ts && (f.ts.integerValue || f.ts.stringValue)) || 0);
+      return !TUMBAS[id] && !(M[id] && rts <= M[id].ts);
+    });
+    return Promise.all(pedir.map(function (d) {
+      return fetch(con(base() + '/' + d.name.split('/').pop()))
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .catch(function () { return null; });
+    })).then(function (llenos) {
+      var mapa = {};
+      llenos.forEach(function (x) { if (x && x.name) mapa[x.name] = x; });
+      return lista.map(function (d) { return mapa[d.name] || d; });
+    });
+  }
+
   function bajarCambios() {
     var url = base();
     if (!url) return Promise.resolve();
-    return fetch(con(url + '?pageSize=300'))
+    return fetch(con(url + '?pageSize=300&mask.fieldPaths=ts'))
       .then(function (r) {
         if (r.status === 404) return { documents: [] };
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       })
+      .then(function (j) { return completar(j.documents || []).then(function (docs) { return { documents: docs }; }); })
       .then(function (j) {
         var cambio = false;
         var vistos = {};
@@ -24632,15 +24651,34 @@ var NUEVO_TIPOS = [
     return Promise.all(pr);
   }
 
+  // Primero se leen solo las fechas; el contenido se baja solo de lo que cambió
+  function completar(lista) {
+    var pedir = lista.filter(function (d) {
+      var id = d.name.split('/').pop(), f = d.fields || {};
+      var rts = +((f.ts && (f.ts.integerValue || f.ts.stringValue)) || 0);
+      return !TUMBAS[id] && !(M[id] && rts <= M[id].ts);
+    });
+    return Promise.all(pedir.map(function (d) {
+      return fetch(con(base() + '/' + d.name.split('/').pop()))
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .catch(function () { return null; });
+    })).then(function (llenos) {
+      var mapa = {};
+      llenos.forEach(function (x) { if (x && x.name) mapa[x.name] = x; });
+      return lista.map(function (d) { return mapa[d.name] || d; });
+    });
+  }
+
   function bajarCambios() {
     var u = base();
     if (!u) return Promise.resolve();
-    return fetch(con(u + '?pageSize=300'))
+    return fetch(con(u + '?pageSize=300&mask.fieldPaths=ts'))
       .then(function (r) {
         if (r.status === 404) return { documents: [] };
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       })
+      .then(function (j) { return completar(j.documents || []).then(function (docs) { return { documents: docs }; }); })
       .then(function (j) {
         var cambio = false, vistos = {};
         (j.documents || []).forEach(function (d) {
@@ -24927,6 +24965,49 @@ var NUEVO_TIPOS = [
   };
 
   try { cuaRenderTools(); } catch (e) {}
+})();
+
+
+// ═══════════════════════════════════════════════════════════════
+// PLANO DE FONDO MÁS LIVIANO
+//
+// Un plano importado (foto o PDF convertido) se guardaba tal cual dentro
+// del proyecto, a veces de varios MB. Eso hacía lenta la sincronización
+// y la tablet no alcanzaba a cargarlo. Ahora, si la imagen es pesada,
+// se reduce a 1800 px (JPEG 80 %) antes de guardarla. Se ve igual en
+// pantalla para trabajar sobre el plano.
+// ═══════════════════════════════════════════════════════════════
+(function () {
+  if (window.PLANOS_IMAGEN_VER) return;
+  if (typeof placeBgPlan !== 'function') return;
+  window.PLANOS_IMAGEN_VER = 'planos-imagen-1';
+  var original = window.placeBgPlan;
+
+  function achicar(url, cb) {
+    var im = new Image();
+    im.onload = function () {
+      var w = im.naturalWidth, h = im.naturalHeight, e = Math.min(1, 1800 / Math.max(w, h)) || 1;
+      if (e >= 1 && url.length < 900000) return cb(url);   // ya es liviana
+      var c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(w * e)); c.height = Math.max(1, Math.round(h * e));
+      var x = c.getContext('2d');
+      x.fillStyle = '#ffffff'; x.fillRect(0, 0, c.width, c.height);
+      x.drawImage(im, 0, 0, c.width, c.height);
+      cb(c.toDataURL('image/jpeg', 0.8));
+    };
+    im.onerror = function () { cb(url); };
+    im.src = url;
+  }
+
+  window.placeBgPlan = function (dataUrl, name) {
+    var self = this, args = arguments;
+    if (typeof dataUrl !== 'string' || dataUrl.indexOf('data:image/') !== 0) {
+      return original.apply(self, args);
+    }
+    achicar(dataUrl, function (lista) {
+      original.call(self, lista, name);
+    });
+  };
 })();
 
 
