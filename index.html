@@ -24733,6 +24733,98 @@ var NUEVO_TIPOS = [
 
 
 // ═══════════════════════════════════════════════════════════════
+// IMÁGENES EN NOTAS (texto enriquecido): galería o cámara
+//
+// La pestaña «Texto enriquecido» no tenía forma de traer imágenes.
+// Ahora hay dos botones encima del editor: Galería y Cámara. La imagen
+// se pone donde estaba el cursor y se guarda con la página (y viaja a
+// la nube junto con el texto).
+// ═══════════════════════════════════════════════════════════════
+(function () {
+  if (window.NOTA_IMAGEN_VER) return;
+  var ed = document.getElementById('rich-editor');
+  if (!ed || typeof saveCurPage !== 'function') return;
+  window.NOTA_IMAGEN_VER = 'nota-imagen-1';
+
+  var ultimoRango = null;
+  document.addEventListener('selectionchange', function () {
+    var s = window.getSelection();
+    if (s && s.rangeCount && ed.contains(s.anchorNode)) ultimoRango = s.getRangeAt(0).cloneRange();
+  });
+
+  var barra = document.createElement('div');
+  barra.style.cssText = 'display:flex;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--bd,#dde3ec)';
+  var boton = 'padding:6px 12px;border-radius:8px;border:1px solid var(--bd,#dde3ec);background:transparent;color:inherit;cursor:pointer;font:600 12px system-ui,sans-serif';
+  barra.innerHTML = '<span style="font-size:11px;opacity:.7">Imagen:</span>' +
+    '<button type="button" data-gal style="' + boton + '">🖼 Galería</button>' +
+    '<button type="button" data-cam style="' + boton + '">📷 Cámara</button>';
+  ed.parentNode.insertBefore(barra, ed);
+
+  function comprimir(f, cb) {
+    var r = new FileReader();
+    r.onload = function () {
+      var im = new Image();
+      im.onload = function () {
+        var w = im.width, h = im.height, e = Math.min(1, 1000 / Math.max(w, h)) || 1;
+        var c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(w * e)); c.height = Math.max(1, Math.round(h * e));
+        var x = c.getContext('2d');
+        x.fillStyle = '#ffffff'; x.fillRect(0, 0, c.width, c.height);
+        x.drawImage(im, 0, 0, c.width, c.height);
+        cb(c.toDataURL('image/jpeg', 0.75));
+      };
+      im.onerror = function () {
+        try { showToast('No pude leer esa imagen: usa JPG o PNG (las HEIC de iPhone no se leen aquí)', 'err'); } catch (e) {}
+      };
+      im.src = r.result;
+    };
+    r.readAsDataURL(f);
+  }
+
+  function insertar(url) {
+    ed.focus();
+    var s = window.getSelection();
+    var rango = ultimoRango;
+    if (!rango || !ed.contains(rango.startContainer)) {
+      rango = document.createRange();
+      rango.selectNodeContents(ed);
+      rango.collapse(false);
+    }
+    s.removeAllRanges(); s.addRange(rango);
+    var img = document.createElement('img');
+    img.src = url;
+    img.style.cssText = 'max-width:100%;height:auto;border-radius:8px;display:block;margin:8px 0';
+    rango.deleteContents();
+    rango.insertNode(img);
+    var br = document.createElement('br');
+    img.after(br);
+    var nuevo = document.createRange();
+    nuevo.setStartAfter(br); nuevo.collapse(true);
+    s.removeAllRanges(); s.addRange(nuevo);
+    ultimoRango = nuevo.cloneRange();
+    saveCurPage();
+  }
+
+  function elegir(camara) {
+    var i = document.createElement('input');
+    i.type = 'file'; i.accept = 'image/*';
+    if (camara) i.setAttribute('capture', 'environment');
+    i.style.cssText = 'position:fixed;left:-9999px;opacity:0';
+    document.body.appendChild(i);
+    i.onchange = function () {
+      var f = i.files && i.files[0];
+      try { i.remove(); } catch (e) {}
+      if (f) comprimir(f, insertar);
+    };
+    i.click();
+  }
+
+  barra.querySelector('[data-gal]').onclick = function () { elegir(false); };
+  barra.querySelector('[data-cam]').onclick = function () { elegir(true); };
+})();
+
+
+// ═══════════════════════════════════════════════════════════════
 // LA CONFIGURACIÓN LLEGA A TODAS LAS PESTAÑAS
 //
 // La configuración (Firebase, Telegram) se envía a las pestañas al
