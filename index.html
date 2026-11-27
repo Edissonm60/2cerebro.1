@@ -24178,6 +24178,19 @@ var NUEVO_TIPOS = [
   };
 })();
 
+// Traer los cambios de la nube cada 20 s mientras la app esté a la vista
+// (antes cada 60 s). Así lo que se hace en el PC aparece pronto en la tablet.
+(function () {
+  if (window.SYNC_RAPIDA_VER) return;
+  if (typeof nnCloudPull !== 'function') return;
+  window.SYNC_RAPIDA_VER = 'sync-rapida-1';
+  setInterval(function () {
+    if (document.hidden) return;
+    try { nnCloudPull(true); } catch (e) {}
+  }, 20000);
+  window.addEventListener('focus', function () { try { nnCloudPull(true); } catch (e) {} });
+})();
+
 
 // ═══════════════════════════════════════════════════════════════
 // CUADERNOS EN LA NUBE (PC, tablet y celular ven lo mismo)
@@ -24391,7 +24404,7 @@ var NUEVO_TIPOS = [
 
   // ── Cuándo se sincroniza ──────────────────────────────────────
   setTimeout(ciclo, 3000);                              // al abrir
-  setInterval(function () { if (!document.hidden) ciclo(); }, 45000);
+  setInterval(function () { if (!document.hidden) ciclo(); }, 20000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) ciclo(); });
   window.addEventListener('focus', function () { ciclo(); });
 })();
@@ -24505,7 +24518,7 @@ var NUEVO_TIPOS = [
     else loadFromCloud();
   }, 2000);
 
-  setInterval(function () { if (!document.hidden) traer(); }, 60000);
+  setInterval(function () { if (!document.hidden) traer(); }, 20000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) traer(); });
   window.addEventListener('focus', traer);
 })();
@@ -24713,7 +24726,7 @@ var NUEVO_TIPOS = [
     };
   }
 
-  setInterval(function () { if (!document.hidden) ciclo(); }, 45000);
+  setInterval(function () { if (!document.hidden) ciclo(); }, 20000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) ciclo(); });
   window.addEventListener('focus', function () { ciclo(); });
 })();
