@@ -23219,6 +23219,72 @@ var REUNIONES_VER = 'reuniones-1';
   }
 
   // ── La ficha ──────────────────────────────────────────────────────
+
+  // ── Fotos de la reunión (cámara o galería) ────────────────────
+  function comprimirFoto(f, cb){
+    var r=new FileReader();
+    r.onload=function(){
+      var im=new Image();
+      im.onload=function(){
+        var w=im.width, h=im.height, e=Math.min(1, 1000/Math.max(w,h))||1;
+        var c=document.createElement('canvas');
+        c.width=Math.max(1,Math.round(w*e)); c.height=Math.max(1,Math.round(h*e));
+        var x=c.getContext('2d');
+        x.fillStyle='#ffffff'; x.fillRect(0,0,c.width,c.height);
+        x.drawImage(im,0,0,c.width,c.height);
+        cb(c.toDataURL('image/jpeg',0.72));
+      };
+      im.onerror=function(){
+        try{ T('No pude leer esa imagen','Usa JPG o PNG. Las fotos HEIC de iPhone no se pueden leer aquí.','⚠️'); }catch(e){}
+      };
+      im.src=r.result;
+    };
+    r.readAsDataURL(f);
+  }
+
+  function fotosSeccion(m, alCambiar){
+    var ref=document.getElementById('reu-n'); if(!ref) return;
+    var etiqueta=ref.previousElementSibling;
+    var bot='style="padding:8px 12px;border-radius:10px;border:1px solid var(--bd,#dde3ec);background:transparent;color:var(--t1,#131a26);cursor:pointer;font:600 12px system-ui,sans-serif"';
+    var sec=document.createElement('div');
+    sec.innerHTML='<label style="display:block;margin-top:10px;font-size:11px;color:var(--t2,#4b5a6e)">Fotos</label>'+
+      '<div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">'+
+        '<button type="button" data-cam '+bot+'><i class="fa fa-camera"></i> Cámara</button>'+
+        '<button type="button" data-gal '+bot+'><i class="fa fa-images"></i> Galería</button></div>'+
+      '<div data-vista style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>';
+    etiqueta.parentNode.insertBefore(sec, etiqueta);
+    if(!m.fotos) m.fotos=[];
+    var vista=sec.querySelector('[data-vista]');
+    var pintar=function(){
+      vista.innerHTML=(m.fotos||[]).map(function(u,i){
+        return '<div style="position:relative"><img src="'+u+'" style="width:72px;height:72px;object-fit:cover;border-radius:8px;display:block">'+
+          '<button type="button" data-q="'+i+'" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:#dc2626;color:#fff;cursor:pointer;font-size:11px">✕</button></div>';
+      }).join('');
+      vista.querySelectorAll('[data-q]').forEach(function(b){
+        b.onclick=function(){ m.fotos.splice(+b.getAttribute('data-q'),1); pintar(); alCambiar&&alCambiar(); };
+      });
+    };
+    var subir=function(camara){
+      var i=document.createElement('input');
+      i.type='file'; i.accept='image/*'; i.multiple=!camara;
+      if(camara) i.setAttribute('capture','environment');
+      i.style.cssText='position:fixed;left:-9999px;opacity:0';
+      document.body.appendChild(i);
+      i.onchange=function(){
+        var lista=Array.prototype.slice.call(i.files||[]);
+        try{ i.remove(); }catch(e){}
+        lista.forEach(function(f){
+          if((m.fotos||[]).length>=4){ try{ T('Máximo 4 fotos','Quita una para agregar otra','⚠️'); }catch(e){} return; }
+          comprimirFoto(f, function(url){ m.fotos.push(url); pintar(); alCambiar&&alCambiar(); });
+        });
+      };
+      i.click();
+    };
+    sec.querySelector('[data-cam]').onclick=function(){ subir(true); };
+    sec.querySelector('[data-gal]').onclick=function(){ subir(false); };
+    pintar();
+  }
+
   window.reunionVer=function(id){
     var m=(MEETS||[]).filter(function(x){return String(x.id)===String(id);})[0];
     if(!m) return;
@@ -23258,6 +23324,7 @@ var REUNIONES_VER = 'reuniones-1';
         '<button data-guardar style="width:100%;margin-top:12px;padding:10px;border-radius:10px;border:none;background:var(--ac,#0284c7);color:#fff;font-weight:700;cursor:pointer">Guardar cambios</button>'+
       '</div>';
     document.body.appendChild(caja);
+    fotosSeccion(m, function(){ try{ nnSave(); }catch(e){} try{ renderMeets(); }catch(e){} });
     var cerrar=function(){ caja.remove(); };
     caja.querySelector('[data-x]').onclick=cerrar;
     caja.onclick=function(e){ if(e.target===caja) cerrar(); };
@@ -23406,6 +23473,7 @@ var NUEVO_TIPOS = [
 
   // ── El formulario único ────────────────────────────────────────
   function armarFormulario(){
+    FOTOS=[];
     var m=document.getElementById('mo-new');
     if(!m||m.getAttribute('data-nuevo')) return;
     m.setAttribute('data-nuevo','1');
@@ -23442,6 +23510,12 @@ var NUEVO_TIPOS = [
         '</div>'+
         '<div class="fg"><label class="fl">Proyecto</label><select class="fs" id="new-proj"><option value="">— Sin proyecto —</option></select></div>'+
         '<div class="fg"><label class="fl">Descripción o notas</label><textarea class="ft" id="new-desc" placeholder="Detalles..."></textarea></div>'+
+        '<div class="fg" id="new-f-fotos"><label class="fl">Fotos (cámara o galería)</label>'+
+          '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+            '<button type="button" class="bs" onclick="nuevoFoto(true)"><i class="fa fa-camera" style="margin-right:6px"></i>Cámara</button>'+
+            '<button type="button" class="bs" onclick="nuevoFoto(false)"><i class="fa fa-images" style="margin-right:6px"></i>Galería</button>'+
+          '</div>'+
+          '<div id="new-fotos-vista" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div></div>'+
       '</div>'+
       '<div class="mdf"><button class="bs" onclick="closeModal(\'mo-new\')">Cancelar</button>'+
         '<button class="bp" onclick="addNew()"><i class="fa fa-check" style="margin-right:5px"></i>Crear</button></div>';
@@ -23461,6 +23535,7 @@ var NUEVO_TIPOS = [
     f('new-f-lugar', !!t.lugar);
     f('new-f-enlace', !!t.enlace);
     f('new-f-tarea', t.k==='task');
+    f('new-f-fotos', t.k!=='task' && t.k!=='note');
     var fe=document.querySelector('#mo-new .nv-fila'); // fecha y hora
     var tl=document.querySelector('#new-date'); if(tl&&tl.closest('.nv-fila')) tl.closest('.nv-fila').style.display=(t.k==='note')?'none':'';
     var lbl=document.getElementById('new-l-lugar'); if(lbl) lbl.textContent=(t.k==='visita')?'Cliente o dirección':'Lugar o sala';
@@ -23481,7 +23556,39 @@ var NUEVO_TIPOS = [
     try{ openModal('mo-new'); }catch(e){}
   };
 
+  // ── Fotos del elemento: cámara o galería, achicadas antes de guardar ──
+  var FOTOS=[];
+  var FOTOS_MAX=4, FOTOS_TOPE=900000;   // hasta 4 fotos y ~900 KB en total
+  function fotosPintar(){
+    var vista=document.getElementById('new-fotos-vista'); if(!vista) return;
+    vista.innerHTML=FOTOS.map(function(u,i){
+      return '<div style="position:relative"><img src="'+u+'" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--bd,#dde3ec)">'+
+        '<button type="button" onclick="nuevoFotoQuitar('+i+')" style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:none;background:#ef4444;color:#fff;font-size:13px;line-height:22px;cursor:pointer">×</button></div>';
+    }).join('');
+  }
+  function fotoAgregar(f){
+    if(FOTOS.length>=FOTOS_MAX){ try{T('Máximo '+FOTOS_MAX+' fotos','Quita una para agregar otra','⚠️');}catch(e){} return; }
+    achicar(f, 1000, 0.72, function(url){
+      if(FOTOS.join('').length+url.length>FOTOS_TOPE){ try{T('Fotos muy pesadas','Quita alguna o usa fotos más pequeñas','⚠️');}catch(e){} return; }
+      FOTOS.push(url); fotosPintar();
+    });
+  }
+  window.nuevoFoto=function(camara){
+    var i=document.createElement('input');
+    i.type='file'; i.accept='image/*';
+    if(camara) i.setAttribute('capture','environment'); else i.multiple=true;
+    i.style.cssText='position:fixed;left:-9999px;opacity:0';
+    document.body.appendChild(i);
+    i.onchange=function(){
+      Array.prototype.forEach.call(i.files||[], fotoAgregar);
+      try{ i.remove(); }catch(e){}
+    };
+    i.click();
+  };
+  window.nuevoFotoQuitar=function(i){ FOTOS.splice(i,1); fotosPintar(); };
+
   function limpiar(){
+    FOTOS=[]; fotosPintar();
     ['new-title','new-desc','new-lugar','new-link'].forEach(function(id){
       var e=document.getElementById(id); if(e) e.value='';
     });
@@ -23497,6 +23604,7 @@ var NUEVO_TIPOS = [
     var p=(proj&&typeof projFind==='function')?projFind(proj):null;
     var lugar=v('new-lugar'), enlace=v('new-link'), desc=v('new-desc');
     var notas=tipo.lab+(lugar?' · '+lugar:'')+(desc?'\n'+desc:'');
+    var fotosE=(tipo.k==='task'||tipo.k==='note')?[]:FOTOS.slice();
     // Una reunión se identifica igual que en su propio módulo (nn_meet_+id),
     // así Alertas la reconoce como la misma y no la duplica.
     var idBase=Date.now();
@@ -23506,13 +23614,14 @@ var NUEVO_TIPOS = [
       try{
         MEETS.unshift({id:idBase, t:t, time:hora, date:nnCorto(fecha), fecha:fecha,
           plat:tipo.plat||'presencial', parts:['Yo'], agenda:desc||'', lugar:lugar, link:enlace,
-          when:(typeof nnHoy==='function'&&fecha===nnHoy())?'today':'upcoming'});
+          when:(typeof nnHoy==='function'&&fecha===nnHoy())?'today':'upcoming', fotos:fotosE});
       }catch(e){}
       try{ if(typeof renderMeets==='function') renderMeets(); }catch(e){}
     }else{
       var ev={id:(tipo.k==='recordatorio'?'nn_rec_':'nn_cal_')+idBase, title:t, type:tipo.cal, prio:'media',
               date:fecha, time:hora, project:p?p.name:'', projId:proj||'', notes:notasR, link:enlace,
               recur:'', recurEnd:'', sent:'', done:false};
+      if(fotosE.length) ev.fotos=fotosE;
       // Un recordatorio es alarma (suma al contador). Lo demás va a la agenda sin alarma.
       nnEvent(ev, tipo.k==='recordatorio');
     }
@@ -23590,7 +23699,7 @@ var NUEVO_TIPOS = [
         x.drawImage(im,0,0,c.width,c.height);
         cb(c.toDataURL('image/jpeg',calidad));
       };
-      im.onerror=function(){ try{T('No se pudo abrir la imagen','Prueba con otra','⚠️');}catch(e){} };
+      im.onerror=function(){ try{T('No pude leer esa imagen','Usa JPG o PNG. Las fotos HEIC de iPhone no se pueden leer aquí.','⚠️');}catch(e){} };
       im.src=r.result;
     };
     r.readAsDataURL(f);
@@ -23797,7 +23906,9 @@ var NUEVO_TIPOS = [
         return '<div style="display:flex;gap:10px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--bd,rgba(127,140,170,.2))">'+
           '<i class="fa '+icono(e)+'" style="color:var(--ac,#4f8cff);width:18px;text-align:center"></i>'+
           '<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+nnEsc(e.title)+'</div>'+
-          '<div style="font-size:10.5px;color:var(--t3,#7a8498)">'+etiqueta(e)+' · '+(typeof nnFechaLarga==='function'?nnFechaLarga(e.date):e.date)+(e.time?' · '+e.time:'')+'</div></div></div>';
+          '<div style="font-size:10.5px;color:var(--t3,#7a8498)">'+etiqueta(e)+' · '+(typeof nnFechaLarga==='function'?nnFechaLarga(e.date):e.date)+(e.time?' · '+e.time:'')+'</div></div>'+
+          ((e.fotos&&e.fotos.length)?'<div style="display:flex;gap:4px">'+e.fotos.slice(0,3).map(function(u){return '<img src="'+u+'" style="width:34px;height:34px;object-fit:cover;border-radius:6px">';}).join('')+'</div>':'')+
+          '</div>';
       }).join('') : '<div style="text-align:center;padding:18px;color:var(--t3,#7a8498);font-size:12px">Nada agendado. Usa <b>+ Nuevo elemento</b> arriba.</div>';
     }
     var la=document.getElementById('dash-alerts-list');
@@ -24283,6 +24394,366 @@ var NUEVO_TIPOS = [
   setInterval(function () { if (!document.hidden) ciclo(); }, 45000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) ciclo(); });
   window.addEventListener('focus', function () { ciclo(); });
+})();
+
+
+// ═══════════════════════════════════════════════════════════════
+// LÁPIZ NEGRO POR DEFECTO EN NOTAS & CANVAS
+//
+// El lienzo es claro: el lápiz por defecto era casi blanco y no se
+// veía. Ahora arranca en negro y hay un círculo negro en la paleta.
+// ═══════════════════════════════════════════════════════════════
+(function () {
+  if (window.LAPIZ_VER) return;
+  if (!document.getElementById('color-strip') || typeof setColor !== 'function') return;
+  window.LAPIZ_VER = 'lapiz-1';
+  var NEGRO = '#111111';
+  var franja = document.getElementById('color-strip');
+  var ya = franja.querySelector('[data-color="' + NEGRO + '"]');
+  if (!ya) {
+    ya = document.createElement('div');
+    ya.className = 'color-btn';
+    ya.style.background = NEGRO;
+    ya.setAttribute('data-color', NEGRO);
+    ya.setAttribute('title', 'Negro');
+    ya.onclick = function () { setColor(this); };
+    franja.insertBefore(ya, franja.firstChild);
+  }
+  franja.querySelectorAll('.color-btn').forEach(function (b) { b.classList.remove('on'); });
+  ya.classList.add('on');
+  penColor = NEGRO;
+})();
+
+
+// ═══════════════════════════════════════════════════════════════
+// PLANOS: SINCRONIZACIÓN SEGURA
+//
+// Problema que corrige:
+//  · Al abrir la app en otro equipo, el plano no se cargaba solo: solo
+//    se traía al elegir proyecto o al tocar «Recargar». Eso dejaba la
+//    pantalla vacía y podía volver a subir una versión vacía.
+//  · Ahora el plano del último proyecto se carga al arrancar, y NO se
+//    sube nada a la nube hasta que la carga haya salido bien. Así un
+//    equipo sin datos nunca borra lo que ya está en la nube.
+//  · Al volver a la app se trae la última versión, salvo que tenga
+//    cambios sin subir (esos se suben primero).
+// ═══════════════════════════════════════════════════════════════
+(function () {
+  if (window.PLANOS_NUBE_VER) return;
+  if (typeof saveToCloud !== 'function' || typeof loadFromCloud !== 'function') return;
+  window.PLANOS_NUBE_VER = 'planosnube-1';
+
+  var CLAVE = 'em_plan_ultimo_v1';
+  var listo = false;    // ya se cargó bien desde la nube
+  var sucio = false;    // hay cambios que aún no se han subido
+
+  function leerUltimo() { try { return JSON.parse(localStorage.getItem(CLAVE) || 'null'); } catch (e) { return null; } }
+  function guardarUltimo(p) { try { localStorage.setItem(CLAVE, JSON.stringify(p)); } catch (e) {} }
+
+  function estadoNube() {
+    var el = document.getElementById('cloud-status');
+    return el ? el.textContent : '';
+  }
+  function nubeOk() { return /Sincronizado/.test(estadoNube()); }
+
+  var guardarOriginal = window.saveToCloud;
+  window.saveToCloud = async function (notificar) {
+    if (!listo) {
+      if (notificar && typeof showToast === 'function')
+        showToast('Espera a que cargue el plano desde la nube', 'info');
+      return;
+    }
+    var r = await guardarOriginal.apply(this, arguments);
+    sucio = false;
+    return r;
+  };
+
+  var programarOriginal = window.scheduleCloudSave;
+  if (typeof programarOriginal === 'function') {
+    window.scheduleCloudSave = function () {
+      sucio = true;
+      return programarOriginal.apply(this, arguments);
+    };
+  }
+
+  var cargarOriginal = window.loadFromCloud;
+  window.loadFromCloud = async function () {
+    var r = await cargarOriginal.apply(this, arguments);
+    listo = nubeOk();
+    return r;
+  };
+
+  var abrirOriginal = window.openPlanoProject;
+  if (typeof abrirOriginal === 'function') {
+    window.openPlanoProject = async function (proj) {
+      var r = await abrirOriginal.apply(this, arguments);
+      if (proj && proj.id) guardarUltimo({ id: proj.id, name: proj.name, client: proj.client });
+      return r;
+    };
+  }
+
+  // Traer lo último sin pisar cambios pendientes
+  function traer() {
+    if (!listo || sucio) return;
+    loadFromCloud();
+  }
+
+  // Al arrancar: el último proyecto, o el plano general
+  setTimeout(function () {
+    var u = leerUltimo();
+    if (u && u.id && typeof openPlanoProject === 'function') openPlanoProject(u);
+    else loadFromCloud();
+  }, 2000);
+
+  setInterval(function () { if (!document.hidden) traer(); }, 60000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) traer(); });
+  window.addEventListener('focus', traer);
+})();
+
+
+// ═══════════════════════════════════════════════════════════════
+// NOTAS & CANVAS: SINCRONIZACIÓN EN LA NUBE + LÁPIZ NEGRO
+//
+// Antes las páginas solo vivían en el navegador de cada equipo. Ahora
+// cada página es un documento de la colección «canvas» de Firestore:
+//   · se sube lo que cambió, se bajan los cambios de otros equipos
+//   · al borrar una página, se borra también en la nube
+//   · la página que está abierta no se reemplaza mientras se dibuja
+//
+// Regla necesaria en Firebase:
+//   match /canvas/{doc} { allow read, write: if true; }
+//
+// Además, el lápiz arranca en negro (antes salía casi blanco).
+// ═══════════════════════════════════════════════════════════════
+(function () {
+  if (window.CANVAS_NUBE_VER) return;
+  if (typeof saveData !== 'function' || typeof pages === 'undefined') return;   // solo en Canvas
+  window.CANVAS_NUBE_VER = 'canvasnube-1';
+
+  // ── Lápiz negro por defecto ─────────────────────────────────
+  try {
+    window.penColor = '#111111';
+    var primero = document.querySelector('.color-btn');
+    if (primero) {
+      primero.setAttribute('data-color', '#111111');
+      primero.style.background = '#111111';
+    }
+  } catch (e) {}
+
+  var COL = 'canvas';
+  var CFG = { proj: 'em-suite-pro', key: '' };
+  var M = leer('em_canvas_sync_v1', {});       // id → { h, ts }
+  var TUMBAS = leer('em_canvas_tumbas_v1', {});
+  var DEV = 'c' + Math.random().toString(36).slice(2, 8);
+  var ocupado = false, pendienteApertura = false, ultimoAviso = 0;
+
+  function leer(k, d) { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } }
+  function guardar(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function huella(s) {
+    var h = 5381;
+    for (var i = 0; i < s.length; i++) h = ((h << 5) + h) ^ s.charCodeAt(i);
+    return (h >>> 0).toString(36) + ':' + s.length;
+  }
+
+  // La configuración llega por mensaje del shell (igual que NeuroNotes)
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.type === 'EM_CFG' && e.data.cfg) {
+      CFG.proj = e.data.cfg.fbProject || CFG.proj;
+      CFG.key = e.data.cfg.fbKey || '';
+      setTimeout(ciclo, 500);
+    }
+  });
+
+  // La configuración del shell está al alcance (misma aplicación)
+  function cargarCfgPadre() {
+    try {
+      var c = window.parent && window.parent.EMC;
+      if (c && c.fbKey) { CFG.proj = c.fbProject || CFG.proj; CFG.key = c.fbKey; }
+    } catch (e) {}
+  }
+
+  function base() {
+    if (!CFG.key) cargarCfgPadre();
+    if (!CFG.key) return '';
+    return 'https://firestore.googleapis.com/v1/projects/' + CFG.proj + '/databases/(default)/documents/' + COL;
+  }
+  function con(u) { return u + (u.indexOf('?') >= 0 ? '&' : '?') + 'key=' + CFG.key; }
+
+  function avisarFallo(e) {
+    var ahora = Date.now();
+    if (ahora - ultimoAviso < 300000) return;
+    ultimoAviso = ahora;
+    var motivo = String((e && e.message) || e || '');
+    var causa = /403/.test(motivo) ? 'Firebase no deja escribir en «canvas»: falta publicar la regla'
+              : /404/.test(motivo) ? 'No encuentro el proyecto de Firebase'
+              : 'Revisa la conexión a internet';
+    if (typeof toast === 'function') toast('Canvas sin sincronizar: ' + causa + ' (' + motivo + ')', 'err');
+  }
+
+  function subirCambios() {
+    var u = base();
+    if (!u) return Promise.resolve();
+    var pr = [];
+    pages.forEach(function (p) {
+      var txt = JSON.stringify(p);
+      var h = huella(txt);
+      if (M[p.id] && M[p.id].h === h) return;
+      if (txt.length > 950000) {
+        if (typeof toast === 'function') toast('La página «' + (p.title || '') + '» es muy pesada: no se sube', 'err');
+        return;
+      }
+      var ts = Date.now();
+      M[p.id] = { h: h, ts: ts };
+      pr.push(fetch(con(u + '/' + encodeURIComponent(p.id)), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: {
+          json: { stringValue: txt },
+          ts:   { integerValue: String(ts) },
+          dev:  { stringValue: DEV }
+        } })
+      }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); })
+        .catch(function (e) { delete M[p.id]; avisarFallo(e); }));
+    });
+    guardar('em_canvas_sync_v1', M);
+    return Promise.all(pr);
+  }
+
+  function bajarCambios() {
+    var u = base();
+    if (!u) return Promise.resolve();
+    return fetch(con(u + '?pageSize=300'))
+      .then(function (r) {
+        if (r.status === 404) return { documents: [] };
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (j) {
+        var cambio = false, vistos = {};
+        (j.documents || []).forEach(function (d) {
+          var id = d.name.split('/').pop();
+          vistos[id] = true;
+          if (TUMBAS[id]) return;
+          var f = d.fields || {};
+          var rts = +((f.ts && (f.ts.integerValue || f.ts.stringValue)) || 0);
+          var m = M[id];
+          if (m && rts <= m.ts) return;
+          var rp;
+          try { rp = JSON.parse((f.json && f.json.stringValue) || 'null'); } catch (e) { return; }
+          if (!rp || !rp.id) return;
+          if (rp.id === curPageId) { pendienteApertura = true; return; }   // no cambiar la que estás dibujando
+          var idx = -1;
+          for (var i = 0; i < pages.length; i++) if (pages[i].id === id) { idx = i; break; }
+          if (idx >= 0) pages[idx] = rp; else pages.push(rp);
+          M[id] = { h: huella(JSON.stringify(rp)), ts: rts };
+          cambio = true;
+        });
+        // Lo borrado en otro equipo: se quita aquí, salvo si tiene cambios sin subir
+        Object.keys(M).forEach(function (id) {
+          if (vistos[id] || id === curPageId) return;
+          var idx = -1;
+          for (var k = 0; k < pages.length; k++) if (pages[k].id === id) { idx = k; break; }
+          if (idx < 0) { delete M[id]; return; }
+          if (huella(JSON.stringify(pages[idx])) !== M[id].h) return;
+          pages.splice(idx, 1);
+          delete M[id];
+          cambio = true;
+        });
+        guardar('em_canvas_sync_v1', M);
+        if (cambio) {
+          if (pages.length === 0) pages.push({ id: 'p' + Date.now(), title: 'Página 1', strokes: [], projId: null });
+          guardarOriginal();
+          try { renderPagesList(); } catch (_) {}
+        }
+      });
+  }
+
+  function ciclo() {
+    if (ocupado || !base()) return;
+    ocupado = true;
+    subirCambios()
+      .then(function () { return bajarCambios(); })
+      .catch(avisarFallo)
+      .then(function () { ocupado = false; });
+  }
+
+  // ── Enganches (las funciones originales se llaman igual) ──────
+  var guardarOriginal = window.saveData;
+  var pendiente = null;
+  window.saveData = function () {
+    var r = guardarOriginal.apply(this, arguments);
+    clearTimeout(pendiente);
+    pendiente = setTimeout(ciclo, 2500);
+    return r;
+  };
+
+  var borrarOriginal = window.delPage;
+  if (typeof borrarOriginal === 'function') {
+    window.delPage = function (e, id) {
+      var antes = pages.length;
+      var r = borrarOriginal.apply(this, arguments);
+      if (pages.length < antes && !pages.some(function (p) { return p.id === id; })) {
+        TUMBAS[id] = Date.now();
+        guardar('em_canvas_tumbas_v1', TUMBAS);
+        delete M[id];
+        guardar('em_canvas_sync_v1', M);
+        var u = base();
+        if (u) fetch(con(u + '/' + encodeURIComponent(id)), { method: 'DELETE' }).catch(function () {});
+      }
+      return r;
+    };
+  }
+
+  var cambiarOriginal = window.switchPage;
+  if (typeof cambiarOriginal === 'function') {
+    window.switchPage = function () {
+      var r = cambiarOriginal.apply(this, arguments);
+      if (pendienteApertura) { pendienteApertura = false; setTimeout(ciclo, 300); }
+      return r;
+    };
+  }
+
+  setInterval(function () { if (!document.hidden) ciclo(); }, 45000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) ciclo(); });
+  window.addEventListener('focus', function () { ciclo(); });
+})();
+
+
+// ═══════════════════════════════════════════════════════════════
+// LA CONFIGURACIÓN LLEGA A TODAS LAS PESTAÑAS
+//
+// La configuración (Firebase, Telegram) se envía a las pestañas al
+// arrancar. Si una pestaña carga después, se queda sin configuración y
+// su sincronización no arranca (cuadernos, canvas). Este módulo la
+// reenvía unas cuantas veces durante el arranque, hasta que la pestaña
+// la tenga.
+// ═══════════════════════════════════════════════════════════════
+(function () {
+  if (window.CFG_REENVIO_VER) return;
+  if (window.parent !== window) return;              // solo en el shell
+  if (!document.getElementById('f2')) return;
+  window.CFG_REENVIO_VER = 'reenvio-1';
+
+  function enviar() {
+    if (typeof EMC === 'undefined' || !EMC) return;
+    ['f1', 'f2', 'f3'].forEach(function (id) {
+      try {
+        var f = document.getElementById(id);
+        if (f && f.contentWindow) f.contentWindow.postMessage({ type: 'EM_CFG', cfg: EMC }, '*');
+      } catch (e) {}
+    });
+  }
+
+  var veces = 0;
+  (function ciclo() {
+    enviar();
+    veces++;
+    if (veces < 25) setTimeout(ciclo, veces < 6 ? 700 : 2000);
+  })();
+  ['f1', 'f2', 'f3'].forEach(function (id) {
+    var f = document.getElementById(id);
+    if (f) f.addEventListener('load', enviar);
+  });
 })();
 
 
