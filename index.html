@@ -24825,6 +24825,112 @@ var NUEVO_TIPOS = [
 
 
 // ═══════════════════════════════════════════════════════════════
+// IMPORTAR IMAGEN EN CUADERNOS
+//
+// Botón «Importar imagen» en la barra del cuaderno. La imagen (de la
+// galería o de la cámara del equipo) se pone sobre la hoja como una
+// pegatina: se arrastra, se agranda o se quita igual que las demás.
+// Se guarda con la hoja y viaja a la nube con el cuaderno.
+// ═══════════════════════════════════════════════════════════════
+(function () {
+  if (window.CUA_IMAGEN_VER) return;
+  if (typeof cuaRenderTools !== 'function' || typeof cuaRenderPegatinas !== 'function') return;
+  window.CUA_IMAGEN_VER = 'cua-imagen-1';
+
+  function comprimir(f, cb) {
+    var r = new FileReader();
+    r.onload = function () {
+      var im = new Image();
+      im.onload = function () {
+        var w = im.width, h = im.height, e = Math.min(1, 1000 / Math.max(w, h)) || 1;
+        var c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(w * e)); c.height = Math.max(1, Math.round(h * e));
+        var x = c.getContext('2d');
+        x.fillStyle = '#ffffff'; x.fillRect(0, 0, c.width, c.height);
+        x.drawImage(im, 0, 0, c.width, c.height);
+        cb(c.toDataURL('image/jpeg', 0.8));
+      };
+      im.onerror = function () {
+        try { T('No pude leer esa imagen', 'Usa JPG o PNG. Las fotos HEIC de iPhone no se pueden leer aquí.', '⚠️'); } catch (e) {}
+      };
+      im.src = r.result;
+    };
+    r.readAsDataURL(f);
+  }
+
+  function ponerImagen(url) {
+    var p = cuaPagina(); if (!p) return;
+    p.pegatinas = p.pegatinas || [];
+    var k = p.pegatinas.length;
+    p.pegatinas.push({ e: '🖼', img: url, x: +(0.30 + (k % 3) * 0.06).toFixed(4),
+                       y: +(0.30 + (Math.floor(k / 3) % 3) * 0.08).toFixed(4),
+                       s: 240, id: cuaId() });
+    p.ts = Date.now(); if (CU.libro) CU.libro.ts = Date.now();
+    CUA_SEL = p.pegatinas[p.pegatinas.length - 1].id;
+    cuaGuardar(true); cuaRenderPegatinas();
+  }
+
+  function importar() {
+    var i = document.createElement('input');
+    i.type = 'file'; i.accept = 'image/*';
+    i.style.cssText = 'position:fixed;left:-9999px;opacity:0';
+    document.body.appendChild(i);
+    i.onchange = function () {
+      var f = i.files && i.files[0];
+      try { i.remove(); } catch (e) {}
+      if (f) comprimir(f, ponerImagen);
+    };
+    i.click();
+  }
+  window.cuaImportarImagen = importar;
+
+  // Botón en la barra (la barra se redibuja a menudo: se vuelve a poner)
+  var herramientasOriginal = window.cuaRenderTools;
+  window.cuaRenderTools = function () {
+    var r = herramientasOriginal.apply(this, arguments);
+    var t = document.getElementById('cua-tools');
+    if (t && !t.querySelector('[data-imp]')) {
+      t.insertAdjacentHTML('beforeend',
+        '<button class="cu-b" data-imp onclick="cuaImportarImagen()" title="Importar una imagen de la galería o la cámara">' +
+        '<i class="fa fa-image"></i> Importar imagen</button>');
+    }
+    return r;
+  };
+
+  // Dibujar las imágenes sobre la hoja
+  var pegasOriginal = window.cuaRenderPegatinas;
+  window.cuaRenderPegatinas = function () {
+    var r = pegasOriginal.apply(this, arguments);
+    var p = cuaPagina();
+    if (!p) return r;
+    (p.pegatinas || []).forEach(function (x) {
+      if (!x.img) return;
+      var el = document.querySelector('.cu-pega[data-id="' + x.id + '"]');
+      if (el) el.innerHTML = '<img src="' + x.img + '" alt="" draggable="false" ' +
+        'style="display:block;width:' + (x.s || 240) + 'px;max-width:none;border-radius:6px;' +
+        'box-shadow:0 2px 10px rgba(0,0,0,.18);pointer-events:none">';
+    });
+    return r;
+  };
+
+  // Para las imágenes, agrandar o achicar de a 8 px, con tope de 60 a 900
+  var tamOriginal = window.cuaPegaTam;
+  window.cuaPegaTam = function (d) {
+    var p = cuaPagina();
+    var sel = p && (p.pegatinas || []).find(function (x) { return x.id === CUA_SEL; });
+    if (sel && sel.img) {
+      sel.s = Math.max(60, Math.min(900, (sel.s || 240) + d * 8));
+      p.ts = Date.now(); cuaGuardar(); cuaRenderPegatinas();
+      return;
+    }
+    return tamOriginal.apply(this, arguments);
+  };
+
+  try { cuaRenderTools(); } catch (e) {}
+})();
+
+
+// ═══════════════════════════════════════════════════════════════
 // LA CONFIGURACIÓN LLEGA A TODAS LAS PESTAÑAS
 //
 // La configuración (Firebase, Telegram) se envía a las pestañas al
